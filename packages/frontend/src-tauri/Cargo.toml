@@ -1,0 +1,22 @@
+[package]
+name = "anriod"
+version = "0.1.0"
+description = "Cross-platform media watch history tracker"
+authors = ["anriod"]
+edition = "2021"
+
+[lib]
+name = "anriod_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon"] }
+tauri-plugin-opener = "2"
+tauri-plugin-shell = "2"
+tauri-plugin-updater = "2"
+tauri-plugin-process = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

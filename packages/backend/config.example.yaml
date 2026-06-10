@@ -1,0 +1,23 @@
+server:
+  port: 8000
+  host: 0.0.0.0
+
+database:
+  path: ./data/media.db
+
+auth:
+  api_key: "your-secret-api-key-here"
+
+sync:
+  cron: "0 3 * * *"  # 定时同步 cron 表达式，设为 "" 禁用
+
+proxy: ""  # HTTP 代理, 留空则自动检测系统代理
+
+storage:
+  covers_dir: ./data/covers
+
+datasources:
+  bangumi:
+    enabled: true
+    base_url: https://api.bgm.tv
+    bgm_token: ""  # Bangumi access token (可选)

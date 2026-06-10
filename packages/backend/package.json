@@ -1,0 +1,19 @@
+{
+  "name": "@anriod/backend",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "bun --watch src/index.ts",
+    "build": "bun build --compile --minify --sourcemap src/index.ts --outfile anriod",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@anriod/shared": "file:../shared",
+    "hono": "^4.3.0",
+    "drizzle-orm": "^0.30.0",
+    "croner": "^8.0.0"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  }
+}

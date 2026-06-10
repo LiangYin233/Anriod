@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#005faa"/>
+      <stop offset="100%" style="stop-color:#0078d4"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+  <!-- Film strip / media icon -->
+  <g transform="translate(256,256)" fill="none" stroke="#ffffff" stroke-width="24" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Outer rounded rect -->
+    <rect x="-140" y="-120" width="280" height="240" rx="32"/>
+    <!-- Film sprocket holes -->
+    <line x1="-140" y1="-90" x2="-140" y2="-50"/>
+    <line x1="-140" y1="50" x2="-140" y2="90"/>
+    <line x1="140" y1="-90" x2="140" y2="-50"/>
+    <line x1="140" y1="50" x2="140" y2="90"/>
+    <!-- Play triangle -->
+    <polygon points="-40,-50 -40,50 60,0" fill="#ffffff"/>
+  </g>
+</svg>

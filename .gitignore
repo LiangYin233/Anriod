@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+packages/backend/anriod
+packages/backend/anriod.exe
+
+# Runtime data (contains secrets and user data)
+packages/backend/config.yaml
+packages/backend/data/
+*.db
+*.db-journal
+
+# Frontend build
+packages/frontend/dist/
+
+# Tauri build
+packages/frontend/src-tauri/target/
+
+# IDE
+.vscode/
+.idea/
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+.env.local
+
+# Logs
+*.log
