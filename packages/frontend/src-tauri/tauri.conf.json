@@ -29,10 +29,11 @@
     "security": {
       "csp": null
     },
+    "withGlobalTauri": true,
     "trayIcon": {
       "iconPath": "icons/icon.png",
       "iconAsTemplate": true,
-      "tooltip": "Anriod - 观看记录"
+      "tooltip": "Anriod"
     }
   },
   "bundle": {
