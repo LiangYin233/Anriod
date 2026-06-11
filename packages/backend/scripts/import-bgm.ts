@@ -173,12 +173,13 @@ async function main() {
 
     // 如果有进度，创建观看历史
     if (progress && progress.episode > 0) {
+      const watchDate = item.updated_at || now
       history.push({
         id: history.length + 1,
         media_id: mediaId,
         media_title: title,
-        started_at: item.updated_at || now,
-        completed_at: anriodStatus === 'completed' ? now : null,
+        started_at: watchDate,
+        completed_at: anriodStatus === 'completed' ? watchDate : null,
         progress_from: { episode: 0 },
         progress_to: progress,
         rating: item.rate ?? null,
