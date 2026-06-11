@@ -54,16 +54,27 @@ function chartColors() {
 useChart(statusCanvas, () => {
   if (!overview.value) return null
   const { text: tc } = chartColors()
+  const isDark = document.documentElement.classList.contains('dark')
   return {
     type: 'doughnut',
     data: {
-      labels: statusOrder.map((s) => STATUS_LABELS[s]),
-      datasets: [{ data: statusOrder.map((s) => overview.value!.by_status[s] ?? 0), backgroundColor: statusOrder.map((s) => statusColors[s]), borderWidth: 0 }],
+      labels: statusOrder.map((s) => `${STATUS_LABELS[s]}  ${overview.value!.by_status[s] ?? 0}`),
+      datasets: [{ data: statusOrder.map((s) => overview.value!.by_status[s] ?? 0), backgroundColor: statusOrder.map((s) => statusColors[s]), borderWidth: 2, borderColor: isDark ? '#2a2a2a' : '#ffffff' }],
     },
     options: {
       responsive: true,
+      cutout: '60%',
       plugins: {
-        legend: { position: 'bottom', labels: { padding: 16, usePointStyle: true, pointStyleWidth: 10, color: tc } },
+        legend: {
+          position: 'bottom',
+          labels: {
+            padding: 14,
+            usePointStyle: true,
+            pointStyleWidth: 12,
+            color: tc,
+            font: { size: 12 },
+          },
+        },
       },
     },
   }
@@ -94,12 +105,24 @@ useChart(typeCanvas, () => {
 useChart(timelineCanvas, () => {
   if (timeline.value.length === 0) return null
   const { text: tc, grid: gc } = chartColors()
+  const isDark = document.documentElement.classList.contains('dark')
   const data = timeline.value.slice(-12)
   return {
-    type: 'bar',
+    type: 'line',
     data: {
       labels: data.map((p) => p.period),
-      datasets: [{ data: data.map((p) => p.count), backgroundColor: '#0078d4', borderRadius: 4, borderWidth: 0 }],
+      datasets: [{
+        data: data.map((p) => p.count),
+        borderColor: '#0078d4',
+        backgroundColor: isDark ? 'rgba(0,120,212,0.12)' : 'rgba(0,120,212,0.06)',
+        borderWidth: 2,
+        pointRadius: 3,
+        pointBackgroundColor: '#0078d4',
+        pointBorderColor: isDark ? '#1a1a1a' : '#ffffff',
+        pointBorderWidth: 1.5,
+        fill: true,
+        tension: 0.3,
+      }],
     },
     options: {
       responsive: true,
