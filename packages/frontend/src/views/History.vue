@@ -89,7 +89,7 @@ onMounted(loadHistory)
     <div v-else class="max-w-2xl mx-auto">
       <template v-for="[key, items] in months" :key="key">
         <!-- Month sticky header -->
-        <div class="sticky top-16 z-10 -mx-2 px-2 py-2 mb-3 bg-background/80 backdrop-blur-sm border-b border-outline-variant/20">
+        <div class="sticky top-0 z-10 -mx-2 px-2 py-2 mb-3 bg-background/80 backdrop-blur-sm border-b border-outline-variant/20">
           <span class="text-label-sm font-semibold text-on-surface-variant tracking-wider">{{ monthLabel(key) }}</span>
           <span class="ml-2 text-caption-xs text-on-surface-variant">{{ items.length }} 条</span>
         </div>

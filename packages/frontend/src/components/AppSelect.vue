@@ -54,12 +54,18 @@ function onMousedown(e: MouseEvent) {
   }
 }
 
+function onScroll() {
+  open.value = false
+}
+
 onMounted(() => {
   document.addEventListener('mousedown', onMousedown)
+  document.addEventListener('scroll', onScroll, { passive: true, capture: true })
 })
 
 onUnmounted(() => {
   document.removeEventListener('mousedown', onMousedown)
+  document.removeEventListener('scroll', onScroll, { capture: true })
 })
 </script>
 
