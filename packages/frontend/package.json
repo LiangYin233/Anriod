@@ -8,7 +8,9 @@
     "typecheck": "vue-tsc --noEmit",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
-    "tauri:build": "tauri build"
+    "tauri:build": "tauri build",
+    "tauri:android": "tauri android build",
+    "tauri:android:dev": "tauri android dev"
   },
   "dependencies": {
     "@anriod/shared": "file:../shared",

@@ -20,7 +20,11 @@ packages/frontend/dist/
 
 # Tauri build
 packages/frontend/src-tauri/target/
-packages/frontend/src-tauri/gen/
+# Tauri generated mobile project — tracked so others can build without re-init
+# packages/frontend/src-tauri/gen/android/
+
+# Other Tauri gen schemas are build artifacts
+packages/frontend/src-tauri/gen/schemas/
 
 # IDE
 .vscode/
