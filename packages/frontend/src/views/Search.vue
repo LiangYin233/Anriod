@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import type { MediaType, SearchResult, Status } from '@anriod/shared'
 import { MEDIA_TYPES, MEDIA_TYPE_VALUES, STATUS_LABELS, STATUS_VALUES } from '@anriod/shared'
 import SearchBar from '@/components/SearchBar.vue'
@@ -7,6 +7,7 @@ import PageHeader from '@/components/PageHeader.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import ErrorBanner from '@/components/ErrorBanner.vue'
+import AppSelect from '@/components/AppSelect.vue'
 import { api } from '@/utils/api'
 import { useToast } from '@/composables/useToast'
 
@@ -14,6 +15,9 @@ const query = ref('')
 const searched = ref(false)
 const source = ref('bangumi')
 const sources = ref<Array<{ name: string; supportedTypes: string[] }>>([])
+const sourceOptions = computed(() => sources.value.map((s) => ({ value: s.name, label: s.name })))
+const mediaTypeOptions = MEDIA_TYPE_VALUES.map((mt) => ({ value: mt, label: MEDIA_TYPES[mt] }))
+const manualStatusOptions = STATUS_VALUES.map((s) => ({ value: s, label: STATUS_LABELS[s] }))
 const results = ref<SearchResult[]>([])
 const loading = ref(false)
 const error = ref('')
@@ -96,11 +100,8 @@ onMounted(loadSources)
         <div class="flex-1 min-w-[200px]">
           <SearchBar v-model="query" placeholder="搜索作品名..." @search="runSearch" />
         </div>
-        <div class="relative w-40 shrink-0">
-          <select v-model="source" class="field-fluent appearance-none cursor-pointer">
-            <option v-for="s in sources" :key="s.name" :value="s.name">{{ s.name }}</option>
-          </select>
-          <span class="material-symbols-outlined pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-outline">expand_more</span>
+        <div class="w-40 shrink-0">
+          <AppSelect v-model="source" :options="sourceOptions" variant="fluent" />
         </div>
       </div>
     </div>
@@ -192,12 +193,8 @@ onMounted(loadSources)
           <h3 class="mb-4 text-title-sm font-semibold">手动添加</h3>
           <div class="flex flex-col gap-3">
             <input v-model="manualTitle" class="field-fluent" placeholder="作品名称" @keydown.enter="manualImport" />
-            <select v-model="manualType" class="field">
-              <option v-for="mt in MEDIA_TYPE_VALUES" :key="mt" :value="mt">{{ MEDIA_TYPES[mt] }}</option>
-            </select>
-            <select v-model="manualStatus" class="field">
-              <option v-for="s in STATUS_VALUES" :key="s" :value="s">{{ STATUS_LABELS[s] }}</option>
-            </select>
+            <AppSelect v-model="manualType" :options="mediaTypeOptions" variant="field" />
+            <AppSelect v-model="manualStatus" :options="manualStatusOptions" variant="field" />
           </div>
           <div class="mt-5 flex justify-end gap-3">
             <button class="btn-secondary" type="button" @click="manualOpen = false">取消</button>

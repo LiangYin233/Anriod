@@ -9,6 +9,7 @@ import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import ErrorBanner from '@/components/ErrorBanner.vue'
 import Modal from '@/components/Modal.vue'
+import AppSelect from '@/components/AppSelect.vue'
 import { useMedia } from '@/composables/useMedia'
 import { useToast } from '@/composables/useToast'
 import { api } from '@/utils/api'
@@ -32,6 +33,16 @@ const sortOptions = [
   { value: 'title:asc', label: '标题 A-Z' },
 ]
 const sortBy = ref(sortOptions[0].value)
+
+const typeOptions = [
+  { value: '', label: '全部类型' },
+  ...MEDIA_TYPE_VALUES.map((mt) => ({ value: mt, label: MEDIA_TYPES[mt] }))
+]
+
+const statusOptions = [
+  { value: '', label: '全部状态' },
+  ...STATUS_VALUES.map((s) => ({ value: s, label: STATUS_LABELS[s] }))
+]
 
 const totalPages = computed(() => Math.ceil(pagination.value.total / pagination.value.limit))
 const hasPrev = computed(() => pagination.value.page > 1)
@@ -158,14 +169,8 @@ onMounted(loadMedia)
 
       <!-- Filters -->
       <div v-if="showFilters" class="mt-3 grid gap-3 sm:grid-cols-2">
-        <select v-model="type" class="field" @change="onFilterChange">
-          <option value="">全部类型</option>
-          <option v-for="mt in MEDIA_TYPE_VALUES" :key="mt" :value="mt">{{ MEDIA_TYPES[mt] }}</option>
-        </select>
-        <select v-model="status" class="field" @change="onFilterChange">
-          <option value="">全部状态</option>
-          <option v-for="s in STATUS_VALUES" :key="s" :value="s">{{ STATUS_LABELS[s] }}</option>
-        </select>
+        <AppSelect v-model="type" :options="typeOptions" variant="field" @change="onFilterChange" />
+        <AppSelect v-model="status" :options="statusOptions" variant="field" @change="onFilterChange" />
       </div>
 
       <!-- Active filter chips -->
@@ -198,16 +203,7 @@ onMounted(loadMedia)
     <!-- Grid -->
     <template v-else>
       <div class="flex items-center justify-between">
-        <div class="relative">
-          <select
-            v-model="sortBy"
-            class="appearance-none cursor-pointer bg-transparent text-title-sm text-on-surface font-semibold outline-none pr-6 py-1"
-            @change="onFilterChange"
-          >
-            <option v-for="opt in sortOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-          </select>
-          <span class="material-symbols-outlined pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">expand_more</span>
-        </div>
+        <AppSelect v-model="sortBy" :options="sortOptions" variant="minimal" @change="onFilterChange" />
       </div>
 
       <div class="grid gap-gutter grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">

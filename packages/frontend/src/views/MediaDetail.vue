@@ -6,6 +6,7 @@ import { MEDIA_TYPES, MEDIA_TYPE_VALUES, STATUS_LABELS, STATUS_VALUES } from '@a
 import { api } from '@/utils/api'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import ErrorBanner from '@/components/ErrorBanner.vue'
+import AppSelect from '@/components/AppSelect.vue'
 import { useToast } from '@/composables/useToast'
 import { formatDate } from '@/utils/format'
 
@@ -45,6 +46,9 @@ const editCoverUrl = ref('')
 const editExternalRating = ref<number | null>(null)
 const editDescription = ref('')
 const showMore = ref(false)
+
+const editTypeOptions = MEDIA_TYPE_VALUES.map((mt) => ({ value: mt, label: MEDIA_TYPES[mt] }))
+const statusOptions = STATUS_VALUES.map((s) => ({ value: s, label: STATUS_LABELS[s] }))
 
 function fillForm(item: Media) {
   title.value = item.title
@@ -405,15 +409,11 @@ onMounted(loadDetail)
               <div class="grid grid-cols-2 gap-3">
                 <label class="flex flex-col gap-1">
                   <span class="pl-1 text-label-sm text-on-surface-variant">类型</span>
-                  <select v-model="editType" class="field-fluent appearance-none cursor-pointer">
-                    <option v-for="mt in MEDIA_TYPE_VALUES" :key="mt" :value="mt">{{ MEDIA_TYPES[mt] }}</option>
-                  </select>
+                  <AppSelect v-model="editType" :options="editTypeOptions" variant="fluent" />
                 </label>
                 <label class="flex flex-col gap-1">
                   <span class="pl-1 text-label-sm text-on-surface-variant">状态</span>
-                  <select v-model="status" class="field-fluent appearance-none cursor-pointer">
-                    <option v-for="s in STATUS_VALUES" :key="s" :value="s">{{ STATUS_LABELS[s] }}</option>
-                  </select>
+                  <AppSelect v-model="status" :options="statusOptions" variant="fluent" />
                 </label>
               </div>
 
