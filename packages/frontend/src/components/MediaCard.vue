@@ -82,12 +82,12 @@ function cancelEdit() {
 <template>
   <article class="glass-card rounded-lg overflow-hidden group cursor-pointer reveal-hover transition-all duration-300 hover:-translate-y-1 hover:shadow-lg flex flex-col">
     <!-- Poster -->
-    <RouterLink :to="`/media/${media.id}`" class="relative w-full aspect-poster bg-surface-variant block overflow-hidden">
+    <RouterLink :to="`/media/${media.id}`" class="cover-wrapper relative w-full aspect-poster bg-surface-variant block overflow-hidden">
       <img
         v-if="coverSrc"
         :src="coverSrc"
         :alt="media.title"
-        class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+        class="cover-img h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         loading="lazy"
       />
       <div v-else class="flex h-full w-full items-center justify-center">

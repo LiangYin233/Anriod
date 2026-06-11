@@ -205,12 +205,12 @@ onMounted(loadDetail)
         <div class="flex flex-col gap-stack-lg">
           <!-- Hero -->
           <div class="flex flex-col items-start gap-stack-md sm:flex-row">
-            <div class="relative w-48 shrink-0 overflow-hidden rounded-lg border border-outline-variant/20 shadow-lg group">
+            <div class="cover-wrapper relative w-48 shrink-0 overflow-hidden rounded-lg border border-outline-variant/20 shadow-lg group">
               <img
                 v-if="media.cover_url"
                 :src="media.cover_url"
                 :alt="media.title"
-                class="aspect-poster w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                class="cover-img aspect-poster w-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
               <div v-else class="aspect-poster flex w-full items-center justify-center bg-surface-variant">
                 <span class="material-symbols-outlined text-5xl text-on-surface-variant">movie</span>

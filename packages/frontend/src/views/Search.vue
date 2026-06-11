@@ -119,8 +119,8 @@ onMounted(loadSources)
           class="acrylic flex flex-col items-start gap-gutter rounded-xl border border-outline-variant/20 p-stack-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md sm:flex-row sm:items-center"
           :class="{ 'opacity-70': importingId === `${result.source}:${result.source_id}` }"
         >
-          <div class="relative h-36 w-24 shrink-0 overflow-hidden rounded-lg bg-surface-container-high shadow-sm">
-            <img v-if="result.cover_url" :src="result.cover_url" :alt="result.title" class="h-full w-full object-cover" loading="lazy" />
+          <div class="cover-wrapper relative h-36 w-24 shrink-0 overflow-hidden rounded-lg bg-surface-container-high shadow-sm">
+            <img v-if="result.cover_url" :src="result.cover_url" :alt="result.title" class="cover-img h-full w-full object-cover" loading="lazy" />
             <div v-else class="flex h-full w-full items-center justify-center bg-surface-variant">
               <span class="material-symbols-outlined text-3xl text-on-surface-variant">movie</span>
             </div>
