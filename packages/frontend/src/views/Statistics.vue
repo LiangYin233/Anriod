@@ -1,14 +1,12 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, ref, nextTick } from 'vue'
 import type { StatisticsOverview, Status, TagStatistic, TimelinePoint } from '@anriod/shared'
 import { STATUS_LABELS } from '@anriod/shared'
-import { Chart, registerables } from 'chart.js'
-import { api, apiRequest } from '@/utils/api'
 import PageHeader from '@/components/PageHeader.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import ErrorBanner from '@/components/ErrorBanner.vue'
-
-Chart.register(...registerables)
+import { useChart } from '@/composables/useChart'
+import { api, apiRequest } from '@/utils/api'
 
 const overview = ref<StatisticsOverview | null>(null)
 const timeline = ref<TimelinePoint[]>([])
@@ -16,17 +14,15 @@ const tagStats = ref<TagStatistic[]>([])
 const ratingDist = ref<Array<{ rating: number; count: number }>>([])
 const loading = ref(false)
 const error = ref('')
+const chartTrigger = ref(0)
 
-// Chart instances for cleanup
-let statusChart: Chart | null = null
-let typeChart: Chart | null = null
-let timelineChart: Chart | null = null
-let ratingChart: Chart | null = null
-
+// Canvas refs
 const statusCanvas = ref<HTMLCanvasElement | null>(null)
 const typeCanvas = ref<HTMLCanvasElement | null>(null)
 const timelineCanvas = ref<HTMLCanvasElement | null>(null)
 const ratingCanvas = ref<HTMLCanvasElement | null>(null)
+
+// ── Chart configs ──────────────────────────────────────
 
 const statusOrder = ['watching', 'completed', 'plan_to_watch', 'on_hold', 'dropped'] as Status[]
 
@@ -47,6 +43,98 @@ const typeColors: Record<string, string> = {
   manga: '#ec4899',
 }
 
+function gridColor(): string {
+  return document.documentElement.classList.contains('dark') ? '#333' : '#e5e7eb'
+}
+
+useChart(statusCanvas, () => {
+  if (!overview.value) return null
+  const gc = gridColor()
+  return {
+    type: 'doughnut',
+    data: {
+      labels: statusOrder.map((s) => STATUS_LABELS[s]),
+      datasets: [{ data: statusOrder.map((s) => overview.value!.by_status[s] ?? 0), backgroundColor: statusOrder.map((s) => statusColors[s]), borderWidth: 0 }],
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'bottom', labels: { padding: 16, usePointStyle: true, pointStyleWidth: 10, color: gc } },
+      },
+    },
+  }
+}, chartTrigger)
+
+useChart(typeCanvas, () => {
+  if (!overview.value) return null
+  const gc = gridColor()
+  const entries = Object.entries(overview.value.by_type).filter(([, c]) => c > 0)
+  return {
+    type: 'bar',
+    data: {
+      labels: entries.map(([t]) => t),
+      datasets: [{ data: entries.map(([, c]) => c), backgroundColor: entries.map(([t]) => typeColors[t] ?? '#6b7280'), borderRadius: 6, borderWidth: 0 }],
+    },
+    options: {
+      responsive: true,
+      indexAxis: 'y',
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { stepSize: 1, color: gc }, grid: { color: gc } },
+        y: { ticks: { color: gc }, grid: { display: false } },
+      },
+    },
+  }
+}, chartTrigger)
+
+useChart(timelineCanvas, () => {
+  if (timeline.value.length === 0) return null
+  const gc = gridColor()
+  const data = timeline.value.slice(-12)
+  return {
+    type: 'bar',
+    data: {
+      labels: data.map((p) => p.period),
+      datasets: [{ data: data.map((p) => p.count), backgroundColor: '#0078d4', borderRadius: 4, borderWidth: 0 }],
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: gc }, grid: { display: false } },
+        y: { ticks: { stepSize: 1, color: gc }, grid: { color: gc } },
+      },
+    },
+  }
+}, chartTrigger)
+
+useChart(ratingCanvas, () => {
+  if (ratingDist.value.length === 0) return null
+  const gc = gridColor()
+  const bins = new Array(10).fill(0)
+  for (const { rating, count } of ratingDist.value) {
+    const idx = Math.round(rating) - 1
+    if (idx >= 0 && idx < 10) bins[idx] = count
+  }
+  return {
+    type: 'bar',
+    data: {
+      labels: Array.from({ length: 10 }, (_, i) => `${i + 1}`),
+      datasets: [{ data: bins, backgroundColor: '#0078d4', borderRadius: 4, borderWidth: 0 }],
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { title: { display: true, text: '评分', color: gc }, ticks: { color: gc }, grid: { display: false } },
+        y: { ticks: { stepSize: 1, color: gc }, grid: { color: gc }, title: { display: true, text: '数量', color: gc } },
+      },
+    },
+  }
+}, chartTrigger)
+
+// ── Data loading ───────────────────────────────────────
+
 async function loadStatistics() {
   loading.value = true
   error.value = ''
@@ -59,7 +147,7 @@ async function loadStatistics() {
     ])
     overview.value = o; timeline.value = t; tagStats.value = g; ratingDist.value = rd
     await nextTick()
-    renderCharts()
+    chartTrigger.value++
   } catch (caught) {
     error.value = caught instanceof Error ? caught.message : '加载统计失败'
   } finally {
@@ -67,136 +155,7 @@ async function loadStatistics() {
   }
 }
 
-function nextTick(): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, 50))
-}
-
-function renderCharts() {
-  destroyCharts()
-  if (!overview.value) return
-
-  const isDark = document.documentElement.classList.contains('dark')
-  const gridColor = isDark ? '#333' : '#e5e7eb'
-
-  renderStatusChart(gridColor)
-  renderTypeChart(gridColor)
-  renderTimelineChart(gridColor)
-  renderRatingChart(gridColor)
-}
-
-function renderStatusChart(gridColor: string) {
-  if (!statusCanvas.value || !overview.value) return
-  const labels = statusOrder.map((s) => STATUS_LABELS[s])
-  const data = statusOrder.map((s) => overview.value!.by_status[s] ?? 0)
-  const colors = statusOrder.map((s) => statusColors[s])
-
-  statusChart = new Chart(statusCanvas.value, {
-    type: 'doughnut',
-    data: {
-      labels,
-      datasets: [{ data, backgroundColor: colors, borderWidth: 0 }],
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: { position: 'bottom', labels: { padding: 16, usePointStyle: true, pointStyleWidth: 10, color: gridColor } },
-      },
-    },
-  })
-}
-
-function renderTypeChart(gridColor: string) {
-  if (!typeCanvas.value || !overview.value) return
-  const entries = Object.entries(overview.value.by_type).filter(([, c]) => c > 0)
-  const labels = entries.map(([t]) => t)
-  const data = entries.map(([, c]) => c)
-  const colors = entries.map(([t]) => typeColors[t] ?? '#6b7280')
-
-  typeChart = new Chart(typeCanvas.value, {
-    type: 'bar',
-    data: {
-      labels,
-      datasets: [{ data, backgroundColor: colors, borderRadius: 6, borderWidth: 0 }],
-    },
-    options: {
-      responsive: true,
-      indexAxis: 'y',
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { ticks: { stepSize: 1, color: gridColor }, grid: { color: gridColor } },
-        y: { ticks: { color: gridColor }, grid: { display: false } },
-      },
-    },
-  })
-}
-
-function renderTimelineChart(gridColor: string) {
-  if (!timelineCanvas.value || timeline.value.length === 0) return
-  const data = timeline.value.slice(-12)
-
-  timelineChart = new Chart(timelineCanvas.value, {
-    type: 'bar',
-    data: {
-      labels: data.map((p) => p.period),
-      datasets: [{
-        data: data.map((p) => p.count),
-        backgroundColor: '#0078d4',
-        borderRadius: 4,
-        borderWidth: 0,
-      }],
-    },
-    options: {
-      responsive: true,
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { ticks: { color: gridColor }, grid: { display: false } },
-        y: { ticks: { stepSize: 1, color: gridColor }, grid: { color: gridColor } },
-      },
-    },
-  })
-}
-
-function renderRatingChart(gridColor: string) {
-  if (!ratingCanvas.value || ratingDist.value.length === 0) return
-
-  // Build full 1-10 bins
-  const bins = new Array(10).fill(0)
-  for (const { rating, count } of ratingDist.value) {
-    const idx = Math.round(rating) - 1
-    if (idx >= 0 && idx < 10) bins[idx] = count
-  }
-
-  ratingChart = new Chart(ratingCanvas.value, {
-    type: 'bar',
-    data: {
-      labels: Array.from({ length: 10 }, (_, i) => `${i + 1}`),
-      datasets: [{
-        data: bins,
-        backgroundColor: '#0078d4',
-        borderRadius: 4,
-        borderWidth: 0,
-      }],
-    },
-    options: {
-      responsive: true,
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { title: { display: true, text: '评分', color: gridColor }, ticks: { color: gridColor }, grid: { display: false } },
-        y: { ticks: { stepSize: 1, color: gridColor }, grid: { color: gridColor }, title: { display: true, text: '数量', color: gridColor } },
-      },
-    },
-  })
-}
-
-function destroyCharts() {
-  statusChart?.destroy()
-  typeChart?.destroy()
-  timelineChart?.destroy()
-  ratingChart?.destroy()
-}
-
 onMounted(loadStatistics)
-onUnmounted(destroyCharts)
 </script>
 
 <template>
@@ -238,15 +197,12 @@ onUnmounted(destroyCharts)
 
       <!-- Charts row 1 -->
       <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
-        <!-- Status doughnut -->
         <div class="acrylic reveal-hover rounded-xl p-6 shadow-sm">
           <h3 class="mb-4 text-title-sm">状态分布</h3>
           <div class="max-w-xs mx-auto">
             <canvas ref="statusCanvas" />
           </div>
         </div>
-
-        <!-- Type bar -->
         <div class="acrylic reveal-hover rounded-xl p-6 shadow-sm">
           <h3 class="mb-4 text-title-sm">类型分布</h3>
           <canvas ref="typeCanvas" height="200" />
@@ -255,14 +211,11 @@ onUnmounted(destroyCharts)
 
       <!-- Charts row 2 -->
       <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
-        <!-- Timeline -->
         <div class="acrylic reveal-hover rounded-xl p-6 shadow-sm">
           <h3 class="mb-4 text-title-sm">观看趋势</h3>
           <canvas v-if="timeline.length > 0" ref="timelineCanvas" height="200" />
           <p v-else class="text-body-md text-on-surface-variant py-8 text-center">暂无数据</p>
         </div>
-
-        <!-- Rating distribution -->
         <div class="acrylic reveal-hover rounded-xl p-6 shadow-sm">
           <h3 class="mb-4 text-title-sm">评分分布</h3>
           <canvas v-if="ratingDist.length > 0" ref="ratingCanvas" height="200" />

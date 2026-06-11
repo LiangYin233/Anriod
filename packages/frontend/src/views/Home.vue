@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import type { Media, MediaType, Status } from '@anriod/shared'
 import { MEDIA_TYPES, MEDIA_TYPE_VALUES, STATUS_LABELS, STATUS_VALUES } from '@anriod/shared'
 import MediaCard from '@/components/MediaCard.vue'
@@ -13,7 +13,7 @@ import { useMedia } from '@/composables/useMedia'
 import { useToast } from '@/composables/useToast'
 import { api } from '@/utils/api'
 
-const { mediaList, pagination, statusCounts, loading, error, fetchMedia, incrementProgress, setStatus, removeMedia } = useMedia()
+const { mediaList, pagination, statusCounts, loading, error, pageSize, fetchMedia, incrementProgress, setStatus, removeMedia } = useMedia()
 const toast = useToast()
 const modalVisible = ref(false)
 const modalMediaId = ref('')
@@ -22,6 +22,7 @@ const keyword = ref('')
 const type = ref<MediaType | ''>('')
 const status = ref<Status | ''>('')
 const showFilters = ref(false)
+const goToPageInput = ref('')
 
 const sortOptions = [
   { value: 'updated_at:desc', label: '最近修改' },
@@ -32,27 +33,58 @@ const sortOptions = [
 ]
 const sortBy = ref(sortOptions[0].value)
 
+const totalPages = computed(() => Math.ceil(pagination.value.total / pagination.value.limit))
+const hasPrev = computed(() => pagination.value.page > 1)
+const hasNext = computed(() => pagination.value.page < totalPages.value)
+
+const pageSizeOptions = [24, 48, 96]
+
 async function loadMedia(page?: number) {
   await fetchMedia({
     q: keyword.value || undefined,
     type: type.value || undefined,
     status: status.value || undefined,
     page: page ?? pagination.value.page,
-    limit: pagination.value.limit,
+    limit: pageSize.value,
     sort: sortBy.value
   })
 }
 
 function onFilterChange() {
   loadMedia(1)
-}
-
-function nextPage() {
-  loadMedia(pagination.value.page + 1)
+  goToPageInput.value = ''
 }
 
 function prevPage() {
-  loadMedia(pagination.value.page - 1)
+  if (hasPrev.value) loadMedia(pagination.value.page - 1)
+  goToPageInput.value = ''
+}
+
+function nextPage() {
+  if (hasNext.value) loadMedia(pagination.value.page + 1)
+  goToPageInput.value = ''
+}
+
+function goToFirst() {
+  loadMedia(1)
+  goToPageInput.value = ''
+}
+
+function goToLast() {
+  loadMedia(totalPages.value)
+  goToPageInput.value = ''
+}
+
+function goToPageNum() {
+  const page = parseInt(goToPageInput.value)
+  if (!isNaN(page) && page >= 1 && page <= totalPages.value) {
+    loadMedia(page)
+  }
+  goToPageInput.value = ''
+}
+
+function onPageSizeChange() {
+  loadMedia(1)
 }
 
 async function handleIncrement(media: Media) {
@@ -199,20 +231,59 @@ onMounted(loadMedia)
       </div>
     </template>
 
-    <div v-if="pagination.total > pagination.limit" class="flex items-center justify-center gap-4">
-      <button class="btn-secondary" type="button" :disabled="pagination.page <= 1" @click="prevPage">
-        <span class="material-symbols-outlined text-[18px]">chevron_left</span>
-      </button>
-      <span class="text-caption-xs text-on-surface-variant">
-        第 {{ pagination.page }} / {{ Math.ceil(pagination.total / pagination.limit) }} 页 · 共 {{ pagination.total }} 条
-      </span>
-      <button class="btn-secondary" type="button" :disabled="pagination.page * pagination.limit >= pagination.total" @click="nextPage">
-        <span class="material-symbols-outlined text-[18px]">chevron_right</span>
-      </button>
-    </div>
-    <p v-else-if="pagination.total > 0" class="text-center text-caption-xs text-on-surface-variant">
-      共 {{ pagination.total }} 条
-    </p>
+    <!-- Pagination -->
+    <template v-if="pagination.total > 0">
+      <div class="flex flex-wrap items-center justify-center gap-3 rounded-lg p-4">
+        <!-- Page nav -->
+        <div class="flex items-center gap-1">
+          <button class="btn-icon" title="第一页" :disabled="!hasPrev" @click="goToFirst">
+            <span class="material-symbols-outlined text-[20px]">first_page</span>
+          </button>
+          <button class="btn-icon" title="上一页" :disabled="!hasPrev" @click="prevPage">
+            <span class="material-symbols-outlined text-[20px]">chevron_left</span>
+          </button>
+        </div>
+
+        <!-- Page jump -->
+        <div class="flex items-center gap-1.5 text-caption-xs text-on-surface-variant">
+          <span>第</span>
+          <input
+            v-model="goToPageInput"
+            class="w-10 rounded border border-outline-variant/40 bg-surface-container-lowest px-1 py-1 text-center text-label-sm text-on-surface outline-none focus:border-primary"
+            type="text"
+            inputmode="numeric"
+            :placeholder="String(pagination.page)"
+            @keydown.enter="goToPageNum"
+            @blur="goToPageNum"
+          />
+          <span>/ {{ totalPages }} 页</span>
+        </div>
+
+        <div class="flex items-center gap-1">
+          <button class="btn-icon" title="下一页" :disabled="!hasNext" @click="nextPage">
+            <span class="material-symbols-outlined text-[20px]">chevron_right</span>
+          </button>
+          <button class="btn-icon" title="最后一页" :disabled="!hasNext" @click="goToLast">
+            <span class="material-symbols-outlined text-[20px]">last_page</span>
+          </button>
+        </div>
+
+        <!-- Total count -->
+        <span class="text-caption-xs text-on-surface-variant">共 {{ pagination.total }} 条</span>
+
+        <!-- Page size -->
+        <div class="flex items-center gap-1.5 text-caption-xs text-on-surface-variant">
+          <span>每页</span>
+          <select
+            v-model="pageSize"
+            class="rounded border border-outline-variant/40 bg-surface-container-lowest px-2 py-1 text-label-sm text-on-surface outline-none focus:border-primary"
+            @change="onPageSizeChange"
+          >
+            <option v-for="n in pageSizeOptions" :key="n" :value="n">{{ n }}</option>
+          </select>
+        </div>
+      </div>
+    </template>
   </div>
 
   <Modal

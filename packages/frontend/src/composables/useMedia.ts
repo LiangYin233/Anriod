@@ -2,12 +2,6 @@ import { ref } from 'vue'
 import type { ListMediaQuery, Media, MediaProgress, PaginatedResponse, Status } from '@anriod/shared'
 import { api } from '@/utils/api'
 
-const mediaList = ref<Media[]>([])
-const pagination = ref<PaginatedResponse<Media>['pagination']>({ page: 1, limit: 20, total: 0 })
-const statusCounts = ref<Record<string, number>>({})
-const loading = ref(false)
-const error = ref('')
-
 function nextProgress(media: Media): MediaProgress {
   const current: MediaProgress = { ...(media.current_progress ?? {}) }
 
@@ -25,12 +19,22 @@ function nextProgress(media: Media): MediaProgress {
 }
 
 export function useMedia() {
+  const mediaList = ref<Media[]>([])
+  const pagination = ref<PaginatedResponse<Media>['pagination']>({ page: 1, limit: 20, total: 0 })
+  const statusCounts = ref<Record<string, number>>({})
+  const loading = ref(false)
+  const error = ref('')
+  const pageSize = ref(48)
+
   async function fetchMedia(filters: ListMediaQuery = {}) {
     loading.value = true
     error.value = ''
 
     try {
-      const result = await api.listMedia(filters)
+      const result = await api.listMedia({
+        ...filters,
+        limit: filters.limit ?? pageSize.value
+      })
       mediaList.value = result.data
       pagination.value = result.pagination
       statusCounts.value = result.status_counts ?? {}
@@ -66,6 +70,7 @@ export function useMedia() {
     statusCounts,
     loading,
     error,
+    pageSize,
     fetchMedia,
     incrementProgress,
     setStatus,
