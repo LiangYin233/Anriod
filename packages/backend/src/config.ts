@@ -38,8 +38,10 @@ function findRoot(): string {
     if (parent === dir) break
     dir = parent
   }
-  // Fallback: project root or cwd
-  return resolve(import.meta.dir, '..')
+  // Fallback: use cwd (works for both source and compiled binary)
+  // import.meta.dir points to the source dir during development but
+  // may be undefined or point to the binary location when compiled.
+  return process.cwd()
 }
 
 export const backendRoot = findRoot()
