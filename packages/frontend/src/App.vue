@@ -113,7 +113,7 @@ const mainPadding = computed(() => sidebarCollapsed.value ? 'lg:pl-16' : 'lg:pl-
           v-if="!sidebarCollapsed"
           src="/anriod.svg"
           alt="Anriod"
-          class="sidebar-brand-img h-7 shrink-0"
+          class="sidebar-brand-img h-10 shrink-0"
         />
         <span
           v-else
