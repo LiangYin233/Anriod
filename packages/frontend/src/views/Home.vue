@@ -258,11 +258,11 @@ onMounted(() => {
           <div
             v-for="media in mediaList"
             :key="media.id"
-            class="acrylic group flex items-center gap-4 rounded-xl px-4 py-3 shadow-sm border border-black/5 dark:border-white/5 transition-all hover:shadow-md cursor-pointer"
+            class="acrylic group flex items-center rounded-xl overflow-hidden shadow-sm border border-black/5 dark:border-white/5 transition-all hover:shadow-md cursor-pointer"
             @click="$router.push(`/media/${media.id}`)"
           >
-            <!-- Cover -->
-            <div class="w-[72px] h-24 shrink-0 rounded-lg overflow-hidden bg-surface-variant shadow-sm">
+            <!-- Cover (flush with card top/bottom/left) -->
+            <div class="w-[72px] h-24 shrink-0 overflow-hidden bg-surface-variant self-stretch">
               <img v-if="getCoverSrc(media)" :src="getCoverSrc(media)" class="w-full h-full object-cover" />
               <span v-else class="flex h-full w-full items-center justify-center">
                 <span class="material-symbols-outlined text-[24px] text-on-surface-variant">movie</span>
@@ -270,7 +270,7 @@ onMounted(() => {
             </div>
 
             <!-- Info -->
-            <div class="flex-1 min-w-0">
+            <div class="flex-1 min-w-0 py-3 pr-2 pl-3">
               <div class="flex items-center gap-2 flex-wrap">
                 <span class="text-body-md font-semibold text-on-surface truncate">{{ media.title }}</span>
                 <span class="chip chip-neutral shrink-0">{{ MEDIA_TYPES[media.type] }}</span>
@@ -301,7 +301,7 @@ onMounted(() => {
             </div>
 
             <!-- Delete -->
-            <div class="shrink-0">
+            <div class="shrink-0 pr-3 py-3 self-start">
               <button
                 class="flex h-8 w-8 items-center justify-center rounded-full text-on-surface-variant/30 hover:bg-error/10 hover:text-error transition-all"
                 type="button"
