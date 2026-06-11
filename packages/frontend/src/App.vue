@@ -74,17 +74,15 @@ const mainPadding = computed(() => sidebarCollapsed.value ? 'lg:pl-16' : 'lg:pl-
       @click="mobileDrawerOpen = false"
     />
 
-    <!-- Tauri drag handle — 15px over the sidebar column -->
-    <div v-if="isTauri" class="tauri-drag-handle" :class="sidebarCollapsed ? 'w-16' : 'w-64'" data-tauri-drag-region />
-
     <!-- ============================================ -->
     <!-- SIDEBAR                                       -->
     <!-- ============================================ -->
 
-    <!-- Desktop -->
+    <!-- Desktop (drag region in Tauri mode) -->
     <aside
       class="fixed left-0 top-0 z-50 hidden h-screen flex-col p-3 lg:flex acrylic border-r border-black/5 dark:border-white/5 shadow-sm transition-all duration-200"
       :class="[sidebarWidth]"
+      :data-tauri-drag-region="isTauri ? '' : undefined"
     >
       <!-- Brand -->
       <div
