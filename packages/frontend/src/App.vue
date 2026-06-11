@@ -10,7 +10,7 @@ import Toast from '@/components/Toast.vue'
 const route = useRoute()
 const { toggleTheme, applyStoredTheme } = useConfig()
 const { bind: bindReveal, unbind: unbindReveal } = useReveal()
-const { isTauri, getVersion } = useTauri()
+const { isTauri, getVersion, minimizeWindow, toggleMaximize, closeWindow } = useTauri()
 const sidebarCollapsed = ref(false)
 const mobileDrawerOpen = ref(false)
 const appVersion = ref('0.1.0')
@@ -81,13 +81,26 @@ const mainPadding = computed(() => sidebarCollapsed.value ? 'lg:pl-16' : 'lg:pl-
     <!-- Desktop -->
     <aside
       class="fixed left-0 top-0 z-50 hidden h-screen flex-col p-3 lg:flex acrylic border-r border-black/5 dark:border-white/5 shadow-sm transition-all duration-200"
-      :class="sidebarWidth"
+      :class="[sidebarWidth, isTauri ? 'pt-0' : '']"
     >
-      <!-- Brand -->
-      <div class="mb-6 mt-2 flex items-center gap-3 px-1" :class="sidebarCollapsed ? 'justify-center' : ''">
-        <h1 class="text-primary font-bold tracking-widest shrink-0" :class="sidebarCollapsed ? 'text-label-sm' : 'text-display-lg'">
-          {{ sidebarCollapsed ? 'A' : 'ANRIOD' }}
-        </h1>
+      <!-- Brand / drag region (Tauri) -->
+      <div
+        class="mb-6 mt-3 flex items-center gap-3 px-1"
+        :class="sidebarCollapsed ? 'justify-center' : ''"
+        :data-tauri-drag-region="isTauri ? '' : undefined"
+      >
+        <img
+          v-if="!sidebarCollapsed"
+          src="/anriod.svg"
+          alt="Anriod"
+          class="sidebar-brand-img h-7 shrink-0"
+          data-tauri-drag-region
+        />
+        <span
+          v-else
+          class="text-primary font-bold tracking-widest text-label-sm"
+          data-tauri-drag-region
+        >A</span>
       </div>
 
       <!-- Nav items -->
@@ -179,13 +192,26 @@ const mainPadding = computed(() => sidebarCollapsed.value ? 'lg:pl-16' : 'lg:pl-
           </div>
 
           <!-- Right actions -->
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-1">
             <button class="btn-icon" type="button" @click="toggleTheme" title="切换深浅色主题">
               <span class="material-symbols-outlined">dark_mode</span>
             </button>
             <div class="hidden h-8 w-8 items-center justify-center rounded-full bg-primary-container text-on-primary-container text-label-sm font-bold lg:flex">
               A
             </div>
+            <!-- Window controls (Tauri only) — right of avatar -->
+            <template v-if="isTauri">
+              <div class="mx-1 h-5 w-px bg-outline-variant/40" />
+              <button class="titlebar-btn-win" type="button" title="最小化" @click="minimizeWindow">
+                <svg width="10" height="10" viewBox="0 0 12 12"><rect x="1" y="5.5" width="10" height="1" fill="currentColor"/></svg>
+              </button>
+              <button class="titlebar-btn-win" type="button" title="最大化" @click="toggleMaximize">
+                <svg width="10" height="10" viewBox="0 0 12 12"><rect x="1.5" y="1.5" width="9" height="9" rx="1" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>
+              </button>
+              <button class="titlebar-btn-win titlebar-btn-close" type="button" title="关闭" @click="closeWindow">
+                <svg width="10" height="10" viewBox="0 0 12 12"><path d="M1 1L11 11M11 1L1 11" stroke="currentColor" stroke-width="1.2"/></svg>
+              </button>
+            </template>
           </div>
         </div>
       </header>

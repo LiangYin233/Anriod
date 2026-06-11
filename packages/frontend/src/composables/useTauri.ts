@@ -1,5 +1,24 @@
 import { ref, readonly } from 'vue'
 
+// Tauri 2 global API (available when withGlobalTauri: true)
+declare global {
+  interface Window {
+    __TAURI__?: {
+      window?: {
+        getCurrentWindow: () => {
+          minimize: () => Promise<void>
+          maximize: () => Promise<void>
+          unmaximize: () => Promise<void>
+          toggleMaximize: () => Promise<void>
+          isMaximized: () => Promise<boolean>
+          close: () => Promise<void>
+        }
+      }
+    }
+    __TAURI_INTERNALS__?: Record<string, any>
+  }
+}
+
 /**
  * Tauri environment detection and bridge utilities.
  * Gracefully degrades in web browser mode.
@@ -9,7 +28,7 @@ export function useTauri() {
 
   function hasTauri(): boolean {
     try {
-      return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
+      return typeof window !== 'undefined' && (('__TAURI_INTERNALS__' in window) || ('__TAURI__' in window))
     } catch {
       return false
     }
@@ -61,36 +80,35 @@ export function useTauri() {
     }
   }
 
+  /** Get the current Tauri window handle. */
+  function getWin(): any {
+    try {
+      return window.__TAURI__?.window?.getCurrentWindow()
+    } catch { return null }
+  }
+
   /** Minimize the Tauri window. */
   async function minimizeWindow() {
-    if (!isTauri.value) return
-    try {
-      const { getCurrentWindow } = await import('@tauri-apps/api/window')
-      await getCurrentWindow().minimize()
-    } catch { /* ignore */ }
+    const win = getWin()
+    if (!win) return
+    try { await win.minimize() } catch (e) { console.error('[tauri] minimize:', e) }
   }
 
   /** Maximize/restore the Tauri window. */
   async function toggleMaximize() {
-    if (!isTauri.value) return
+    const win = getWin()
+    if (!win) return
     try {
-      const { getCurrentWindow } = await import('@tauri-apps/api/window')
-      const win = getCurrentWindow()
-      if (await win.isMaximized()) {
-        await win.unmaximize()
-      } else {
-        await win.maximize()
-      }
-    } catch { /* ignore */ }
+      if (await win.isMaximized()) await win.unmaximize()
+      else await win.maximize()
+    } catch (e) { console.error('[tauri] toggleMaximize:', e) }
   }
 
   /** Close the Tauri window. */
   async function closeWindow() {
-    if (!isTauri.value) return
-    try {
-      const { getCurrentWindow } = await import('@tauri-apps/api/window')
-      await getCurrentWindow().close()
-    } catch { /* ignore */ }
+    const win = getWin()
+    if (!win) return
+    try { await win.close() } catch (e) { console.error('[tauri] close:', e) }
   }
 
   return {

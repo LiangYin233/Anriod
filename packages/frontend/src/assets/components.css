@@ -323,6 +323,46 @@
 .dark .status-on-hold { background-color: #737373; }
 
 /* ===================================================
+   TAURI WINDOW CONTROLS (top bar, right of avatar)
+   =================================================== */
+
+.titlebar-btn-win {
+  width: 32px;
+  height: 28px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: #666;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.10s ease, color 0.10s ease;
+}
+.titlebar-btn-win:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: #1a1c1c;
+}
+.dark .titlebar-btn-win {
+  color: #999;
+}
+.dark .titlebar-btn-win:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #e0e0e0;
+}
+
+.titlebar-btn-win.titlebar-btn-close:hover {
+  background: #e81123 !important;
+  color: #fff !important;
+  border-radius: 6px;
+}
+
+/* Sidebar brand SVG — invert in dark mode so black logo appears white */
+.dark .sidebar-brand-img {
+  filter: invert(1);
+}
+
+/* ===================================================
    TAURI SPECIFIC
    =================================================== */
 
