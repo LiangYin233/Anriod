@@ -358,14 +358,14 @@
 }
 
 /* Tauri drag handle — full-width transparent strip at the very top edge */
-/* Tauri drag handle — 3px at the very top edge, full-width, above everything */
+/* Tauri drag handle — 15px strip over the sidebar column only */
 .tauri-drag-handle {
   position: fixed;
   top: 0;
   left: 0;
-  right: 0;
   z-index: 99999;
-  height: 3px;
+  width: 256px;
+  height: 15px;
   cursor: default;
 }
 

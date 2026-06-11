@@ -74,8 +74,8 @@ const mainPadding = computed(() => sidebarCollapsed.value ? 'lg:pl-16' : 'lg:pl-
       @click="mobileDrawerOpen = false"
     />
 
-    <!-- Tauri drag handle — 3px at the very top edge -->
-    <div v-if="isTauri" class="tauri-drag-handle" data-tauri-drag-region />
+    <!-- Tauri drag handle — 15px over the sidebar column -->
+    <div v-if="isTauri" class="tauri-drag-handle" :class="sidebarCollapsed ? 'w-16' : 'w-64'" data-tauri-drag-region />
 
     <!-- ============================================ -->
     <!-- SIDEBAR                                       -->

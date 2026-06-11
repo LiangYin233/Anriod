@@ -10,10 +10,8 @@
   color: #1a1c1c;
 }
 
-/* 禁止 WebView2 默认的点击拖拽平移页面行为 */
 html {
-  touch-action: none;
-  -ms-touch-action: none;
+  touch-action: manipulation;
 }
 
 .dark {
