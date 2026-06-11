@@ -13,7 +13,7 @@ import Modal from '@/components/Modal.vue'
 import AppSelect from '@/components/AppSelect.vue'
 import { useMedia } from '@/composables/useMedia'
 import { useToast } from '@/composables/useToast'
-import { api } from '@/utils/api'
+import { api, getStoredConfig, normalizeBackendUrl } from '@/utils/api'
 
 const route = useRoute()
 const { mediaList, pagination, statusCounts, loading, error, fetchMedia, incrementProgress, setStatus, removeMedia } = useMedia()
@@ -124,6 +124,15 @@ async function handleDelete() {
   toast.success('已删除')
 }
 
+function getCoverSrc(media: Media): string {
+  if (media.cover_local_path) {
+    const filename = media.cover_local_path.split(/[\\/]/).pop()
+    const { backendUrl } = getStoredConfig()
+    if (filename && backendUrl) return `${normalizeBackendUrl(backendUrl)}/covers/${encodeURIComponent(filename)}`
+  }
+  return media.cover_url || ''
+}
+
 function clearFilters() {
   type.value = ''
   status.value = ''
@@ -226,21 +235,68 @@ onMounted(() => {
         </button>
       </div>
 
-      <div :class="layoutDensity === 'compact'
-        ? 'grid gap-2 grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'
-        : 'grid gap-gutter grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'">
-        <div v-for="media in mediaList" :key="media.id" class="relative group/card">
-          <MediaCard :media="media" @increment="handleIncrement" @set-progress="handleSetProgress" @status="handleStatus" />
-          <button
-            class="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-error/80 text-on-error opacity-0 shadow-md transition-opacity hover:bg-error group-hover/card:opacity-100"
-            type="button"
-            title="删除"
-            @click="confirmDelete(media.id, media.title)"
-          >
-            <span class="material-symbols-outlined text-[16px]">delete</span>
-          </button>
+      <!-- Grid (default) -->
+      <template v-if="layoutDensity === 'default'">
+        <div class="grid gap-gutter grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          <div v-for="media in mediaList" :key="media.id" class="relative group/card">
+            <MediaCard :media="media" @increment="handleIncrement" @set-progress="handleSetProgress" @status="handleStatus" />
+            <button
+              class="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-error/80 text-on-error opacity-0 shadow-md transition-opacity hover:bg-error group-hover/card:opacity-100"
+              type="button"
+              title="删除"
+              @click="confirmDelete(media.id, media.title)"
+            >
+              <span class="material-symbols-outlined text-[16px]">delete</span>
+            </button>
+          </div>
         </div>
-      </div>
+      </template>
+
+      <!-- List (compact) -->
+      <template v-if="layoutDensity === 'compact'">
+        <div class="flex flex-col gap-1">
+          <div
+            v-for="media in mediaList"
+            :key="media.id"
+            class="group flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors hover:bg-surface-container-low cursor-pointer"
+            @click="$router.push(`/media/${media.id}`)"
+          >
+            <!-- Cover thumbnail -->
+            <div class="w-8 h-12 shrink-0 rounded overflow-hidden bg-surface-variant">
+              <img v-if="getCoverSrc(media)" :src="getCoverSrc(media)" class="w-full h-full object-cover" />
+              <span v-else class="flex h-full w-full items-center justify-center">
+                <span class="material-symbols-outlined text-[16px] text-on-surface-variant">movie</span>
+              </span>
+            </div>
+            <!-- Info -->
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2">
+                <span class="text-body-md font-medium text-on-surface truncate">{{ media.title }}</span>
+                <span class="chip chip-neutral shrink-0">{{ MEDIA_TYPES[media.type] }}</span>
+                <span
+                  class="chip shrink-0"
+                  :class="media.status === 'watching' ? 'chip-primary' : media.status === 'completed' ? 'chip-success' : 'chip-neutral'"
+                >{{ STATUS_LABELS[media.status] }}</span>
+              </div>
+              <div class="flex items-center gap-3 mt-0.5 text-caption-xs text-on-surface-variant">
+                <span v-if="media.rating">评分 {{ media.rating }}</span>
+                <span v-if="media.current_progress?.episode ?? media.total_episodes">
+                  进度 {{ media.current_progress?.episode ?? 0 }}/{{ media.total_episodes ?? '-' }}
+                </span>
+              </div>
+            </div>
+            <!-- Delete -->
+            <button
+              class="btn-icon opacity-0 group-hover:opacity-100 transition-opacity text-on-surface-variant hover:text-error"
+              type="button"
+              title="删除"
+              @click.stop="confirmDelete(media.id, media.title)"
+            >
+              <span class="material-symbols-outlined text-[20px]">delete</span>
+            </button>
+          </div>
+        </div>
+      </template>
     </template>
 
     <!-- Pagination -->
