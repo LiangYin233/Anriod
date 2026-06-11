@@ -117,6 +117,15 @@ onMounted(loadHistory)
                 {{ item.media_title || item.media_id }}
               </span>
               <span v-if="episodeLabel(item)" class="text-label-sm text-on-surface-variant shrink-0">{{ episodeLabel(item) }}</span>
+              <div class="flex-1" />
+              <button
+                class="flex items-center gap-0.5 text-caption-xs text-on-surface-variant/40 hover:text-error transition-colors shrink-0"
+                type="button"
+                title="删除此记录"
+                @click="deleteEntry(item.id)"
+              >
+                <span class="material-symbols-outlined text-[14px]">delete</span>
+              </button>
             </div>
 
             <!-- Notes -->
@@ -134,17 +143,6 @@ onMounted(loadHistory)
               </template>
               <span class="ml-1 text-label-sm text-on-surface">{{ item.rating }}/10</span>
             </div>
-
-            <!-- Delete button -->
-            <button
-              class="mt-2 flex items-center gap-1 text-caption-xs text-on-surface-variant hover:text-error transition-colors"
-              type="button"
-              title="删除此记录"
-              @click="deleteEntry(item.id)"
-            >
-              <span class="material-symbols-outlined text-[14px]">delete</span>
-              删除
-            </button>
           </div>
         </div>
       </template>
