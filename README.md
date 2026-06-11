@@ -1,8 +1,32 @@
-# Anriod
+<p align="center">
+  <img src="assets/Anriod.svg" alt="Anriod" width="400">
+</p>
 
-**All Narratives Recorded In Orderly Detail.**
+<h1 align="center">Anriod</h1>
 
-跨平台个人媒体观看记录管理。追踪动画、电影、剧集、游戏、小说、漫画的进度。
+<p align="center">
+  <b>All Narratives Recorded In Orderly Detail.</b>
+</p>
+
+<p align="center">
+  <a href="https://github.com/LiangYin233/Anriod/blob/main/LICENSE">
+    <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License">
+  </a>
+  <a href="https://bun.sh">
+    <img src="https://img.shields.io/badge/runtime-Bun-%23f9f1e1" alt="Bun">
+  </a>
+  <a href="https://vuejs.org/">
+    <img src="https://img.shields.io/badge/frontend-Vue%203-4FC08D" alt="Vue 3">
+  </a>
+  <a href="https://v2.tauri.app/">
+    <img src="https://img.shields.io/badge/desktop-Tauri%202-%23FFC131" alt="Tauri 2">
+  </a>
+  <img src="https://img.shields.io/badge/platform-Windows%20|%20macOS%20|%20Linux-lightgrey" alt="Platform">
+</p>
+
+<p align="center">跨平台个人媒体观看记录管理。<br>追踪动画、电影、剧集、游戏、小说、漫画的进度。</p>
+
+---
 
 ## 快速开始
 

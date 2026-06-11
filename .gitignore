@@ -1,6 +1,9 @@
 # Dependencies
 node_modules/
 
+# Bun (primary) — npm lock is unintended noise
+package-lock.json
+
 # Build output
 dist/
 packages/backend/anriod
@@ -34,3 +37,6 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Temp / scripts
+scripts/
