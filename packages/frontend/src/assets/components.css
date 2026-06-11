@@ -327,6 +327,20 @@
    =================================================== */
 
 /* ===================================================
+   TAURI DRAG OVERLAY — full-width at top bar height
+   =================================================== */
+
+.tauri-drag-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 99999;
+  height: 64px;
+  cursor: default;
+}
+
+/* ===================================================
    TAURI WINDOW CONTROLS (top bar, right of avatar)
    =================================================== */
 
