@@ -285,11 +285,17 @@
   aspect-ratio: 2 / 3;
 }
 
-/* ── Smooth cover image rendering ── */
+/* ── Cover image: highest-quality scaling ── */
 .cover-img {
+  /* Modern browsers: smooth = Lanczos / bicubic (CSS Images L4) */
   image-rendering: auto;
+  image-rendering: smooth;
+  /* WebKit/Safari + Chromium/Edge: bicubic interpolation */
   image-rendering: -webkit-optimize-contrast;
+  /* Legacy EdgeHTML */
   -ms-interpolation-mode: bicubic;
+  /* Hint GPU compositing for the img itself */
+  will-change: transform;
 }
 
 /* GPU-accelerated poster container (avoids conflict with hover scale) */
