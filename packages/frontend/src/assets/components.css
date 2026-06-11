@@ -357,17 +357,7 @@
   border-radius: 6px;
 }
 
-/* Tauri drag handle — thin strip only over the sidebar column */
-.tauri-drag-handle {
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 99999;
-  width: 256px;      /* expanded sidebar width */
-  height: 6px;
-}
-
-
+/* Tauri drag handle — full-width transparent strip at the very top edge */
 /* Sidebar brand SVG — invert in dark mode so black logo appears white */
 .dark .sidebar-brand-img {
   filter: invert(1);
