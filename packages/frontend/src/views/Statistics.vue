@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref, nextTick } from 'vue'
 import type { StatisticsOverview, Status, TagStatistic, TimelinePoint } from '@anriod/shared'
-import { STATUS_LABELS } from '@anriod/shared'
+import { MEDIA_TYPES, STATUS_LABELS } from '@anriod/shared'
 import PageHeader from '@/components/PageHeader.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import ErrorBanner from '@/components/ErrorBanner.vue'
@@ -106,7 +106,7 @@ useChart(typeCanvas, () => {
   return {
     type: 'bar',
     data: {
-      labels: entries.map(([t]) => t),
+      labels: entries.map(([t]) => MEDIA_TYPES[t as keyof typeof MEDIA_TYPES] || t),
       datasets: [{ data: entries.map(([, c]) => c), backgroundColor: entries.map(([t]) => typeColors[t] ?? '#6b7280'), borderRadius: 6, borderWidth: 0 }],
     },
     options: {
