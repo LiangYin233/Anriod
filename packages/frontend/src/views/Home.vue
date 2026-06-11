@@ -179,6 +179,7 @@ function clearFilters() {
   airDateTo.value = ''
   epMin.value = undefined
   epMax.value = undefined
+  showAllChips.value = false
   onFilterChange()
 }
 
