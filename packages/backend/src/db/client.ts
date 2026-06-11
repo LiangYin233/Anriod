@@ -1,17 +1,13 @@
 import { Database } from 'bun:sqlite'
 import { mkdirSync } from 'node:fs'
 import { dirname } from 'node:path'
-import { drizzle } from 'drizzle-orm/bun-sqlite'
 import { config } from '../config'
-import * as schema from './schema'
 
 mkdirSync(dirname(config.databasePath), { recursive: true })
 mkdirSync(config.coversDir, { recursive: true })
 
 export const sqlite = new Database(config.databasePath)
 sqlite.exec('PRAGMA foreign_keys = ON')
-
-export const db = drizzle(sqlite, { schema })
 
 export function initializeDatabase() {
   sqlite.exec(`

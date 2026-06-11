@@ -39,10 +39,4 @@ export function jsonString(value: unknown): string | null {
   return JSON.stringify(value)
 }
 
-export function nowIso(): string {
-  return new Date().toISOString()
-}
 
-export function ok<T>(data: T) {
-  return data
-}
