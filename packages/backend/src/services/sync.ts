@@ -1,11 +1,10 @@
-import { Cron } from 'croner'
 import { syncMedia } from './media'
 import { all } from '../db/helpers'
 import { downloadQueue } from '../utils/download-queue'
 import { config } from '../config'
 import { logger } from '../logger'
 
-let job: Cron | null = null
+let job: ReturnType<typeof Bun.cron> | null = null
 
 export function startSyncScheduler() {
   if (job) return job
@@ -13,7 +12,7 @@ export function startSyncScheduler() {
   const cronExpr = config.sync.cron
   if (!cronExpr) return
 
-  job = new Cron(cronExpr, async () => {
+  job = Bun.cron(cronExpr, async () => {
     logger.info('开始定时同步任务')
     const result = await runSync()
     logger.success(`同步完成: 成功 ${result.synced} 个，失败 ${result.errors.length} 个`)
