@@ -180,7 +180,7 @@ onMounted(loadDetails)
             <div class="flex gap-4 overflow-x-auto pb-2 -mx-2 px-2 snap-x snap-mandatory scrollbar-thin">
               <div
                 v-for="person in credits.cast.slice(0, 15)"
-                :key="person.name"
+                :key="`${person.name}-${person.character || person.role}`"
                 class="snap-start shrink-0 w-24 text-center"
               >
                 <div class="w-16 h-16 mx-auto rounded-full overflow-hidden bg-surface-container-high shadow-sm">

@@ -210,8 +210,9 @@ export class TmdbDataSource implements DataSource {
 
     const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
     const baseUrl = config.datasources.tmdb?.baseUrl || 'https://api.themoviedb.org/3'
+    const lang = config.datasources.tmdb?.language || 'zh-CN'
     const endpoint = mediaType === 'tv' ? 'tv' : 'movie'
-    const url = `${baseUrl}/${endpoint}/${sourceId}/credits?language=zh-CN`
+    const url = `${baseUrl}/${endpoint}/${sourceId}/credits?language=${lang}`
 
     try {
       const resp = await fetch(url, { headers, ...proxyFetchOptions() })
