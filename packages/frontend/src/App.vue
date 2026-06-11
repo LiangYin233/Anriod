@@ -86,7 +86,7 @@ const mainPadding = computed(() => sidebarCollapsed.value ? 'lg:pl-16' : 'lg:pl-
 </script>
 
 <template>
-  <div class="min-h-screen bg-background text-on-background antialiased" :class="{ 'tauri-app': isTauri }">
+  <div class="h-screen flex flex-col overflow-hidden bg-background text-on-background antialiased" :class="{ 'tauri-app': isTauri }">
 
     <!-- Mobile backdrop -->
     <div
@@ -195,7 +195,7 @@ const mainPadding = computed(() => sidebarCollapsed.value ? 'lg:pl-16' : 'lg:pl-
     <!-- ============================================ -->
     <!-- MAIN AREA                                    -->
     <!-- ============================================ -->
-    <div :class="mainPadding" class="transition-all duration-200">
+    <div :class="mainPadding" class="flex flex-1 flex-col overflow-hidden transition-all duration-200">
       <!-- Top App Bar -->
       <header class="sticky top-0 z-40 border-b border-black/5 dark:border-white/5 bg-white/70 dark:bg-neutral-900/70 backdrop-blur-lg">
         <div class="flex h-16 items-center justify-between px-container-padding lg:px-8">
@@ -235,7 +235,7 @@ const mainPadding = computed(() => sidebarCollapsed.value ? 'lg:pl-16' : 'lg:pl-
       </header>
 
       <!-- Page Content -->
-      <main class="px-container-padding py-6 lg:px-8">
+      <main class="flex-1 overflow-y-auto px-container-padding py-6 lg:px-8">
         <RouterView />
       </main>
     </div>

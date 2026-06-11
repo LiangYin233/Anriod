@@ -88,7 +88,6 @@ body {
   min-width: 320px;
   min-height: 100vh;
   -webkit-tap-highlight-color: transparent;
-  overscroll-behavior: none;
 }
 
 button,
