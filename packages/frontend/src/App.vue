@@ -74,8 +74,8 @@ const mainPadding = computed(() => sidebarCollapsed.value ? 'lg:pl-16' : 'lg:pl-
       @click="mobileDrawerOpen = false"
     />
 
-    <!-- Tauri drag handle — full-width bar at the very top of the window -->
-    <div v-if="isTauri" class="tauri-drag-handle" data-tauri-drag-region />
+    <!-- Tauri drag handle — strip at top of sidebar column only -->
+    <div v-if="isTauri" class="tauri-drag-handle" :class="sidebarCollapsed ? 'w-16' : 'w-64'" data-tauri-drag-region />
 
     <!-- ============================================ -->
     <!-- SIDEBAR                                       -->
@@ -84,7 +84,7 @@ const mainPadding = computed(() => sidebarCollapsed.value ? 'lg:pl-16' : 'lg:pl-
     <!-- Desktop -->
     <aside
       class="fixed left-0 top-0 z-50 hidden h-screen flex-col p-3 lg:flex acrylic border-r border-black/5 dark:border-white/5 shadow-sm transition-all duration-200"
-      :class="[sidebarWidth, isTauri ? 'pt-7' : '']"
+      :class="[sidebarWidth]"
     >
       <!-- Brand -->
       <div
@@ -177,7 +177,7 @@ const mainPadding = computed(() => sidebarCollapsed.value ? 'lg:pl-16' : 'lg:pl-
     <!-- ============================================ -->
     <!-- MAIN AREA                                    -->
     <!-- ============================================ -->
-    <div :class="[mainPadding, isTauri ? 'pt-7' : '']" class="transition-all duration-200">
+    <div :class="mainPadding" class="transition-all duration-200">
       <!-- Top App Bar -->
       <header class="sticky top-0 z-40 border-b border-black/5 dark:border-white/5 bg-white/70 dark:bg-neutral-900/70 backdrop-blur-lg">
         <div class="flex h-16 items-center justify-between px-container-padding lg:px-8">

@@ -357,15 +357,14 @@
   border-radius: 6px;
 }
 
-/* Tauri drag handle — fixed bar at the top of the window */
+/* Tauri drag handle — thin strip only over the sidebar column */
 .tauri-drag-handle {
   position: fixed;
   top: 0;
   left: 0;
-  right: 0;
   z-index: 99999;
-  height: 28px;
-  cursor: default;
+  width: 256px;      /* expanded sidebar width */
+  height: 6px;
 }
 
 
