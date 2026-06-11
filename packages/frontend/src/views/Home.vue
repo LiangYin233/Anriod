@@ -29,6 +29,7 @@ const goToPageInput = ref('')
 const tagFilter = ref('')
 const layoutDensity = ref<'default' | 'compact'>('default')
 const source = ref('')
+const showAllChips = ref(false)
 const airDateFrom = ref('')
 const airDateTo = ref('')
 const epMin = ref<number | undefined>(undefined)
@@ -58,6 +59,25 @@ const sourceOptions = [
   { value: 'tmdb', label: 'TMDB' },
   { value: 'manual', label: '手动' },
 ]
+
+const activeChips = computed(() => {
+  const chips: { key: string; label: string; onRemove: () => void }[] = []
+  if (tagFilter.value) chips.push({ key: 'tag', label: `#${tagFilter.value}`, onRemove: () => { tagFilter.value = ''; onFilterChange() } })
+  if (type.value) chips.push({ key: 'type', label: MEDIA_TYPES[type.value as MediaType], onRemove: () => { type.value = ''; onFilterChange() } })
+  if (status.value) chips.push({ key: 'status', label: STATUS_LABELS[status.value as Status], onRemove: () => { status.value = ''; onFilterChange() } })
+  if (source.value) chips.push({ key: 'source', label: `来源: ${source.value}`, onRemove: () => { source.value = ''; onFilterChange() } })
+  if (airDateFrom.value) chips.push({ key: 'airFrom', label: `首播 ≥ ${airDateFrom.value}`, onRemove: () => { airDateFrom.value = ''; onFilterChange() } })
+  if (airDateTo.value) chips.push({ key: 'airTo', label: `首播 ≤ ${airDateTo.value}`, onRemove: () => { airDateTo.value = ''; onFilterChange() } })
+  if (epMin.value !== undefined) chips.push({ key: 'epMin', label: `≥ ${epMin.value} 集`, onRemove: () => { epMin.value = undefined; onFilterChange() } })
+  if (epMax.value !== undefined) chips.push({ key: 'epMax', label: `≤ ${epMax.value} 集`, onRemove: () => { epMax.value = undefined; onFilterChange() } })
+  return chips
+})
+const visibleChips = computed(() => showAllChips.value ? activeChips.value : activeChips.value.slice(0, 4))
+const hasMoreChips = computed(() => activeChips.value.length > 4)
+
+function toggleChips() {
+  showAllChips.value = !showAllChips.value
+}
 
 const totalPages = computed(() => Math.ceil(pagination.value.total / pagination.value.limit))
 const hasPrev = computed(() => pagination.value.page > 1)
@@ -203,9 +223,17 @@ onMounted(() => {
         <div class="min-w-[200px] flex-1">
           <SearchBar v-model="keyword" placeholder="搜索影视..." @search="onFilterChange" />
         </div>
-        <button class="btn-secondary" type="button" @click="showFilters = !showFilters">
-          <span class="material-symbols-outlined text-[18px]">tune</span>
-          高级
+        <button
+          class="btn-secondary"
+          type="button"
+          :class="{ 'is-active': showFilters }"
+          @click="showFilters = !showFilters"
+        >
+          <span
+            class="material-symbols-outlined text-[18px] transition-transform duration-200"
+            :class="showFilters ? 'rotate-45' : ''"
+          >tune</span>
+          {{ showFilters ? '收起' : '高级' }}
         </button>
       </div>
 
@@ -215,66 +243,56 @@ onMounted(() => {
         <AppSelect v-model="status" :options="statusOptions" variant="field" @change="onFilterChange" />
       </div>
 
-      <!-- Advanced filters (toggle) -->
-      <div v-if="showFilters" class="mt-3 space-y-3">
-        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <AppSelect v-model="source" :options="sourceOptions" variant="field" @change="onFilterChange" />
-          <label class="flex flex-col gap-0.5">
-            <span class="text-caption-xs text-on-surface-variant pl-1">首播日期 ≥</span>
-            <input v-model="airDateFrom" type="date" class="field" @change="onFilterChange" />
-          </label>
-          <label class="flex flex-col gap-0.5">
-            <span class="text-caption-xs text-on-surface-variant pl-1">首播日期 ≤</span>
-            <input v-model="airDateTo" type="date" class="field" @change="onFilterChange" />
-          </label>
+      <!-- Advanced filters (toggle) with animation -->
+      <Transition name="filter-slide">
+        <div v-if="showFilters" class="mt-3">
+          <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div class="filter-inline-field source-select">
+              <span class="filter-inline-label">来源</span>
+              <AppSelect v-model="source" :options="sourceOptions" variant="field" class="min-w-0 flex-1" @change="onFilterChange" />
+            </div>
+            <div class="filter-inline-field">
+              <span class="filter-inline-label">首播 ≥</span>
+              <input v-model="airDateFrom" type="date" class="filter-inline-input" @change="onFilterChange" />
+            </div>
+            <div class="filter-inline-field">
+              <span class="filter-inline-label">首播 ≤</span>
+              <input v-model="airDateTo" type="date" class="filter-inline-input" @change="onFilterChange" />
+            </div>
+            <div class="filter-inline-field">
+              <span class="filter-inline-label">集数 ≥</span>
+              <input v-model.number="epMin" type="number" class="filter-inline-input" min="0" placeholder="12" @change="onFilterChange" />
+            </div>
+            <div class="filter-inline-field">
+              <span class="filter-inline-label">集数 ≤</span>
+              <input v-model.number="epMax" type="number" class="filter-inline-input" min="0" placeholder="24" @change="onFilterChange" />
+            </div>
+          </div>
         </div>
-        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <label class="flex flex-col gap-0.5">
-            <span class="text-caption-xs text-on-surface-variant pl-1">最少集数</span>
-            <input v-model.number="epMin" type="number" class="field" min="0" placeholder="例如 12" @change="onFilterChange" />
-          </label>
-          <label class="flex flex-col gap-0.5">
-            <span class="text-caption-xs text-on-surface-variant pl-1">最多集数</span>
-            <input v-model.number="epMax" type="number" class="field" min="0" placeholder="例如 24" @change="onFilterChange" />
-          </label>
-        </div>
-      </div>
+      </Transition>
 
       <!-- Active filter chips -->
-      <div v-if="type || status || tagFilter || source || airDateFrom || airDateTo || epMin !== undefined || epMax !== undefined" class="mt-3 flex flex-wrap gap-2">
-        <span v-if="tagFilter" class="chip chip-neutral cursor-pointer" @click="tagFilter = ''; onFilterChange()">
-          #{{ tagFilter }}
+      <div v-if="activeChips.length > 0" class="mt-3 flex flex-wrap items-center gap-2">
+        <span
+          v-for="chip in visibleChips"
+          :key="chip.key"
+          class="chip cursor-pointer transition-all active:scale-95"
+          :class="chip.key === 'type' ? 'chip-primary' : chip.key === 'status' ? 'chip-secondary' : 'chip-neutral'"
+          @click="chip.onRemove"
+        >
+          {{ chip.label }}
           <span class="material-symbols-outlined text-[14px]">close</span>
         </span>
-        <span v-if="type" class="chip chip-primary cursor-pointer" @click="type = ''; onFilterChange()">
-          {{ MEDIA_TYPES[type as MediaType] }}
-          <span class="material-symbols-outlined text-[14px]">close</span>
-        </span>
-        <span v-if="status" class="chip chip-secondary cursor-pointer" @click="status = ''; onFilterChange()">
-          {{ STATUS_LABELS[status as Status] }}
-          <span class="material-symbols-outlined text-[14px]">close</span>
-        </span>
-        <span v-if="source" class="chip chip-neutral cursor-pointer" @click="source = ''; onFilterChange()">
-          来源: {{ source }}
-          <span class="material-symbols-outlined text-[14px]">close</span>
-        </span>
-        <span v-if="airDateFrom" class="chip chip-neutral cursor-pointer" @click="airDateFrom = ''; onFilterChange()">
-          首播 ≥ {{ airDateFrom }}
-          <span class="material-symbols-outlined text-[14px]">close</span>
-        </span>
-        <span v-if="airDateTo" class="chip chip-neutral cursor-pointer" @click="airDateTo = ''; onFilterChange()">
-          首播 ≤ {{ airDateTo }}
-          <span class="material-symbols-outlined text-[14px]">close</span>
-        </span>
-        <span v-if="epMin !== undefined" class="chip chip-neutral cursor-pointer" @click="epMin = undefined; onFilterChange()">
-          ≥ {{ epMin }} 集
-          <span class="material-symbols-outlined text-[14px]">close</span>
-        </span>
-        <span v-if="epMax !== undefined" class="chip chip-neutral cursor-pointer" @click="epMax = undefined; onFilterChange()">
-          ≤ {{ epMax }} 集
-          <span class="material-symbols-outlined text-[14px]">close</span>
-        </span>
-        <button class="text-caption-xs text-on-surface-variant underline" type="button" @click="clearFilters">清除全部</button>
+        <button
+          v-if="hasMoreChips"
+          class="chip chip-neutral text-caption-xs"
+          type="button"
+          @click="toggleChips"
+        >
+          {{ showAllChips ? `收起` : `+${activeChips.length - 4} 项` }}
+          <span class="material-symbols-outlined text-[14px]">{{ showAllChips ? 'expand_less' : 'expand_more' }}</span>
+        </button>
+        <button class="text-caption-xs text-on-surface-variant/50 hover:text-error transition-colors ml-1" type="button" @click="clearFilters">清除全部</button>
       </div>
     </div>
 
@@ -327,8 +345,8 @@ onMounted(() => {
             @click="$router.push(`/media/${media.id}`)"
           >
             <!-- Cover (flush with card top/bottom/left) -->
-            <div class="w-[72px] h-24 shrink-0 overflow-hidden bg-surface-variant self-stretch">
-              <img v-if="getCoverSrc(media)" :src="getCoverSrc(media)" class="w-full h-full object-cover" />
+            <div class="cover-wrapper w-[72px] h-24 shrink-0 overflow-hidden bg-surface-variant self-stretch">
+              <img v-if="getCoverSrc(media)" :src="getCoverSrc(media)" class="cover-img w-full h-full object-cover" />
               <span v-else class="flex h-full w-full items-center justify-center">
                 <span class="material-symbols-outlined text-[24px] text-on-surface-variant">movie</span>
               </span>
@@ -435,3 +453,126 @@ onMounted(() => {
     @cancel="modalVisible = false"
   />
 </template>
+
+<style scoped>
+/* ── Advanced filter slide animation ── */
+.filter-slide-enter-active {
+  transition: opacity 0.2s ease-out, margin-top 0.2s ease-out;
+}
+.filter-slide-leave-active {
+  transition: opacity 0.15s ease-in, margin-top 0.15s ease-in;
+}
+.filter-slide-enter-from {
+  opacity: 0;
+  margin-top: -0.75rem;
+}
+.filter-slide-leave-to {
+  opacity: 0;
+  margin-top: -0.75rem;
+}
+
+/* ── Advanced button active state ── */
+.btn-secondary.is-active {
+  background-color: rgba(0, 120, 212, 0.12);
+  border-color: rgba(0, 120, 212, 0.3);
+  color: #005faa;
+}
+.dark .btn-secondary.is-active {
+  background-color: rgba(211, 227, 255, 0.1);
+  border-color: rgba(211, 227, 255, 0.2);
+  color: #a3c9ff;
+}
+
+/* ── Inline filter fields (date / number) ── */
+.filter-inline-field {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(192, 199, 212, 0.4);
+  background-color: rgba(243, 243, 243, 0.6);
+  padding: 0.375rem 0.75rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.filter-inline-field:focus-within {
+  border-color: #005faa;
+  box-shadow: 0 0 0 1px #005faa;
+}
+.dark .filter-inline-field {
+  border-color: rgba(64, 64, 64, 0.6);
+  background-color: rgba(38, 38, 38, 0.6);
+}
+.dark .filter-inline-field:focus-within {
+  border-color: #d3e3ff;
+  box-shadow: 0 0 0 1px #d3e3ff;
+}
+
+.filter-inline-label {
+  font-size: 0.75rem;
+  line-height: 1;
+  color: #737373;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.dark .filter-inline-label {
+  color: #999;
+}
+
+.filter-inline-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: #1a1c1c;
+  min-width: 0;
+}
+.filter-inline-input::placeholder {
+  color: #c0c7d4;
+}
+.dark .filter-inline-input {
+  color: #f5f5f5;
+}
+.dark .filter-inline-input::placeholder {
+  color: #555;
+}
+
+/* ── Source select inline style override ── */
+.source-select {
+  padding: 0 0.5rem 0 0.75rem;
+}
+.source-select :deep(.app-select) {
+  width: auto;
+  display: flex;
+}
+.source-select :deep(.app-select-trigger) {
+  border: none !important;
+  background: transparent !important;
+  padding: 0.25rem 0 !important;
+  font-size: 0.8125rem !important;
+  color: #1a1c1c !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  gap: 2px !important;
+}
+.dark .source-select :deep(.app-select-trigger) {
+  color: #f5f5f5 !important;
+}
+.source-select :deep(.app-select-label) {
+  color: inherit !important;
+}
+.source-select :deep(.app-select-arrow) {
+  font-size: 18px !important;
+  color: #999 !important;
+}
+.source-select :deep(.app-select-trigger:focus) {
+  box-shadow: none !important;
+}
+.source-select :deep(.variant-field .app-select-trigger.has-value) {
+  color: #1a1c1c !important;
+}
+.dark .source-select :deep(.variant-field .app-select-trigger.has-value) {
+  color: #f5f5f5 !important;
+}
+</style>
