@@ -4,16 +4,16 @@
   "type": "module",
   "scripts": {
     "dev": "bun --watch src/index.ts",
-    "build": "bun build --compile --minify --sourcemap --target=bun src/index.ts --outfile anriod",
+    "build": "bun build --compile --minify --sourcemap --target=bun --define process.env.NODE_ENV='\"production\"' src/index.ts --outfile anriod",
     "typecheck": "tsc --noEmit",
     "test": "bun test --parallel=1",
     "test:watch": "bun test --parallel=1 --watch"
   },
   "dependencies": {
     "@anriod/shared": "file:../shared",
-    "hono": "^4.3.0",
+    "croner": "^8.0.0",
     "drizzle-orm": "^0.30.0",
-    "croner": "^8.0.0"
+    "hono": "^4.3.0"
   },
   "devDependencies": {
     "@types/bun": "latest"

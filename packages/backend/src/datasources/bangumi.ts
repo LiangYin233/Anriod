@@ -1,5 +1,6 @@
 import type { CreditPerson, CreditsResponse, DiscoverItem, DiscoverSection, MediaDetails, MediaType, SearchResult } from '@anriod/shared'
 import { config } from '../config'
+import { logger } from '../logger'
 import { proxyFetchOptions } from '../utils/proxy'
 import type { DataSource } from './types'
 
@@ -155,6 +156,7 @@ export class BangumiDataSource implements DataSource {
   // ── Search ──────────────────────────────────────────────
 
   async search(query: string, mediaType?: MediaType): Promise<SearchResult[]> {
+    logger.info(`[Bangumi] 搜索: "${query}" (类型: ${mediaType || '全部'})`)
     // When type is not specified, search across all Bangumi-supported types
     const typeIds = mediaType
       ? (MEDIA_TO_BANGUMI_TYPE[mediaType] ?? [2])
@@ -301,6 +303,7 @@ export class BangumiDataSource implements DataSource {
   // ── GetDetails ──────────────────────────────────────────
 
   async getDetails(sourceId: string, mediaType: MediaType = 'anime'): Promise<MediaDetails> {
+    logger.info(`[Bangumi] 获取详情: ${sourceId} (类型: ${mediaType})`)
     const url = `${this.baseUrl}/v0/subjects/${sourceId}`
 
     const headers: Record<string, string> = {

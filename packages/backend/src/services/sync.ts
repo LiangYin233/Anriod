@@ -3,6 +3,7 @@ import { syncMedia } from './media'
 import { all } from '../db/helpers'
 import { downloadQueue } from '../utils/download-queue'
 import { config } from '../config'
+import { logger } from '../logger'
 
 let job: Cron | null = null
 
@@ -13,9 +14,15 @@ export function startSyncScheduler() {
   if (!cronExpr) return
 
   job = new Cron(cronExpr, async () => {
-    await runSync()
+    logger.info('开始定时同步任务')
+    const result = await runSync()
+    logger.success(`同步完成: 成功 ${result.synced} 个，失败 ${result.errors.length} 个`)
+    if (result.errors.length > 0) {
+      logger.error('同步错误', result.errors.slice(0, 5))
+    }
   })
 
+  logger.info(`同步调度器已启动: ${cronExpr}`)
   return job
 }
 

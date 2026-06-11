@@ -1,7 +1,9 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
+import { logger as honoLogger } from 'hono/logger'
 import { basename, join } from 'node:path'
 import { config } from './config'
+import { logger } from './logger'
 import { initializeDatabase } from './db/client'
 import { authMiddleware } from './middleware/auth'
 import { handleError, notFound } from './middleware/error'
@@ -16,10 +18,10 @@ import { tagRoutes } from './routes/tag'
 import { startSyncScheduler } from './services/sync'
 
 initializeDatabase()
-startSyncScheduler()
 
 const app = new Hono()
 
+app.use('*', honoLogger())
 app.use('*', cors())
 app.onError(handleError)
 app.notFound(notFound)
@@ -56,5 +58,9 @@ const server = Bun.serve({
   reusePort: false
 })
 
-console.log(`Anriod backend listening on http://${server.hostname}:${server.port}`)
-console.log(`Server configured to use port ${config.server.port} only`)
+startSyncScheduler()
+
+logger.success('Anriod Backend Server 已启动')
+logger.info(`地址: http://${server.hostname}:${server.port}`)
+logger.info(`数据库: ${config.databasePath}`)
+logger.info(`同步: ${config.sync.cron || '未启用'}`)

@@ -202,7 +202,7 @@ const mainPadding = computed(() => sidebarCollapsed.value ? 'lg:pl-16' : 'lg:pl-
     <!-- ============================================ -->
     <div :class="mainPadding" class="flex flex-1 flex-col overflow-hidden transition-all duration-200">
       <!-- Top App Bar -->
-      <header class="sticky top-0 z-40 border-b border-black/5 dark:border-white/5 bg-white/70 dark:bg-neutral-900/70 backdrop-blur-lg">
+      <header class="sticky top-0 z-40 border-b border-black/5 dark:border-white/5 bg-white/70 dark:bg-neutral-900/70 backdrop-blur-lg safe-area-header">
         <div class="flex h-16 items-center justify-between px-container-padding lg:px-8">
           <div class="flex items-center gap-4">
             <!-- Sidebar toggle (always visible) -->
@@ -261,3 +261,14 @@ const mainPadding = computed(() => sidebarCollapsed.value ? 'lg:pl-16' : 'lg:pl-
     <Toast ref="toastRef" />
   </div>
 </template>
+
+<style scoped>
+/* Android safe area support */
+.safe-area-header {
+  padding-top: env(safe-area-inset-top);
+}
+
+.tauri-app .safe-area-header {
+  padding-top: max(env(safe-area-inset-top), 0px);
+}
+</style>

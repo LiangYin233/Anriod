@@ -1,5 +1,6 @@
 import type { CreditPerson, CreditsResponse, DiscoverItem, DiscoverSection, MediaDetails, MediaType, SearchResult } from '@anriod/shared'
 import { config } from '../config'
+import { logger } from '../logger'
 import { MAX_CAST_DISPLAY, MAX_CREW_DISPLAY } from '../constants'
 import { proxyFetchOptions } from '../utils/proxy'
 import type { DataSource } from './types'
@@ -119,6 +120,7 @@ export class TmdbDataSource implements DataSource {
   // ── Search ──────────────────────────────────────────────
 
   async search(query: string, mediaType?: MediaType): Promise<SearchResult[]> {
+    logger.info(`[TMDB] 搜索: "${query}" (类型: ${mediaType || '全部'})`)
     const url = mediaType === 'movie'
       ? `${this.baseUrl}/search/movie`
       : mediaType === 'tv'
@@ -246,6 +248,7 @@ export class TmdbDataSource implements DataSource {
   // ── GetDetails ──────────────────────────────────────────
 
   async getDetails(sourceId: string, mediaType: MediaType = 'movie'): Promise<MediaDetails> {
+    logger.info(`[TMDB] 获取详情: ${sourceId} (类型: ${mediaType})`)
     const endpoint = mediaType === 'tv' ? 'tv' : 'movie'
     const url = `${this.baseUrl}/${endpoint}/${sourceId}?language=${this.language}`
 

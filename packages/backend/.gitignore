@@ -1,0 +1,8 @@
+node_modules
+dist
+*.exe
+*.map
+data/*.db
+data/*.db-*
+coverage
+.env.local
