@@ -1,0 +1,60 @@
+/**
+ * Test helpers.
+ *
+ * Call `initTestEnv()` once per test file to create a temporary
+ * config.yaml + SQLite database.  Because ESM modules are cached
+ * across test files, the database is shared — use `clearAllTables()`
+ * in beforeAll to isolate each test suite.
+ */
+
+let initialized = false
+
+/** Create temp config, chdir, initialize DB. Safe to call multiple times. */
+export async function initTestEnv() {
+  if (initialized) return
+  initialized = true
+
+  const { mkdtempSync, writeFileSync, mkdirSync } = await import('node:fs')
+  const { join } = await import('node:path')
+  const { tmpdir } = await import('node:os')
+
+  const dir = mkdtempSync(join(tmpdir(), 'anriod-test-'))
+  mkdirSync(join(dir, 'data'))
+
+  writeFileSync(join(dir, 'config.yaml'), [
+    'server:',
+    '  port: 0',
+    '  host: localhost',
+    'database:',
+    '  path: ./data/test.db',
+    'auth:',
+    '  api_key: "test-api-key"',
+    'sync:',
+    '  cron: ""',
+    'storage:',
+    '  covers_dir: ./data/covers',
+    'datasources:',
+    '  bangumi:',
+    '    enabled: false',
+    '    base_url: https://api.bgm.tv',
+    '    bgm_token: ""',
+  ].join('\n'))
+
+  process.chdir(dir)
+
+  const { initializeDatabase } = await import('../db/client')
+  initializeDatabase()
+}
+
+export interface DbSession {
+  run: (sql: string) => void
+}
+
+/** Clear all data from every table. */
+export async function clearAllTables() {
+  const { sqlite } = await import('../db/client')
+  sqlite.exec('DELETE FROM watch_history')
+  sqlite.exec('DELETE FROM media_tags')
+  sqlite.exec('DELETE FROM tags')
+  sqlite.exec('DELETE FROM media')
+}

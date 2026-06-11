@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "bun --watch src/index.ts",
     "build": "bun build --compile --minify --sourcemap src/index.ts --outfile anriod",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "test:watch": "bun test --watch"
   },
   "dependencies": {
     "@anriod/shared": "file:../shared",
