@@ -4,6 +4,7 @@ import type {
   ImportMediaInput,
   ListMediaQuery,
   Media,
+  MediaDetails,
   PaginatedResponse,
   SearchResult,
   StatisticsOverview,
@@ -122,4 +123,6 @@ export const api = {
   importBackup: (data: any) => apiRequest<{ ok: boolean }>('/api/backup/import', { method: 'POST', body: JSON.stringify(data) }),
   triggerSync: () => apiRequest<{ synced: number; errors: string[] }>('/api/sync/trigger', { method: 'POST' }),
   migrateCovers: () => apiRequest<{ queued: number }>('/api/sync/covers', { method: 'POST' }),
+  fetchDetails: (query: { source: string; source_id: string; type?: string }) =>
+    apiRequest<MediaDetails>(`/api/search/details${queryString(query)}`),
 }

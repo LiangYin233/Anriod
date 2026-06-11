@@ -300,33 +300,40 @@ export function deleteMedia(id: string) {
   run('DELETE FROM media WHERE id = ?', [id])
 }
 
+export function isChapterBased(type: string): boolean {
+  return type === 'novel' || type === 'manga'
+}
+
 export function updateProgress(id: string, progress: MediaProgress, notes?: string | null, startedAt?: string | null): Media {
   const current = getMediaById(id)
   const now = startedAt || new Date().toISOString()
+  const useChapter = isChapterBased(current.type)
+  const field = useChapter ? 'chapter' : 'episode'
 
   run('UPDATE media SET current_progress = ?, updated_at = ? WHERE id = ?', [jsonString(progress), now, id])
 
-  const newEp = progress.episode
-  const oldEp = current.current_progress?.episode ?? 0
-  if (newEp !== undefined && newEp > oldEp) {
-    // Create a discrete entry for each episode watched
-    for (let ep = oldEp + 1; ep <= newEp; ep++) {
-      const epProgress = { episode: ep }
+  const newVal = progress[field]
+  const oldVal = (current.current_progress?.[field] as number | undefined) ?? 0
+  if (newVal !== undefined && newVal > oldVal) {
+    // Create a discrete entry for each episode/chapter watched
+    for (let v = oldVal + 1; v <= newVal; v++) {
+      const valProgress = { [field]: v }
       createWatchHistory({
         media_id: id,
         started_at: now,
         completed_at: now,
-        progress_from: { episode: ep - 1 },
-        progress_to: epProgress,
+        progress_from: { [field]: v - 1 },
+        progress_to: valProgress,
         rating: null,
-        notes: ep === newEp ? (notes ?? null) : null
+        notes: v === newVal ? (notes ?? null) : null
       })
     }
-  } else if (newEp !== undefined && newEp < oldEp) {
-    // User decreased episode count — delete the now-unwatched episode entries
+  } else if (newVal !== undefined && newVal < oldVal) {
+    // User decreased count — delete entries beyond new value
+    const key = useChapter ? "'chapter'" : "'episode'"
     run(
-      "DELETE FROM watch_history WHERE media_id = ? AND CAST(json_extract(progress_to, '$.episode') AS INTEGER) > ?",
-      [id, newEp]
+      `DELETE FROM watch_history WHERE media_id = ? AND CAST(json_extract(progress_to, $.${key}) AS INTEGER) > ?`,
+      [id, newVal]
     )
   }
 

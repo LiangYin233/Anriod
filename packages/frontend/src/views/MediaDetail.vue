@@ -1,22 +1,42 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import type { Media, MediaType, Status, WatchHistory } from '@anriod/shared'
+import type { Media, MediaProgress, MediaType, Status, WatchHistory } from '@anriod/shared'
 import { MEDIA_TYPES, MEDIA_TYPE_VALUES, STATUS_LABELS, STATUS_VALUES } from '@anriod/shared'
 import { api } from '@/utils/api'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import ErrorBanner from '@/components/ErrorBanner.vue'
 import AppSelect from '@/components/AppSelect.vue'
 import { useToast } from '@/composables/useToast'
+import { useTauri } from '@/composables/useTauri'
 import { formatDate } from '@/utils/format'
 
+function isChapterBased(type: string): boolean {
+  return type === 'novel' || type === 'manga'
+}
+
+function progressVal(p: MediaProgress | null | undefined): number {
+  return p?.chapter ?? p?.episode ?? 0
+}
+
+function progressUnit(type: string): string {
+  return isChapterBased(type) ? 'CH' : 'EP'
+}
+
+function progressLabel(type: string): string {
+  return isChapterBased(type) ? '章节' : '集数'
+}
+
 function episodeLabel(h: WatchHistory): string {
-  const from = h.progress_from?.episode
-  const to = h.progress_to?.episode
-  if (from !== undefined && to !== undefined && from > 0 && to > 0) {
-    return from === to ? `EP${to}` : `EP${from} → EP${to}`
+  const from = h.progress_from
+  const to = h.progress_to
+  const fromVal = progressVal(from)
+  const toVal = progressVal(to)
+  if (toVal > 0) {
+    const prefix = from?.chapter !== undefined ? 'CH' : 'EP'
+    if (fromVal > 0 && fromVal !== toVal) return `${prefix}${fromVal} → ${prefix}${toVal}`
+    return `${prefix}${toVal}`
   }
-  if (to !== undefined && to > 0) return `至 EP${to}`
   return ''
 }
 
@@ -28,6 +48,7 @@ const loading = ref(false)
 const saving = ref(false)
 const error = ref('')
 const toast = useToast()
+const { openUrl } = useTauri()
 
 const title = ref('')
 const status = ref<Status>('plan_to_watch')
@@ -55,7 +76,7 @@ function fillForm(item: Media) {
   status.value = item.status
   rating.value = item.rating
   notes.value = item.notes ?? ''
-  episode.value = item.current_progress?.episode ?? 0
+  episode.value = progressVal(item.current_progress)
   tagsText.value = item.tags?.join(', ') ?? ''
   editType.value = item.type
   editAirDate.value = item.air_date ?? ''
@@ -73,10 +94,10 @@ async function loadDetail() {
     media.value = await api.getMedia(mediaId.value)
     fillForm(media.value)
     history.value = (await api.listHistory({ media_id: mediaId.value })).data
-    // Build episode→notes map from history data
+    // Build progress→notes map from history data (supports both episode and chapter)
     const notes: Record<number, string> = {}
     for (const h of history.value) {
-      const to = h.progress_to?.episode ?? 0
+      const to = progressVal(h.progress_to)
       if (h.notes && to > 0) notes[to] = h.notes
     }
     epNotes.value = notes
@@ -87,15 +108,15 @@ async function loadDetail() {
   }
 }
 
-// When clicking an episode, show its watch date
+// When clicking an episode/chapter, show its watch date
 watch(editingEp, (ep) => {
-  if (!ep || ep > (media.value?.current_progress?.episode ?? 0)) {
+  if (!ep || ep > progressVal(media.value?.current_progress)) {
     watchDate.value = ''
     return
   }
-  // Find the history entry that covers this episode
+  // Find the history entry that covers this episode/chapter
   const h = history.value.find(
-    (item) => item.progress_to?.episode === ep
+    (item) => progressVal(item.progress_to) === ep
   )
   if (h) {
     const d = new Date(h.started_at)
@@ -134,9 +155,10 @@ async function saveDetail() {
 
 async function saveProgress() {
   if (!media.value) return
+  const field = isChapterBased(media.value.type) ? 'chapter' : 'episode'
   try {
     media.value = await api.updateProgress(media.value.id, {
-      current_progress: { episode: episode.value },
+      current_progress: { [field]: episode.value },
       started_at: watchDate.value ? new Date(watchDate.value).toISOString() : null
     })
     fillForm(media.value)
@@ -148,22 +170,24 @@ async function saveProgress() {
 async function saveEpNote(ep: number) {
   if (!media.value) return
   const note = epNotes.value[ep]?.trim() || null
+  const field = isChapterBased(media.value.type) ? 'chapter' : 'episode'
+  const prefix = progressUnit(media.value.type)
   try {
-    // Check if a history entry for this episode already exists
+    // Check if a history entry for this episode/chapter already exists
     const existing = history.value.find(
-      (h) => h.progress_to?.episode === ep
+      (h) => progressVal(h.progress_to) === ep
     )
     if (existing) {
       await api.updateHistory(existing.id, { notes: note })
     } else {
       await api.createHistory({
         media_id: media.value.id,
-        progress_from: { episode: ep - 1 },
-        progress_to: { episode: ep },
+        progress_from: { [field]: ep - 1 },
+        progress_to: { [field]: ep },
         notes: note
       })
     }
-    toast.success(note ? `EP${ep} 笔记已保存` : `EP${ep} 笔记已清除`)
+    toast.success(note ? `${prefix}${ep} 笔记已保存` : `${prefix}${ep} 笔记已清除`)
     await loadDetail()
   } catch (caught) {
     error.value = caught instanceof Error ? caught.message : '保存笔记失败'
@@ -239,6 +263,16 @@ onMounted(loadDetail)
                   <span class="material-symbols-outlined text-[20px]">sync</span>
                   同步
                 </button>
+                <button
+                  v-if="media.source_url"
+                  class="btn-secondary"
+                  type="button"
+                  @click="openUrl(media.source_url!)"
+                  title="在外部浏览器中打开"
+                >
+                  <span class="material-symbols-outlined text-[20px]">open_in_new</span>
+                  数据源
+                </button>
               </div>
             </div>
           </div>
@@ -252,8 +286,8 @@ onMounted(loadDetail)
             </div>
             <div class="glass-card reveal-hover flex flex-col items-center justify-center rounded-lg p-4 shadow-sm">
               <span class="material-symbols-outlined mb-1 text-tertiary">video_file</span>
-              <span class="text-headline-md font-bold text-on-surface">{{ media.current_progress?.episode ?? 0 }}/{{ media.total_episodes ?? '-' }}</span>
-              <span class="text-caption-xs text-on-surface-variant">集数进度</span>
+              <span class="text-headline-md font-bold text-on-surface">{{ progressVal(media.current_progress) }}/{{ media.total_episodes ?? '-' }}</span>
+              <span class="text-caption-xs text-on-surface-variant">{{ progressLabel(media.type) }}进度</span>
             </div>
             <div class="glass-card reveal-hover flex flex-col items-center justify-center rounded-lg p-4 shadow-sm">
               <span class="material-symbols-outlined mb-1 text-tertiary">business</span>
@@ -267,12 +301,12 @@ onMounted(loadDetail)
             </div>
           </div>
 
-          <!-- Episode Grid (above Synopsis) -->
+          <!-- Episode/Chapter Grid (above Synopsis) -->
           <div v-if="['anime','tv','novel','manga'].includes(media.type) && media.total_episodes" class="flex flex-col gap-unit">
             <div class="flex items-center justify-between">
               <h3 class="flex items-center gap-2 text-title-sm text-on-surface">
                 <span class="h-4 w-1 rounded-full bg-primary" />
-                集数进度
+                {{ progressLabel(media.type) }}进度
               </h3>
               <div class="flex items-center gap-1">
                 <input
@@ -300,7 +334,7 @@ onMounted(loadDetail)
               />
             </div>
 
-            <!-- Episode boxes grid -->
+            <!-- Episode/Chapter boxes grid -->
             <div class="glass-card rounded-lg p-4 shadow-sm">
               <div class="grid gap-2" :style="{ gridTemplateColumns: `repeat(auto-fill, minmax(48px, 1fr))` }">
                 <button
@@ -308,25 +342,25 @@ onMounted(loadDetail)
                   :key="ep"
                   class="flex flex-col items-center justify-center rounded-lg border py-2 transition-all hover:shadow-sm"
                   :class="[
-                    ep <= (media.current_progress?.episode ?? 0)
+                    ep <= progressVal(media.current_progress)
                       ? 'bg-primary-container/20 border-primary/30 text-on-surface'
                       : 'bg-surface-container-low border-outline-variant/30 text-on-surface-variant',
                     editingEp === ep ? 'ring-2 ring-primary' : ''
                   ]"
                   @click="editingEp = editingEp === ep ? 0 : ep"
                 >
-                  <span class="text-label-sm font-semibold">EP{{ ep }}</span>
+                  <span class="text-label-sm font-semibold">{{ progressUnit(media.type) }}{{ ep }}</span>
                   <span class="mt-0.5 h-4 flex items-center gap-0.5">
-                    <span v-if="ep <= (media.current_progress?.episode ?? 0)" class="material-symbols-outlined text-[14px] text-primary">check_circle</span>
+                    <span v-if="ep <= progressVal(media.current_progress)" class="material-symbols-outlined text-[14px] text-primary">check_circle</span>
                     <span v-if="epNotes[ep]" class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" title="有笔记" />
                   </span>
                 </button>
               </div>
 
-              <!-- Episode note editor -->
+              <!-- Note editor -->
               <div v-if="editingEp" class="mt-4 border-t border-outline-variant/20 pt-4">
                 <div class="flex items-center justify-between mb-2">
-                  <span class="text-label-sm font-semibold text-on-surface">EP{{ editingEp }} 笔记</span>
+                  <span class="text-label-sm font-semibold text-on-surface">{{ progressUnit(media.type) }}{{ editingEp }} 笔记</span>
                   <button class="btn-icon" type="button" @click="editingEp = 0; epNotes[editingEp] = ''">
                     <span class="material-symbols-outlined text-[18px]">close</span>
                   </button>
@@ -334,7 +368,7 @@ onMounted(loadDetail)
                 <textarea
                   v-model="epNotes[editingEp]"
                   class="field-fluent resize-none w-full"
-                  placeholder="这一集的感想..."
+                  :placeholder="`这一${progressLabel(media.type).slice(0, -1)}的感想...`"
                   rows="3"
                 />
                 <div class="flex gap-2 mt-3">

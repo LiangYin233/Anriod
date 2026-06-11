@@ -137,8 +137,9 @@ async function handleIncrement(media: Media) {
   await incrementProgress(media)
 }
 
-async function handleSetProgress(media: Media, episode: number) {
-  const updated = await api.updateProgress(media.id, { current_progress: { episode } })
+async function handleSetProgress(media: Media, value: number) {
+  const field = (media.type === 'novel' || media.type === 'manga') ? 'chapter' : 'episode'
+  const updated = await api.updateProgress(media.id, { current_progress: { [field]: value } })
   mediaList.value = mediaList.value.map((item) => (item.id === updated.id ? updated : item))
 }
 
@@ -370,8 +371,8 @@ onMounted(() => {
                 </span>
                 <span v-if="media.external_rating !== null">外部 {{ media.external_rating }}</span>
                 <span v-if="media.air_date">{{ media.air_date }}</span>
-                <span v-if="(media.current_progress?.episode ?? 0) > 0 || (media.total_episodes ?? 0) > 0">
-                  {{ media.current_progress?.episode ?? 0 }}/{{ media.total_episodes ?? '-' }}
+                <span v-if="(media.current_progress?.episode ?? media.current_progress?.chapter ?? 0) > 0 || (media.total_episodes ?? 0) > 0">
+                  {{ media.current_progress?.episode ?? media.current_progress?.chapter ?? 0 }}/{{ media.total_episodes ?? '-' }}
                 </span>
               </div>
 
