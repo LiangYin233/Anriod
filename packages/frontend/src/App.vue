@@ -16,10 +16,9 @@ router.afterEach(() => { nextTick(() => { pageLoading.value = false }) })
 
 const { toggleTheme, applyStoredTheme } = useConfig()
 const { bind: bindReveal, unbind: unbindReveal } = useReveal()
-const { isTauri, getVersion, minimizeWindow, toggleMaximize, closeWindow } = useTauri()
+const { isTauri, minimizeWindow, toggleMaximize, closeWindow } = useTauri()
 const sidebarCollapsed = ref(false)
 const mobileDrawerOpen = ref(false)
-const appVersion = ref('0.1.0')
 const toastRef = ref<InstanceType<typeof Toast> | null>(null)
 
 // Provide toast API to all descendants
@@ -34,7 +33,6 @@ onMounted(async () => {
   applyStoredTheme()
   bindReveal()
   if (isTauri.value) {
-    appVersion.value = await getVersion()
     attachHeaderDrag()
   }
 })
@@ -157,7 +155,6 @@ const mainPadding = computed(() => sidebarCollapsed.value ? 'lg:pl-16' : 'lg:pl-
           <span class="material-symbols-outlined text-[18px]">dark_mode</span>
           切换主题
         </button>
-        <p class="text-center text-caption-xs text-on-surface-variant">Anriod v{{ appVersion }}</p>
       </div>
       <div v-else class="mt-auto flex flex-col items-center gap-3">
         <button class="btn-icon" type="button" @click="toggleTheme" title="切换主题">

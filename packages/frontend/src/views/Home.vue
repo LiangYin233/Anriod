@@ -28,6 +28,10 @@ const showFilters = ref(false)
 const goToPageInput = ref('')
 const tagFilter = ref('')
 const layoutDensity = ref<'default' | 'compact'>('default')
+const airDateFrom = ref('')
+const airDateTo = ref('')
+const epMin = ref('')
+const epMax = ref('')
 
 const sortOptions = [
   { value: 'updated_at:desc', label: '最近修改' },
@@ -65,7 +69,6 @@ async function loadMedia(page?: number) {
 }
 
 function onFilterChange() {
-  tagFilter.value = ''
   loadMedia(1)
   goToPageInput.value = ''
 }
@@ -138,6 +141,10 @@ function clearFilters() {
   status.value = ''
   keyword.value = ''
   tagFilter.value = ''
+  airDateFrom.value = ''
+  airDateTo.value = ''
+  epMin.value = ''
+  epMax.value = ''
   onFilterChange()
 }
 
@@ -184,19 +191,27 @@ onMounted(() => {
           <SearchBar v-model="keyword" placeholder="搜索影视..." @search="onFilterChange" />
         </div>
         <button class="btn-secondary" type="button" @click="showFilters = !showFilters">
-          <span class="material-symbols-outlined text-[18px]">filter_list</span>
-          筛选
+          <span class="material-symbols-outlined text-[18px]">tune</span>
+          高级
         </button>
       </div>
 
-      <!-- Filters -->
-      <div v-if="showFilters" class="mt-3 grid gap-3 sm:grid-cols-2">
+      <!-- Basic filters (always visible) -->
+      <div class="mt-3 grid gap-3 sm:grid-cols-2">
         <AppSelect v-model="type" :options="typeOptions" variant="field" @change="onFilterChange" />
         <AppSelect v-model="status" :options="statusOptions" variant="field" @change="onFilterChange" />
       </div>
 
+      <!-- Advanced filters (toggle) -->
+      <div v-if="showFilters" class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <input v-model="airDateFrom" type="date" class="field" placeholder="上线日期起" @change="onFilterChange" />
+        <input v-model="airDateTo" type="date" class="field" placeholder="上线日期止" @change="onFilterChange" />
+        <input v-model="epMin" type="number" class="field" placeholder="最少集数" min="0" @change="onFilterChange" />
+        <input v-model="epMax" type="number" class="field" placeholder="最多集数" min="0" @change="onFilterChange" />
+      </div>
+
       <!-- Active filter chips -->
-      <div v-if="type || status || tagFilter" class="mt-3 flex flex-wrap gap-2">
+      <div v-if="type || status || tagFilter || airDateFrom || airDateTo || epMin || epMax" class="mt-3 flex flex-wrap gap-2">
         <span v-if="tagFilter" class="chip chip-neutral cursor-pointer" @click="tagFilter = ''; onFilterChange()">
           #{{ tagFilter }}
           <span class="material-symbols-outlined text-[14px]">close</span>
@@ -207,6 +222,22 @@ onMounted(() => {
         </span>
         <span v-if="status" class="chip chip-secondary cursor-pointer" @click="status = ''; onFilterChange()">
           {{ STATUS_LABELS[status as Status] }}
+          <span class="material-symbols-outlined text-[14px]">close</span>
+        </span>
+        <span v-if="airDateFrom" class="chip chip-neutral cursor-pointer" @click="airDateFrom = ''; onFilterChange()">
+          上线起 {{ airDateFrom }}
+          <span class="material-symbols-outlined text-[14px]">close</span>
+        </span>
+        <span v-if="airDateTo" class="chip chip-neutral cursor-pointer" @click="airDateTo = ''; onFilterChange()">
+          上线止 {{ airDateTo }}
+          <span class="material-symbols-outlined text-[14px]">close</span>
+        </span>
+        <span v-if="epMin" class="chip chip-neutral cursor-pointer" @click="epMin = ''; onFilterChange()">
+          最少 {{ epMin }} 集
+          <span class="material-symbols-outlined text-[14px]">close</span>
+        </span>
+        <span v-if="epMax" class="chip chip-neutral cursor-pointer" @click="epMax = ''; onFilterChange()">
+          最多 {{ epMax }} 集
           <span class="material-symbols-outlined text-[14px]">close</span>
         </span>
         <button class="text-caption-xs text-on-surface-variant underline" type="button" @click="clearFilters">清除全部</button>
