@@ -76,11 +76,11 @@ onMounted(loadTags)
       description="给媒体添加标签后，它们会出现在这里。"
     />
 
-    <div v-else class="flex flex-wrap gap-2 justify-center">
+    <div v-else class="flex flex-wrap gap-3 justify-center px-4">
       <span
         v-for="tag in tags"
         :key="tag.id"
-        class="chip chip-neutral cursor-pointer transition-all hover:scale-105 hover:shadow-sm group"
+        class="chip chip-neutral !px-4 !py-2 !text-[14px] cursor-pointer transition-all hover:scale-105 hover:shadow-sm group"
         @click="goToMedia(tag.name)"
       >
         {{ tag.name }}
