@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import type { Media, MediaType, Status } from '@anriod/shared'
 import { MEDIA_TYPES, MEDIA_TYPE_VALUES, STATUS_LABELS, STATUS_VALUES } from '@anriod/shared'
 import MediaCard from '@/components/MediaCard.vue'
@@ -14,6 +15,7 @@ import { useMedia } from '@/composables/useMedia'
 import { useToast } from '@/composables/useToast'
 import { api } from '@/utils/api'
 
+const route = useRoute()
 const { mediaList, pagination, statusCounts, loading, error, fetchMedia, incrementProgress, setStatus, removeMedia } = useMedia()
 const toast = useToast()
 const modalVisible = ref(false)
@@ -24,6 +26,7 @@ const type = ref<MediaType | ''>('')
 const status = ref<Status | ''>('')
 const showFilters = ref(false)
 const goToPageInput = ref('')
+const tagFilter = ref('')
 
 const sortOptions = [
   { value: 'updated_at:desc', label: '最近修改' },
@@ -53,6 +56,7 @@ async function loadMedia(page?: number) {
     q: keyword.value || undefined,
     type: type.value || undefined,
     status: status.value || undefined,
+    tag: tagFilter.value || undefined,
     page: page ?? pagination.value.page,
     limit: 20,
     sort: sortBy.value
@@ -60,6 +64,7 @@ async function loadMedia(page?: number) {
 }
 
 function onFilterChange() {
+  tagFilter.value = ''
   loadMedia(1)
   goToPageInput.value = ''
 }
@@ -122,10 +127,17 @@ function clearFilters() {
   type.value = ''
   status.value = ''
   keyword.value = ''
+  tagFilter.value = ''
   onFilterChange()
 }
 
-onMounted(loadMedia)
+onMounted(() => {
+  const tagParam = route.query.tag as string | undefined
+  if (tagParam) {
+    tagFilter.value = tagParam
+  }
+  loadMedia()
+})
 </script>
 
 <template>
@@ -174,7 +186,11 @@ onMounted(loadMedia)
       </div>
 
       <!-- Active filter chips -->
-      <div v-if="type || status" class="mt-3 flex flex-wrap gap-2">
+      <div v-if="type || status || tagFilter" class="mt-3 flex flex-wrap gap-2">
+        <span v-if="tagFilter" class="chip chip-neutral cursor-pointer" @click="tagFilter = ''; onFilterChange()">
+          #{{ tagFilter }}
+          <span class="material-symbols-outlined text-[14px]">close</span>
+        </span>
         <span v-if="type" class="chip chip-primary cursor-pointer" @click="type = ''; onFilterChange()">
           {{ MEDIA_TYPES[type as MediaType] }}
           <span class="material-symbols-outlined text-[14px]">close</span>

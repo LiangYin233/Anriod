@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import type { Tag } from '@anriod/shared'
 import PageHeader from '@/components/PageHeader.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
@@ -8,6 +9,7 @@ import Modal from '@/components/Modal.vue'
 import { useToast } from '@/composables/useToast'
 import { api } from '@/utils/api'
 
+const router = useRouter()
 const tags = ref<Tag[]>([])
 const loading = ref(false)
 const error = ref('')
@@ -26,6 +28,10 @@ async function loadTags() {
   } finally {
     loading.value = false
   }
+}
+
+function goToMedia(tagName: string) {
+  router.push({ path: '/', query: { tag: tagName } })
 }
 
 function confirmDelete(tag: Tag) {
@@ -52,7 +58,7 @@ onMounted(loadTags)
 
 <template>
   <div class="section-gap">
-    <PageHeader title="标签管理" description="查看和管理所有媒体标签。">
+    <PageHeader title="标签管理" description="点击标签查看该标签下的媒体。">
       <template #actions>
         <button class="btn-ghost" type="button" @click="loadTags">
           <span class="material-symbols-outlined text-[18px]">refresh</span>
@@ -70,35 +76,21 @@ onMounted(loadTags)
       description="给媒体添加标签后，它们会出现在这里。"
     />
 
-    <div v-else class="max-w-2xl mx-auto">
-      <div class="grid gap-2">
-        <div
-          v-for="tag in tags"
-          :key="tag.id"
-          class="acrylic group flex items-center justify-between rounded-xl px-5 py-4 shadow-sm border border-black/5 dark:border-white/5"
-        >
-          <div class="flex items-center gap-4">
-            <span class="material-symbols-outlined text-outline-variant">label</span>
-            <div>
-              <span class="text-body-md font-medium text-on-surface">{{ tag.name }}</span>
-              <p class="text-caption-xs text-on-surface-variant mt-0.5">
-                创建于 {{ new Date(tag.created_at).toLocaleDateString('zh-CN') }}
-              </p>
-            </div>
-          </div>
-          <button
-            class="btn-icon text-on-surface-variant hover:text-error"
-            type="button"
-            title="删除标签"
-            @click="confirmDelete(tag)"
-          >
-            <span class="material-symbols-outlined text-[20px]">delete</span>
-          </button>
-        </div>
-      </div>
-      <p class="mt-4 text-center text-caption-xs text-on-surface-variant">
-        共 {{ tags.length }} 个标签
-      </p>
+    <div v-else class="flex flex-wrap gap-2 justify-center">
+      <span
+        v-for="tag in tags"
+        :key="tag.id"
+        class="chip chip-neutral cursor-pointer transition-all hover:scale-105 hover:shadow-sm group"
+        @click="goToMedia(tag.name)"
+      >
+        {{ tag.name }}
+        <button
+          class="material-symbols-outlined text-[14px] ml-1 text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity hover:text-error"
+          type="button"
+          title="删除标签"
+          @click.stop="confirmDelete(tag)"
+        >close</button>
+      </span>
     </div>
   </div>
 
