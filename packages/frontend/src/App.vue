@@ -74,6 +74,9 @@ const mainPadding = computed(() => sidebarCollapsed.value ? 'lg:pl-16' : 'lg:pl-
       @click="mobileDrawerOpen = false"
     />
 
+    <!-- Tauri drag handle — 3px at the very top edge -->
+    <div v-if="isTauri" class="tauri-drag-handle" data-tauri-drag-region />
+
     <!-- ============================================ -->
     <!-- SIDEBAR                                       -->
     <!-- ============================================ -->
@@ -175,11 +178,8 @@ const mainPadding = computed(() => sidebarCollapsed.value ? 'lg:pl-16' : 'lg:pl-
     <!-- MAIN AREA                                    -->
     <!-- ============================================ -->
     <div :class="mainPadding" class="transition-all duration-200">
-      <!-- Top App Bar (also serves as Tauri drag region) -->
-      <header
-        class="sticky top-0 z-40 border-b border-black/5 dark:border-white/5 bg-white/70 dark:bg-neutral-900/70 backdrop-blur-lg"
-        :data-tauri-drag-region="isTauri ? '' : undefined"
-      >
+      <!-- Top App Bar -->
+      <header class="sticky top-0 z-40 border-b border-black/5 dark:border-white/5 bg-white/70 dark:bg-neutral-900/70 backdrop-blur-lg">
         <div class="flex h-16 items-center justify-between px-container-padding lg:px-8">
           <div class="flex items-center gap-4">
             <!-- Sidebar toggle (always visible) -->

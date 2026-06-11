@@ -24,8 +24,6 @@ export function useMedia() {
   const statusCounts = ref<Record<string, number>>({})
   const loading = ref(false)
   const error = ref('')
-  const pageSize = ref(48)
-
   async function fetchMedia(filters: ListMediaQuery = {}) {
     loading.value = true
     error.value = ''
@@ -33,7 +31,7 @@ export function useMedia() {
     try {
       const result = await api.listMedia({
         ...filters,
-        limit: filters.limit ?? pageSize.value
+        limit: filters.limit ?? 24
       })
       mediaList.value = result.data
       pagination.value = result.pagination
@@ -70,7 +68,6 @@ export function useMedia() {
     statusCounts,
     loading,
     error,
-    pageSize,
     fetchMedia,
     incrementProgress,
     setStatus,

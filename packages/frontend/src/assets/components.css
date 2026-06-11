@@ -358,6 +358,17 @@
 }
 
 /* Tauri drag handle — full-width transparent strip at the very top edge */
+/* Tauri drag handle — 3px at the very top edge, full-width, above everything */
+.tauri-drag-handle {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 99999;
+  height: 3px;
+  cursor: default;
+}
+
 /* Sidebar brand SVG — invert in dark mode so black logo appears white */
 .dark .sidebar-brand-img {
   filter: invert(1);

@@ -13,7 +13,7 @@ import { useMedia } from '@/composables/useMedia'
 import { useToast } from '@/composables/useToast'
 import { api } from '@/utils/api'
 
-const { mediaList, pagination, statusCounts, loading, error, pageSize, fetchMedia, incrementProgress, setStatus, removeMedia } = useMedia()
+const { mediaList, pagination, statusCounts, loading, error, fetchMedia, incrementProgress, setStatus, removeMedia } = useMedia()
 const toast = useToast()
 const modalVisible = ref(false)
 const modalMediaId = ref('')
@@ -37,15 +37,13 @@ const totalPages = computed(() => Math.ceil(pagination.value.total / pagination.
 const hasPrev = computed(() => pagination.value.page > 1)
 const hasNext = computed(() => pagination.value.page < totalPages.value)
 
-const pageSizeOptions = [24, 48, 96]
-
 async function loadMedia(page?: number) {
   await fetchMedia({
     q: keyword.value || undefined,
     type: type.value || undefined,
     status: status.value || undefined,
     page: page ?? pagination.value.page,
-    limit: pageSize.value,
+    limit: 24,
     sort: sortBy.value
   })
 }
@@ -81,10 +79,6 @@ function goToPageNum() {
     loadMedia(page)
   }
   goToPageInput.value = ''
-}
-
-function onPageSizeChange() {
-  loadMedia(1)
 }
 
 async function handleIncrement(media: Media) {
@@ -270,18 +264,6 @@ onMounted(loadMedia)
 
         <!-- Total count -->
         <span class="text-caption-xs text-on-surface-variant">共 {{ pagination.total }} 条</span>
-
-        <!-- Page size -->
-        <div class="flex items-center gap-1.5 text-caption-xs text-on-surface-variant">
-          <span>每页</span>
-          <select
-            v-model="pageSize"
-            class="rounded border border-outline-variant/40 bg-surface-container-lowest px-2 py-1 text-label-sm text-on-surface outline-none focus:border-primary"
-            @change="onPageSizeChange"
-          >
-            <option v-for="n in pageSizeOptions" :key="n" :value="n">{{ n }}</option>
-          </select>
-        </div>
       </div>
     </template>
   </div>
