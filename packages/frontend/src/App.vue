@@ -106,14 +106,14 @@ const mainPadding = computed(() => sidebarCollapsed.value ? 'lg:pl-16' : 'lg:pl-
     >
       <!-- Brand -->
       <div
-        class="mb-6 mt-3 flex items-center gap-3 px-1"
+        class="mb-6 mt-1 flex items-center gap-3 px-1"
         :class="sidebarCollapsed ? 'justify-center' : ''"
       >
         <img
           v-if="!sidebarCollapsed"
           src="/anriod.svg"
           alt="Anriod"
-          class="sidebar-brand-img h-10 shrink-0"
+          class="sidebar-brand-img h-14 shrink-0"
         />
         <span
           v-else
