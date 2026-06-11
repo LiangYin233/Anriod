@@ -58,21 +58,40 @@ useChart(statusCanvas, () => {
   return {
     type: 'doughnut',
     data: {
-      labels: statusOrder.map((s) => `${STATUS_LABELS[s]}  ${overview.value!.by_status[s] ?? 0}`),
-      datasets: [{ data: statusOrder.map((s) => overview.value!.by_status[s] ?? 0), backgroundColor: statusOrder.map((s) => statusColors[s]), borderWidth: 2, borderColor: isDark ? '#2a2a2a' : '#ffffff' }],
+      labels: statusOrder.map((s) => STATUS_LABELS[s]),
+      datasets: [{
+        data: statusOrder.map((s) => overview.value!.by_status[s] ?? 0),
+        backgroundColor: statusOrder.map((s) => statusColors[s]),
+        borderWidth: 2,
+        borderColor: isDark ? '#2a2a2a' : '#ffffff',
+      }],
     },
     options: {
       responsive: true,
-      cutout: '60%',
+      maintainAspectRatio: true,
+      cutout: '55%',
       plugins: {
         legend: {
           position: 'bottom',
           labels: {
-            padding: 14,
+            padding: 20,
             usePointStyle: true,
-            pointStyleWidth: 12,
+            pointStyle: 'rectRounded',
+            pointStyleWidth: 18,
+            boxHeight: 10,
             color: tc,
-            font: { size: 12 },
+            font: { size: 13, weight: 'normal' },
+            generateLabels: (chart: any) => {
+              const data = chart.data
+              return (data.labels || []).map((label: string, i: number) => ({
+                text: `${label}  ${data.datasets[0].data[i]}`,
+                fillStyle: data.datasets[0].backgroundColor[i],
+                strokeStyle: data.datasets[0].borderColor,
+                pointStyle: 'rectRounded',
+                hidden: false,
+                index: i,
+              }))
+            },
           },
         },
       },
