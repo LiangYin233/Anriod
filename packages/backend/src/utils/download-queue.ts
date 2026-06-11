@@ -60,7 +60,7 @@ class DownloadQueue {
   }
 
   private updateMediaCoverPath(mediaId: string, path: string) {
-    run('UPDATE media SET cover_local_path = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [path, mediaId])
+    run('UPDATE media SET cover_local_path = ?, updated_at = ? WHERE id = ?', [path, new Date().toISOString(), mediaId])
   }
 }
 

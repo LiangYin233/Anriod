@@ -68,7 +68,8 @@ const INSERT_FIELDS = [
   'source',
   'source_id',
   'source_url',
-  'synced_at'
+  'synced_at',
+  'updated_at'
 ] as const
 
 const UPDATE_FIELDS = [
@@ -122,7 +123,8 @@ function normalizeMediaInput(input: CreateMediaInput | UpdateMediaInput): Record
     source: input.source,
     source_id: input.source_id,
     source_url: input.source_url,
-    synced_at: internalInput.synced_at ?? undefined
+    synced_at: internalInput.synced_at ?? undefined,
+    updated_at: new Date().toISOString()
   }
 }
 
@@ -246,8 +248,8 @@ export function updateMedia(id: string, input: UpdateMediaInput): Media {
     const values = fields.map((field) => normalized[field] as SqlValue)
     const setClause = fields.map((f) => f + ' = ?').join(', ')
     run(
-      'UPDATE media SET ' + setClause + ', updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-      [...values, id]
+      'UPDATE media SET ' + setClause + ', updated_at = ? WHERE id = ?',
+      [...values, new Date().toISOString(), id]
     )
   }
 
