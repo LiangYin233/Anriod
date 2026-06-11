@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "bun --watch src/index.ts",
-    "build": "bun build --compile --minify --sourcemap src/index.ts --outfile anriod",
+    "build": "bun build --compile --minify --sourcemap --target=bun src/index.ts --outfile anriod",
     "typecheck": "tsc --noEmit",
     "test": "bun test --parallel=1",
     "test:watch": "bun test --parallel=1 --watch"

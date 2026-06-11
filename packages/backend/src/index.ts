@@ -52,9 +52,9 @@ app.route('/api/discover', discoverRoutes)
 const server = Bun.serve({
   hostname: config.server.host,
   port: config.server.port,
-  fetch: app.fetch
+  fetch: app.fetch,
+  reusePort: false
 })
 
 console.log(`Anriod backend listening on http://${server.hostname}:${server.port}`)
-
-export default app
+console.log(`Server configured to use port ${config.server.port} only`)
