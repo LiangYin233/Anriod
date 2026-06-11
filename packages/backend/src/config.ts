@@ -108,11 +108,7 @@ function parseSimpleYaml(content: string): Record<string, any> {
   return root
 }
 
-function readYamlConfig(): Record<string, any> {
-  const configPath = resolve(backendRoot, 'config.yaml')
-  if (!existsSync(configPath)) {
-    // Auto-create with defaults
-    const defaults = `server:
+const DEFAULT_YAML = `server:
   port: 8000
   host: 0.0.0.0
 
@@ -133,16 +129,71 @@ datasources:
     access_token: ""
     language: zh-CN
 `
+
+function deepMerge(base: any, patch: any): any {
+  const result = { ...base }
+  for (const key of Object.keys(patch)) {
+    if (typeof patch[key] === 'object' && patch[key] !== null && !Array.isArray(patch[key])) {
+      result[key] = deepMerge(result[key] || {}, patch[key])
+    } else if (result[key] === undefined) {
+      result[key] = patch[key]
+    }
+  }
+  return result
+}
+
+function formatYamlValue(value: any, indent: number): string {
+  const pad = '  '.repeat(indent)
+  if (typeof value === 'string') {
+    const needsQuotes = value === '' || value.includes('#') || value.includes(':') || value.includes(' ')
+    return needsQuotes ? `"${value}"` : value
+  }
+  if (typeof value === 'boolean') return value ? 'true' : 'false'
+  if (value === null) return 'null'
+  return String(value)
+}
+
+function serializeYaml(obj: Record<string, any>, indent = 0): string {
+  let out = ''
+  for (const [key, value] of Object.entries(obj)) {
+    if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+      out += '  '.repeat(indent) + key + ':\n'
+      out += serializeYaml(value, indent + 1)
+    } else {
+      out += '  '.repeat(indent) + key + ': ' + formatYamlValue(value, indent) + '\n'
+    }
+  }
+  return out
+}
+
+function readYamlConfig(): Record<string, any> {
+  const configPath = resolve(backendRoot, 'config.yaml')
+  const defaultParsed = parseSimpleYaml(DEFAULT_YAML)
+
+  if (!existsSync(configPath)) {
     try {
-      writeFileSync(configPath, defaults, 'utf8')
+      writeFileSync(configPath, DEFAULT_YAML, 'utf8')
       console.log('Created default config.yaml')
     } catch {
       // read-only filesystem, keep defaults in memory
     }
-    return parseSimpleYaml(defaults)
+    return defaultParsed
   }
 
-  return parseSimpleYaml(readFileSync(configPath, 'utf8'))
+  const existing = parseSimpleYaml(readFileSync(configPath, 'utf8'))
+  const merged = deepMerge(existing, defaultParsed)
+
+  // If the existing config is missing keys, write the merge back
+  if (JSON.stringify(existing) !== JSON.stringify(merged)) {
+    try {
+      writeFileSync(configPath, serializeYaml(merged), 'utf8')
+      console.log('Updated config.yaml with missing default sections')
+    } catch {
+      // read-only filesystem
+    }
+  }
+
+  return merged
 }
 
 const rawConfig = readYamlConfig()
