@@ -23,6 +23,7 @@ declare global {
  */
 export function useTauri() {
   const isTauri = ref(hasTauri())
+  const currentPlatform = ref<string | null>(null)
 
   function hasTauri(): boolean {
     try {
@@ -30,6 +31,17 @@ export function useTauri() {
     } catch {
       return false
     }
+  }
+
+  // Detect platform on initialization
+  if (isTauri.value) {
+    import('@tauri-apps/plugin-os')
+      .then(({ platform }) => {
+        currentPlatform.value = platform()
+      })
+      .catch(() => {
+        currentPlatform.value = null
+      })
   }
 
   /** Open a URL in the system default browser (Tauri) or a new tab (web). */
@@ -107,11 +119,11 @@ export function useTauri() {
   }
 
   const isDesktop = computed(() => {
-    try {
-      return !!(window.__TAURI__?.window?.getCurrentWindow)
-    } catch {
-      return false
-    }
+    if (!isTauri.value) return false
+    const platform = currentPlatform.value
+    // Platform not yet loaded; treat as non-desktop to be safe
+    if (platform === null) return false
+    return platform !== 'android' && platform !== 'ios'
   })
 
   return {
