@@ -116,10 +116,28 @@ describe('media service — read / list', () => {
     expect(result.data.length).toBeGreaterThanOrEqual(1)
   })
 
+  test('listMedia filters by status', () => {
+    const result = listMedia({ status: 'plan_to_watch' })
+    expect(result.data.every((m: any) => m.status === 'plan_to_watch')).toBe(true)
+  })
+
+  test('listMedia filters by source', () => {
+    const result = listMedia({ source: 'bangumi' })
+    expect(result.data.every((m: any) => m.source === 'bangumi')).toBe(true)
+  })
+
   test('listMedia returns status_counts', () => {
     const result = listMedia({})
     expect(result.status_counts).toBeDefined()
     expect(typeof result.status_counts!.plan_to_watch).toBe('number')
+  })
+
+  test('listMedia sorts by rating descending', () => {
+    const result = listMedia({ sort: 'rating:desc' })
+    const ratings = result.data.map((m: any) => m.rating).filter((r: any) => r !== null)
+    for (let i = 1; i < ratings.length; i++) {
+      expect(ratings[i - 1]).toBeGreaterThanOrEqual(ratings[i])
+    }
   })
 })
 
