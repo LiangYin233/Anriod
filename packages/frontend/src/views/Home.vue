@@ -258,21 +258,21 @@ onMounted(() => {
           <div
             v-for="media in mediaList"
             :key="media.id"
-            class="acrylic group flex items-center gap-4 rounded-xl px-5 py-4 shadow-sm border border-black/5 dark:border-white/5 transition-all hover:shadow-md cursor-pointer"
+            class="acrylic group flex items-center gap-4 rounded-xl px-4 py-3 shadow-sm border border-black/5 dark:border-white/5 transition-all hover:shadow-md cursor-pointer"
             @click="$router.push(`/media/${media.id}`)"
           >
-            <!-- Cover thumbnail -->
-            <div class="w-12 h-16 shrink-0 rounded-lg overflow-hidden bg-surface-variant shadow-sm">
+            <!-- Cover -->
+            <div class="w-[72px] h-24 shrink-0 rounded-lg overflow-hidden bg-surface-variant shadow-sm">
               <img v-if="getCoverSrc(media)" :src="getCoverSrc(media)" class="w-full h-full object-cover" />
               <span v-else class="flex h-full w-full items-center justify-center">
-                <span class="material-symbols-outlined text-[20px] text-on-surface-variant">movie</span>
+                <span class="material-symbols-outlined text-[24px] text-on-surface-variant">movie</span>
               </span>
             </div>
 
             <!-- Info -->
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 flex-wrap">
-                <span class="text-body-md font-semibold text-on-surface truncate max-w-[300px]">{{ media.title }}</span>
+                <span class="text-body-md font-semibold text-on-surface truncate">{{ media.title }}</span>
                 <span class="chip chip-neutral shrink-0">{{ MEDIA_TYPES[media.type] }}</span>
                 <span
                   class="chip shrink-0"
@@ -280,33 +280,30 @@ onMounted(() => {
                 >{{ STATUS_LABELS[media.status] }}</span>
               </div>
 
-              <div class="flex items-center gap-4 mt-1.5 text-caption-xs text-on-surface-variant flex-wrap">
+              <div class="flex items-center gap-3 mt-1 text-caption-xs text-on-surface-variant flex-wrap">
                 <span v-if="media.rating !== null" class="flex items-center gap-0.5">
                   <span class="material-symbols-outlined text-[14px] text-amber-500" style="font-variation-settings:'FILL' 1">star</span>
                   {{ media.rating }}/10
                 </span>
-                <span v-if="media.external_rating !== null">
-                  外部 {{ media.external_rating }}/10
-                </span>
-                <span v-if="media.air_date">📅 {{ media.air_date }}</span>
+                <span v-if="media.external_rating !== null">外部 {{ media.external_rating }}</span>
+                <span v-if="media.air_date">{{ media.air_date }}</span>
                 <span v-if="(media.current_progress?.episode ?? 0) > 0 || (media.total_episodes ?? 0) > 0">
-                  进度 {{ media.current_progress?.episode ?? 0 }}/{{ media.total_episodes ?? '-' }}
+                  {{ media.current_progress?.episode ?? 0 }}/{{ media.total_episodes ?? '-' }}
                 </span>
-                <span v-if="media.source" class="opacity-50">{{ media.source }}</span>
               </div>
 
               <div v-if="media.tags && media.tags.length > 0" class="flex flex-wrap gap-1 mt-1.5">
-                <span v-for="tag in media.tags.slice(0, 4)" :key="tag" class="text-caption-xs px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant/70">
+                <span v-for="tag in media.tags.slice(0, 4)" :key="tag" class="text-caption-xs px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant/60">
                   #{{ tag }}
                 </span>
-                <span v-if="media.tags.length > 4" class="text-caption-xs text-on-surface-variant/50">+{{ media.tags.length - 4 }}</span>
+                <span v-if="media.tags.length > 4" class="text-caption-xs text-on-surface-variant/40">+{{ media.tags.length - 4 }}</span>
               </div>
             </div>
 
-            <!-- Delete (always visible) -->
-            <div class="flex flex-col items-center gap-2 shrink-0">
+            <!-- Delete -->
+            <div class="shrink-0">
               <button
-                class="flex h-8 w-8 items-center justify-center rounded-full text-on-surface-variant/40 hover:bg-error/10 hover:text-error transition-all"
+                class="flex h-8 w-8 items-center justify-center rounded-full text-on-surface-variant/30 hover:bg-error/10 hover:text-error transition-all"
                 type="button"
                 title="删除"
                 @click.stop="confirmDelete(media.id, media.title)"
