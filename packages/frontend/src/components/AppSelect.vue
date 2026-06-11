@@ -189,13 +189,19 @@ onUnmounted(() => {
 }
 
 /* ── variant: minimal ── */
+.variant-minimal {
+  width: auto;
+  display: inline-flex;
+}
 .variant-minimal .app-select-trigger {
   background: transparent;
   font-size: 20px;
   font-weight: 600;
   color: #1a1c1c;
-  padding: 4px 24px 4px 0;
+  padding: 4px 20px 4px 0;
   border: none;
+  width: auto;
+  white-space: nowrap;
 }
 .variant-minimal .app-select-trigger.has-value {
   color: #1a1c1c;
