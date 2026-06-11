@@ -357,6 +357,18 @@
   border-radius: 6px;
 }
 
+/* Tauri drag handle — fixed bar at the top of the window */
+.tauri-drag-handle {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 99999;
+  height: 28px;
+  cursor: default;
+}
+
+
 /* Sidebar brand SVG — invert in dark mode so black logo appears white */
 .dark .sidebar-brand-img {
   filter: invert(1);

@@ -7,10 +7,7 @@ declare global {
       window?: {
         getCurrentWindow: () => {
           minimize: () => Promise<void>
-          maximize: () => Promise<void>
-          unmaximize: () => Promise<void>
           toggleMaximize: () => Promise<void>
-          isMaximized: () => Promise<boolean>
           close: () => Promise<void>
         }
       }
@@ -98,10 +95,7 @@ export function useTauri() {
   async function toggleMaximize() {
     const win = getWin()
     if (!win) return
-    try {
-      if (await win.isMaximized()) await win.unmaximize()
-      else await win.maximize()
-    } catch (e) { console.error('[tauri] toggleMaximize:', e) }
+    try { await win.toggleMaximize() } catch (e) { console.error('[tauri] toggleMaximize:', e) }
   }
 
   /** Close the Tauri window. */
