@@ -98,19 +98,9 @@ function readYamlConfig(): Record<string, any> {
 
   const raw = readFileSync(configPath, 'utf8')
   const existing = Bun.YAML.parse(raw) as Record<string, any>
-  const merged = deepMerge(existing, defaultParsed)
 
-  // If the existing config is missing keys, write the merge back
-  if (JSON.stringify(existing) !== JSON.stringify(merged)) {
-    try {
-      writeFileSync(configPath, Bun.YAML.stringify(merged), 'utf8')
-      console.log('Updated config.yaml with missing default sections')
-    } catch {
-      // read-only filesystem
-    }
-  }
-
-  return merged
+  // Merge defaults for missing keys (in-memory only, don't rewrite the file)
+  return deepMerge(existing, defaultParsed)
 }
 
 const rawConfig = readYamlConfig()
