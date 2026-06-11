@@ -48,66 +48,6 @@ export function resolveBackendPath(pathValue: string): string {
   return isAbsolute(pathValue) ? pathValue : resolve(backendRoot, pathValue)
 }
 
-function parseScalar(value: string): unknown {
-  const trimmed = value.trim()
-  const unquoted = trimmed.replace(/^['"]|['"]$/g, '')
-
-  if (trimmed === 'true') return true
-  if (trimmed === 'false') return false
-  if (trimmed === 'null') return null
-  if (/^-?\d+(\.\d+)?$/.test(trimmed)) return Number(trimmed)
-
-  return unquoted
-}
-
-function stripInlineComment(value: string): string {
-  let quote: '"' | "'" | null = null
-
-  for (let index = 0; index < value.length; index += 1) {
-    const char = value[index]
-    if ((char === '"' || char === "'") && value[index - 1] !== '\\') {
-      quote = quote === char ? null : char
-    }
-    if (char === '#' && quote === null) {
-      return value.slice(0, index).trimEnd()
-    }
-  }
-
-  return value
-}
-
-function parseSimpleYaml(content: string): Record<string, any> {
-  const root: Record<string, any> = {}
-  const stack: Array<{ indent: number; value: Record<string, any> }> = [{ indent: -1, value: root }]
-
-  for (const rawLine of content.split(/\r?\n/)) {
-    const line = rawLine.replace(/\t/g, '  ')
-    if (!line.trim() || line.trimStart().startsWith('#')) continue
-
-    const match = /^(\s*)([^:#]+):(.*)$/.exec(line)
-    if (!match) continue
-
-    const indent = match[1].length
-    const key = match[2].trim()
-    const rawValue = stripInlineComment(match[3]).trim()
-
-    while (stack.length > 1 && stack[stack.length - 1].indent >= indent) {
-      stack.pop()
-    }
-
-    const parent = stack[stack.length - 1].value
-    if (!rawValue) {
-      const child: Record<string, any> = {}
-      parent[key] = child
-      stack.push({ indent, value: child })
-    } else {
-      parent[key] = parseScalar(rawValue)
-    }
-  }
-
-  return root
-}
-
 const DEFAULT_YAML = `server:
   port: 8000
   host: 0.0.0.0
@@ -142,33 +82,9 @@ function deepMerge(base: any, patch: any): any {
   return result
 }
 
-function formatYamlValue(value: any, indent: number): string {
-  const pad = '  '.repeat(indent)
-  if (typeof value === 'string') {
-    const needsQuotes = value === '' || value.includes('#') || value.includes(':') || value.includes(' ')
-    return needsQuotes ? `"${value}"` : value
-  }
-  if (typeof value === 'boolean') return value ? 'true' : 'false'
-  if (value === null) return 'null'
-  return String(value)
-}
-
-function serializeYaml(obj: Record<string, any>, indent = 0): string {
-  let out = ''
-  for (const [key, value] of Object.entries(obj)) {
-    if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-      out += '  '.repeat(indent) + key + ':\n'
-      out += serializeYaml(value, indent + 1)
-    } else {
-      out += '  '.repeat(indent) + key + ': ' + formatYamlValue(value, indent) + '\n'
-    }
-  }
-  return out
-}
-
 function readYamlConfig(): Record<string, any> {
   const configPath = resolve(backendRoot, 'config.yaml')
-  const defaultParsed = parseSimpleYaml(DEFAULT_YAML)
+  const defaultParsed = Bun.YAML.parse(DEFAULT_YAML) as Record<string, any>
 
   if (!existsSync(configPath)) {
     try {
@@ -180,13 +96,14 @@ function readYamlConfig(): Record<string, any> {
     return defaultParsed
   }
 
-  const existing = parseSimpleYaml(readFileSync(configPath, 'utf8'))
+  const raw = readFileSync(configPath, 'utf8')
+  const existing = Bun.YAML.parse(raw) as Record<string, any>
   const merged = deepMerge(existing, defaultParsed)
 
   // If the existing config is missing keys, write the merge back
   if (JSON.stringify(existing) !== JSON.stringify(merged)) {
     try {
-      writeFileSync(configPath, serializeYaml(merged), 'utf8')
+      writeFileSync(configPath, Bun.YAML.stringify(merged), 'utf8')
       console.log('Updated config.yaml with missing default sections')
     } catch {
       // read-only filesystem
