@@ -65,7 +65,7 @@ const mainPadding = computed(() => sidebarCollapsed.value ? 'lg:pl-16' : 'lg:pl-
 </script>
 
 <template>
-  <div class="min-h-screen bg-background text-on-background antialiased" :class="{ 'tauri-app': isTauri }">
+  <div class="min-h-screen bg-background text-on-background antialiased" :class="{ 'tauri-app': isTauri }" :data-tauri-drag-region="isTauri ? '' : undefined">
 
     <!-- Mobile backdrop -->
     <div
@@ -175,9 +175,6 @@ const mainPadding = computed(() => sidebarCollapsed.value ? 'lg:pl-16' : 'lg:pl-
     <!-- MAIN AREA                                    -->
     <!-- ============================================ -->
     <div :class="mainPadding" class="transition-all duration-200">
-      <!-- Tauri drag overlay (full-width, top bar height) -->
-      <div v-if="isTauri" class="tauri-drag-overlay" data-tauri-drag-region />
-
       <!-- Top App Bar -->
       <header class="sticky top-0 z-40 border-b border-black/5 dark:border-white/5 bg-white/70 dark:bg-neutral-900/70 backdrop-blur-lg">
         <div class="flex h-16 items-center justify-between px-container-padding lg:px-8">
