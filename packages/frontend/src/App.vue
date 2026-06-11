@@ -78,7 +78,7 @@ const mainPadding = computed(() => sidebarCollapsed.value ? 'lg:pl-16' : 'lg:pl-
     <!-- SIDEBAR                                       -->
     <!-- ============================================ -->
 
-    <!-- Desktop (drag region in Tauri mode) -->
+    <!-- Desktop (sidebar is also a drag region) -->
     <aside
       class="fixed left-0 top-0 z-50 hidden h-screen flex-col p-3 lg:flex acrylic border-r border-black/5 dark:border-white/5 shadow-sm transition-all duration-200"
       :class="[sidebarWidth]"
@@ -176,8 +176,11 @@ const mainPadding = computed(() => sidebarCollapsed.value ? 'lg:pl-16' : 'lg:pl-
     <!-- MAIN AREA                                    -->
     <!-- ============================================ -->
     <div :class="mainPadding" class="transition-all duration-200">
-      <!-- Top App Bar -->
-      <header class="sticky top-0 z-40 border-b border-black/5 dark:border-white/5 bg-white/70 dark:bg-neutral-900/70 backdrop-blur-lg">
+      <!-- Top App Bar (drag region — buttons inside are clickable) -->
+      <header
+        class="sticky top-0 z-40 border-b border-black/5 dark:border-white/5 bg-white/70 dark:bg-neutral-900/70 backdrop-blur-lg"
+        :data-tauri-drag-region="isTauri ? '' : undefined"
+      >
         <div class="flex h-16 items-center justify-between px-container-padding lg:px-8">
           <div class="flex items-center gap-4">
             <!-- Sidebar toggle (always visible) -->

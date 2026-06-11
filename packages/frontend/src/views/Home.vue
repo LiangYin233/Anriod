@@ -43,7 +43,7 @@ async function loadMedia(page?: number) {
     type: type.value || undefined,
     status: status.value || undefined,
     page: page ?? pagination.value.page,
-    limit: 24,
+    limit: 20,
     sort: sortBy.value
   })
 }

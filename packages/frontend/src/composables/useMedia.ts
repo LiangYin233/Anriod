@@ -31,7 +31,7 @@ export function useMedia() {
     try {
       const result = await api.listMedia({
         ...filters,
-        limit: filters.limit ?? 24
+        limit: filters.limit ?? 20
       })
       mediaList.value = result.data
       pagination.value = result.pagination
