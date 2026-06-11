@@ -148,6 +148,7 @@ async function main() {
     }
 
     const now = new Date().toISOString()
+    const bangumiDate = item.updated_at || now
     const progress = anriodStatus === 'completed'
       ? { episode: subj.eps ?? subj.total_episodes ?? 0 }
       : item.ep_status ? { episode: item.ep_status } : null
@@ -157,7 +158,7 @@ async function main() {
       title,
       type: anriodType,
       status: anriodStatus,
-      rating: item.rate ?? null,  // bgm rate 已是 0-10
+      rating: item.rate ?? null,
       notes: item.comment || null,
       current_progress: progress,
       cover_url: subj.images?.large || subj.images?.common || null,
@@ -172,8 +173,8 @@ async function main() {
       source_id: String(subj.id),
       source_url: `https://bgm.tv/subject/${subj.id}`,
       synced_at: now,
-      created_at: item.updated_at || now,
-      updated_at: now,
+      created_at: bangumiDate,
+      updated_at: bangumiDate,
       tags: tagNames
     })
 

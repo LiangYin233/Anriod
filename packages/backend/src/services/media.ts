@@ -150,7 +150,11 @@ function buildSort(sort = 'updated_at:desc'): string {
   const [field = 'updated_at', direction = 'desc'] = sort.split(':')
   const column = SORT_FIELDS[field] ?? 'updated_at'
   const order = direction.toLowerCase() === 'asc' ? 'ASC' : 'DESC'
-  return `${column} ${order}`
+  // Normalize timestamp format (space→T) so ISO and SQLite formats sort together
+  const col = field === 'updated_at' || field === 'created_at'
+    ? `REPLACE(${column}, ' ', 'T')`
+    : column
+  return `${col} ${order}`
 }
 
 export function listMedia(query: ListMediaQuery): PaginatedResponse<Media> {
