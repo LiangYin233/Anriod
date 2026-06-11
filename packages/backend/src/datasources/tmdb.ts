@@ -76,7 +76,7 @@ const TMDB_MEDIA_TYPE: Record<string, MediaType> = {
   tv: 'tv',
 }
 
-function posterUrl(path: string | null): string | null {
+function posterUrl(path: string | null | undefined): string | null {
   return path ? `${IMAGE_BASE}${path}` : null
 }
 
@@ -84,7 +84,7 @@ function titleOf(result: TmdbSearchResult): string {
   return result.title || result.name || `TMDB #${result.id}`
 }
 
-function yearOf(date: string | undefined): number | undefined {
+function yearOf(date: string | null | undefined): number | undefined {
   if (!date) return undefined
   const y = Number(date.slice(0, 4))
   return isNaN(y) ? undefined : y
