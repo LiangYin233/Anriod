@@ -29,8 +29,29 @@ onMounted(async () => {
   bindReveal()
   if (isTauri.value) {
     appVersion.value = await getVersion()
+    attachHeaderDrag()
   }
 })
+
+function attachHeaderDrag() {
+  // Use Tauri's startDragging for window dragging on the header area
+  const header = document.querySelector('header.sticky')
+  if (!header) return
+  header.addEventListener('mousedown', (e) => {
+    const target = e.target as HTMLElement
+    // Don't drag if clicking on interactive elements
+    if (target.closest('button, a, input, select, textarea, [role=button], [tabindex]')) return
+    // Don't drag if clicking on window control buttons
+    if (target.closest('.titlebar-btn-win')) return
+    // Also don't drag from sidebar nav
+    if (target.closest('nav')) return
+    
+    try {
+      const win = window.__TAURI__?.window?.getCurrentWindow()
+      if (win) win.startDragging()
+    } catch { /* ignore */ }
+  })
+}
 
 onUnmounted(() => {
   unbindReveal()
@@ -65,7 +86,7 @@ const mainPadding = computed(() => sidebarCollapsed.value ? 'lg:pl-16' : 'lg:pl-
 </script>
 
 <template>
-  <div class="min-h-screen bg-background text-on-background antialiased" :class="{ 'tauri-app': isTauri }" :data-tauri-drag-region="isTauri ? '' : undefined">
+  <div class="min-h-screen bg-background text-on-background antialiased" :class="{ 'tauri-app': isTauri }">
 
     <!-- Mobile backdrop -->
     <div

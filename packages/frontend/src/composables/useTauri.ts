@@ -9,6 +9,7 @@ declare global {
           minimize: () => Promise<void>
           toggleMaximize: () => Promise<void>
           close: () => Promise<void>
+          startDragging: () => Promise<void>
         }
       }
     }
