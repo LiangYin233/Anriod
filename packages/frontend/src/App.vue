@@ -165,37 +165,39 @@ const mainPadding = computed(() => sidebarCollapsed.value ? 'lg:pl-16' : 'lg:pl-
     </aside>
 
     <!-- Mobile drawer -->
-    <aside
-      v-if="mobileDrawerOpen"
-      class="fixed left-0 top-0 z-50 flex h-screen w-64 flex-col p-4 acrylic border-r border-black/5 dark:border-white/5 shadow-xl lg:hidden"
-    >
-      <div class="mb-6 mt-1 px-2">
-        <img src="/anriod.svg" alt="Anriod" class="sidebar-brand-img h-10" />
-      </div>
-      <nav class="flex flex-1 flex-col gap-1">
-        <RouterLink
-          v-for="item in navItems"
-          :key="item.name"
-          :to="item.path"
-          class="flex items-center gap-3 rounded-lg px-4 py-2 font-medium transition-all duration-200"
-          :class="route.name === item.name
-            ? 'bg-primary-container text-on-primary-container scale-[0.98]'
-            : 'text-on-surface-variant hover:bg-surface-container-high'"
-        >
-          <span
-            class="material-symbols-outlined select-none"
-            :style="{ fontVariationSettings: route.name === item.name ? '\'FILL\' 1' : '\'FILL\' 0' }"
-          >{{ item.icon }}</span>
-          <span>{{ item.label }}</span>
-        </RouterLink>
-      </nav>
-      <div class="mt-auto space-y-3">
-        <button class="btn-secondary w-full" type="button" @click="toggleTheme">
-          <span class="material-symbols-outlined text-[18px]">dark_mode</span>
-          切换主题
-        </button>
-      </div>
-    </aside>
+    <Transition name="drawer">
+      <aside
+        v-if="mobileDrawerOpen"
+        class="fixed left-0 top-0 z-50 flex h-screen w-64 flex-col p-4 acrylic border-r border-black/5 dark:border-white/5 shadow-xl lg:hidden"
+      >
+        <div class="mb-6 mt-1 px-2">
+          <img src="/anriod.svg" alt="Anriod" class="sidebar-brand-img h-10" />
+        </div>
+        <nav class="flex flex-1 flex-col gap-1">
+          <RouterLink
+            v-for="item in navItems"
+            :key="item.name"
+            :to="item.path"
+            class="flex items-center gap-3 rounded-lg px-4 py-2 font-medium transition-all duration-200"
+            :class="route.name === item.name
+              ? 'bg-primary-container text-on-primary-container scale-[0.98]'
+              : 'text-on-surface-variant hover:bg-surface-container-high'"
+          >
+            <span
+              class="material-symbols-outlined select-none"
+              :style="{ fontVariationSettings: route.name === item.name ? '\'FILL\' 1' : '\'FILL\' 0' }"
+            >{{ item.icon }}</span>
+            <span>{{ item.label }}</span>
+          </RouterLink>
+        </nav>
+        <div class="mt-auto space-y-3">
+          <button class="btn-secondary w-full" type="button" @click="toggleTheme">
+            <span class="material-symbols-outlined text-[18px]">dark_mode</span>
+            切换主题
+          </button>
+        </div>
+      </aside>
+    </Transition>
 
     <!-- ============================================ -->
     <!-- MAIN AREA                                    -->
@@ -270,5 +272,19 @@ const mainPadding = computed(() => sidebarCollapsed.value ? 'lg:pl-16' : 'lg:pl-
 
 .tauri-app .safe-area-header {
   padding-top: max(env(safe-area-inset-top), 0px);
+}
+
+/* Mobile drawer transition */
+.drawer-enter-active,
+.drawer-leave-active {
+  transition: transform 0.3s ease-out;
+}
+
+.drawer-enter-from {
+  transform: translateX(-100%);
+}
+
+.drawer-leave-to {
+  transform: translateX(-100%);
 }
 </style>
