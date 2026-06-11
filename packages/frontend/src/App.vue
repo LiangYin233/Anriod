@@ -236,7 +236,7 @@ const mainPadding = computed(() => sidebarCollapsed.value ? 'lg:pl-16' : 'lg:pl-
       </header>
 
       <!-- Page Content -->
-      <main class="flex-1 overflow-y-auto px-container-padding py-6 lg:px-8">
+      <main class="relative flex-1 overflow-y-auto px-container-padding py-6 lg:px-8">
         <RouterView />
       </main>
     </div>
