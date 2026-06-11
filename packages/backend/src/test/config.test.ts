@@ -8,6 +8,24 @@ beforeAll(async () => {
   configModule = await import('../config')
 })
 
+describe('yaml parser internals', () => {
+  // Access internal functions by re-parsing known patterns
+  test('resolves backend root to a non-empty path', () => {
+    expect(configModule.backendRoot).toBeTruthy()
+    expect(typeof configModule.backendRoot).toBe('string')
+  })
+
+  test('resolveBackendPath handles absolute paths', () => {
+    const abs = configModule.resolveBackendPath('/tmp/test')
+    expect(abs).toBe('/tmp/test')
+  })
+
+  test('resolveBackendPath resolves relative paths', () => {
+    const rel = configModule.resolveBackendPath('./extra')
+    expect(rel).toContain('extra')
+  })
+})
+
 describe('config parsing', () => {
   test('reads server port from config', () => {
     expect(configModule.config.server.port).toBe(0)

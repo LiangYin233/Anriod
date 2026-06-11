@@ -3,6 +3,7 @@ import { initTestEnv, clearAllTables } from './helpers'
 
 let listMedia: any, getMediaById: any, createMedia: any, updateMedia: any
 let deleteMedia: any, updateProgress: any, updateStatus: any
+let importMedia: any, syncMedia: any
 let getTagsForMedia: any, listHistoryForMedia: any
 
 beforeAll(async () => {
@@ -17,6 +18,8 @@ beforeAll(async () => {
   deleteMedia = m.deleteMedia
   updateProgress = m.updateProgress
   updateStatus = m.updateStatus
+  importMedia = m.importMedia
+  syncMedia = m.syncMedia
 
   const t = await import('../services/tag')
   getTagsForMedia = t.getTagsForMedia
@@ -85,6 +88,8 @@ describe('media service — read / list', () => {
 
   beforeAll(() => {
     createdId = createMedia({ title: 'Reader 1', type: 'anime' }).id
+    // Create a media with different status for filter/sort tests
+    createMedia({ title: 'Dropped Item', type: 'tv', status: 'dropped', rating: 4 })
   })
 
   test('getMediaById returns correct media', () => {
@@ -116,8 +121,9 @@ describe('media service — read / list', () => {
     expect(result.data.length).toBeGreaterThanOrEqual(1)
   })
 
-  test('listMedia filters by status', () => {
+  test('listMedia filters by status — includes matching, excludes non-matching', () => {
     const result = listMedia({ status: 'plan_to_watch' })
+    expect(result.data.length).toBeGreaterThanOrEqual(1)
     expect(result.data.every((m: any) => m.status === 'plan_to_watch')).toBe(true)
   })
 
@@ -133,8 +139,14 @@ describe('media service — read / list', () => {
   })
 
   test('listMedia sorts by rating descending', () => {
+    // Create items with explicit ratings so the sort is testable
+    createMedia({ title: 'Low Rating', type: 'anime', rating: 2 })
+    createMedia({ title: 'High Rating', type: 'anime', rating: 9 })
+    createMedia({ title: 'Mid Rating', type: 'anime', rating: 5 })
+
     const result = listMedia({ sort: 'rating:desc' })
     const ratings = result.data.map((m: any) => m.rating).filter((r: any) => r !== null)
+    expect(ratings.length).toBeGreaterThanOrEqual(3)
     for (let i = 1; i < ratings.length; i++) {
       expect(ratings[i - 1]).toBeGreaterThanOrEqual(ratings[i])
     }
@@ -161,6 +173,13 @@ describe('media service — update', () => {
     const updated = updateMedia(media.id, { tags: ['c', 'd'] })
     expect(updated.tags).toEqual(['c', 'd'])
   })
+
+  test('update with no-op keeps same values', () => {
+    const media = createMedia({ title: 'No Op', type: 'anime', rating: 7 })
+    const updated = updateMedia(media.id, {})
+    expect(updated.rating).toBe(7)
+    expect(updated.title).toBe('No Op')
+  })
 })
 
 describe('media service — delete', () => {
@@ -175,6 +194,10 @@ describe('media service — delete', () => {
     expect(getTagsForMedia(media.id)).toContain('科幻')
     deleteMedia(media.id)
     expect(getTagsForMedia(media.id)).toEqual([])
+  })
+
+  test('delete throws on non-existent media', () => {
+    expect(() => deleteMedia('non-existent-id')).toThrow('Media not found')
   })
 })
 
@@ -239,5 +262,22 @@ describe('media service — status transitions', () => {
     const history = listHistoryForMedia(media.id)
     const openEntry = history.find((h: any) => h.completed_at === null)
     expect(openEntry).toBeDefined()
+  })
+})
+
+describe('media service — import / sync (disabled source)', () => {
+  test('importMedia throws for disabled datasource', async () => {
+    await expect(
+      importMedia({ source: 'bangumi', source_id: '123' })
+    ).rejects.toThrow('Unknown or disabled data source')
+  })
+
+  test('syncMedia throws for non-existent media', async () => {
+    await expect(syncMedia('bad-id')).rejects.toThrow('Media not found')
+  })
+
+  test('syncMedia throws for media without source', async () => {
+    const media = createMedia({ title: 'No Source', type: 'movie' })
+    await expect(syncMedia(media.id)).rejects.toThrow('Media has no data source')
   })
 })
