@@ -43,13 +43,17 @@ const typeColors: Record<string, string> = {
   manga: '#ec4899',
 }
 
-function gridColor(): string {
-  return document.documentElement.classList.contains('dark') ? '#333' : '#e5e7eb'
+function chartColors() {
+  const dark = document.documentElement.classList.contains('dark')
+  return {
+    text: dark ? '#c8c8c8' : '#404752',
+    grid: dark ? '#333' : '#e5e7eb',
+  }
 }
 
 useChart(statusCanvas, () => {
   if (!overview.value) return null
-  const gc = gridColor()
+  const { text: tc } = chartColors()
   return {
     type: 'doughnut',
     data: {
@@ -59,7 +63,7 @@ useChart(statusCanvas, () => {
     options: {
       responsive: true,
       plugins: {
-        legend: { position: 'bottom', labels: { padding: 16, usePointStyle: true, pointStyleWidth: 10, color: gc } },
+        legend: { position: 'bottom', labels: { padding: 16, usePointStyle: true, pointStyleWidth: 10, color: tc } },
       },
     },
   }
@@ -67,7 +71,7 @@ useChart(statusCanvas, () => {
 
 useChart(typeCanvas, () => {
   if (!overview.value) return null
-  const gc = gridColor()
+  const { text: tc, grid: gc } = chartColors()
   const entries = Object.entries(overview.value.by_type).filter(([, c]) => c > 0)
   return {
     type: 'bar',
@@ -80,8 +84,8 @@ useChart(typeCanvas, () => {
       indexAxis: 'y',
       plugins: { legend: { display: false } },
       scales: {
-        x: { ticks: { stepSize: 1, color: gc }, grid: { color: gc } },
-        y: { ticks: { color: gc }, grid: { display: false } },
+        x: { ticks: { stepSize: 1, color: tc }, grid: { color: gc } },
+        y: { ticks: { color: tc }, grid: { display: false } },
       },
     },
   }
@@ -89,7 +93,7 @@ useChart(typeCanvas, () => {
 
 useChart(timelineCanvas, () => {
   if (timeline.value.length === 0) return null
-  const gc = gridColor()
+  const { text: tc, grid: gc } = chartColors()
   const data = timeline.value.slice(-12)
   return {
     type: 'bar',
@@ -101,8 +105,8 @@ useChart(timelineCanvas, () => {
       responsive: true,
       plugins: { legend: { display: false } },
       scales: {
-        x: { ticks: { color: gc }, grid: { display: false } },
-        y: { ticks: { stepSize: 1, color: gc }, grid: { color: gc } },
+        x: { ticks: { color: tc }, grid: { display: false } },
+        y: { ticks: { stepSize: 1, color: tc }, grid: { color: gc } },
       },
     },
   }
@@ -110,7 +114,7 @@ useChart(timelineCanvas, () => {
 
 useChart(ratingCanvas, () => {
   if (ratingDist.value.length === 0) return null
-  const gc = gridColor()
+  const { text: tc, grid: gc } = chartColors()
   const bins = new Array(10).fill(0)
   for (const { rating, count } of ratingDist.value) {
     const idx = Math.round(rating) - 1
@@ -126,8 +130,8 @@ useChart(ratingCanvas, () => {
       responsive: true,
       plugins: { legend: { display: false } },
       scales: {
-        x: { title: { display: true, text: '评分', color: gc }, ticks: { color: gc }, grid: { display: false } },
-        y: { ticks: { stepSize: 1, color: gc }, grid: { color: gc }, title: { display: true, text: '数量', color: gc } },
+        x: { title: { display: true, text: '评分', color: tc }, ticks: { color: tc }, grid: { display: false } },
+        y: { ticks: { stepSize: 1, color: tc }, grid: { color: gc }, title: { display: true, text: '数量', color: tc } },
       },
     },
   }
