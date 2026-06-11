@@ -254,14 +254,14 @@ onMounted(loadDetail)
                 <span v-for="tag in media.tags" :key="tag" class="rounded-full bg-surface-container-highest px-3 py-1 text-label-sm text-on-surface">{{ tag }}</span>
               </div>
 
-              <div class="mt-3 flex items-center gap-3">
+              <div class="mt-3 flex flex-wrap items-center gap-3">
                 <button class="btn-primary" type="button" :disabled="saving" @click="saveDetail">
                   <span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">save</span>
-                  {{ saving ? '保存中...' : '保存修改' }}
+                  <span class="whitespace-nowrap">{{ saving ? '保存中...' : '保存修改' }}</span>
                 </button>
                 <button v-if="media.source_id" class="btn-secondary" type="button" :disabled="saving" @click="syncCurrent">
                   <span class="material-symbols-outlined text-[20px]">sync</span>
-                  同步
+                  <span class="whitespace-nowrap">同步</span>
                 </button>
                 <button
                   v-if="media.source_url"
@@ -271,7 +271,7 @@ onMounted(loadDetail)
                   title="在外部浏览器中打开"
                 >
                   <span class="material-symbols-outlined text-[20px]">open_in_new</span>
-                  数据源
+                  <span class="whitespace-nowrap">数据源</span>
                 </button>
               </div>
             </div>

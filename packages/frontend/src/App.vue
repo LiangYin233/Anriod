@@ -68,7 +68,7 @@ watch(() => route.path, () => {
 
 function toggleSidebar() {
   // Mobile: toggle drawer. Desktop: toggle collapse.
-  if (window.innerWidth < 1024) {
+  if (window.innerWidth < 900) {
     mobileDrawerOpen.value = !mobileDrawerOpen.value
   } else {
     sidebarCollapsed.value = !sidebarCollapsed.value
@@ -87,7 +87,7 @@ const navItems = [
 const pageTitle = computed(() => navItems.find((item) => item.name === route.name)?.label ?? '观看记录')
 
 const sidebarWidth = computed(() => sidebarCollapsed.value ? 'w-16' : 'w-64')
-const mainPadding = computed(() => sidebarCollapsed.value ? 'lg:pl-16' : 'lg:pl-64')
+const mainPadding = computed(() => sidebarCollapsed.value ? 'dsk:pl-16' : 'dsk:pl-64')
 </script>
 
 <template>
@@ -96,7 +96,7 @@ const mainPadding = computed(() => sidebarCollapsed.value ? 'lg:pl-16' : 'lg:pl-
     <!-- Mobile backdrop -->
     <div
       v-if="mobileDrawerOpen"
-      class="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm lg:hidden"
+      class="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm xl:hidden"
       @click="mobileDrawerOpen = false"
     />
 
@@ -106,7 +106,7 @@ const mainPadding = computed(() => sidebarCollapsed.value ? 'lg:pl-16' : 'lg:pl-
 
     <!-- Desktop -->
     <aside
-      class="fixed left-0 top-0 z-50 hidden h-screen flex-col p-3 lg:flex acrylic border-r border-black/5 dark:border-white/5 shadow-sm transition-all duration-200"
+      class="fixed left-0 top-0 z-50 hidden h-screen flex-col p-3 dsk:flex acrylic border-r border-black/5 dark:border-white/5 shadow-sm transition-all duration-200"
       :class="[sidebarWidth]"
     >
       <!-- Brand -->
@@ -166,7 +166,7 @@ const mainPadding = computed(() => sidebarCollapsed.value ? 'lg:pl-16' : 'lg:pl-
     <!-- Mobile drawer -->
     <aside
       v-if="mobileDrawerOpen"
-      class="fixed left-0 top-0 z-50 flex h-screen w-64 flex-col p-4 acrylic border-r border-black/5 dark:border-white/5 shadow-xl lg:hidden"
+      class="fixed left-0 top-0 z-50 flex h-screen w-64 flex-col p-4 acrylic border-r border-black/5 dark:border-white/5 shadow-xl dsk:hidden"
     >
       <div class="mb-6 mt-1 px-2">
         <img src="/anriod.svg" alt="Anriod" class="sidebar-brand-img h-10" />
@@ -218,7 +218,7 @@ const mainPadding = computed(() => sidebarCollapsed.value ? 'lg:pl-16' : 'lg:pl-
             <button class="btn-icon" type="button" @click="toggleTheme" title="切换深浅色主题">
               <span class="material-symbols-outlined">dark_mode</span>
             </button>
-            <div class="hidden h-8 w-8 items-center justify-center rounded-full bg-primary-container text-on-primary-container text-label-sm font-bold lg:flex">
+            <div class="hidden h-8 w-8 items-center justify-center rounded-full bg-primary-container text-on-primary-container text-label-sm font-bold dsk:flex">
               A
             </div>
             <!-- Window controls (Tauri only) — right of avatar -->
