@@ -190,7 +190,7 @@ const mainPadding = computed(() => sidebarCollapsed.value ? 'lg:pl-16' : 'lg:pl-
           </div>
 
           <!-- Right actions -->
-          <div class="flex items-center gap-1">
+          <div class="flex items-center gap-2">
             <button class="btn-icon" type="button" @click="toggleTheme" title="切换深浅色主题">
               <span class="material-symbols-outlined">dark_mode</span>
             </button>
