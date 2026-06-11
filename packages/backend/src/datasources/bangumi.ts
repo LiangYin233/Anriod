@@ -1,4 +1,4 @@
-import type { MediaDetails, MediaType, SearchResult } from '@anriod/shared'
+import type { DiscoverItem, DiscoverSection, MediaDetails, MediaType, SearchResult } from '@anriod/shared'
 import { config } from '../config'
 import { proxyFetchOptions } from '../utils/proxy'
 import type { DataSource } from './types'
@@ -197,6 +197,53 @@ export class BangumiDataSource implements DataSource {
       media_type: mediaTypeFromBangumi(subject.type),
       external_rating: subject.rating?.score
     }))
+  }
+
+  // ── Discover (today's airing) ──────────────────────────
+
+  async getDiscover(): Promise<DiscoverSection[]> {
+    const url = `${this.baseUrl}/calendar`
+
+    let response: Response
+    try {
+      response = await fetch(url, { headers: this.headers, ...this.fetchOptions })
+    } catch (err) {
+      throw new Error(`无法连接 Bangumi (${this.baseUrl}): ${err instanceof Error ? err.message : String(err)}`)
+    }
+
+    if (!response.ok) {
+      console.error(`Bangumi calendar failed: ${response.status}`)
+      return []
+    }
+
+    const calendar = (await response.json()) as Array<{
+      weekday: { id: number; cn: string; en: string }
+      items: BangumiSubject[]
+    }>
+
+    // Bangumi: 1=Mon … 7=Sun ; JS: 0=Sun … 6=Sat
+    const jsDay = new Date().getDay()         // 0–6
+    const bgmDay = jsDay === 0 ? 7 : jsDay     // 1–7
+
+    const today = calendar.find((d) => d.weekday.id === bgmDay)
+    if (!today || !today.items.length) return []
+
+    const items: DiscoverItem[] = today.items.map((subject) => ({
+      source: this.name,
+      source_id: String(subject.id),
+      title: titleOf(subject),
+      cover_url: coverOf(subject.images),
+      media_type: mediaTypeFromBangumi(subject.type),
+      external_rating: subject.rating?.score,
+      summary: subject.summary?.slice(0, 200) || undefined,
+      year: subject.date ? Number(subject.date.slice(0, 4)) : undefined
+    }))
+
+    return [{
+      source: this.name,
+      label: `今日放送 (${today.weekday.cn})`,
+      items
+    }]
   }
 
   // ── GetDetails ──────────────────────────────────────────

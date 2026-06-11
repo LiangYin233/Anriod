@@ -6,6 +6,7 @@ import { initializeDatabase } from './db/client'
 import { authMiddleware } from './middleware/auth'
 import { handleError, notFound } from './middleware/error'
 import { backupRoutes } from './routes/backup'
+import { discoverRoutes } from './routes/discover'
 import { historyRoutes } from './routes/history'
 import { mediaRoutes } from './routes/media'
 import { searchRoutes } from './routes/search'
@@ -46,6 +47,7 @@ app.route('/api/search', searchRoutes)
 app.route('/api/backup', backupRoutes)
 app.route('/api/sync', syncRoutes)
 app.route('/api/statistics', statisticsRoutes)
+app.route('/api/discover', discoverRoutes)
 
 const server = Bun.serve({
   hostname: config.server.host,

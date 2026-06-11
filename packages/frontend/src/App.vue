@@ -77,6 +77,7 @@ function toggleSidebar() {
 
 const navItems = [
   { name: 'Home', label: '媒体库', path: '/', icon: 'video_library' },
+  { name: 'Discover', label: '发现', path: '/discover', icon: 'explore' },
   { name: 'Search', label: '搜索导入', path: '/search', icon: 'search_insights' },
   { name: 'Tags', label: '标签管理', path: '/tags', icon: 'label' },
   { name: 'History', label: '观看记录', path: '/history', icon: 'history' },

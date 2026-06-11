@@ -7,11 +7,13 @@ import History from '@/views/History.vue'
 import Tags from '@/views/Tags.vue'
 import Settings from '@/views/Settings.vue'
 import ExploreWork from '@/views/ExploreWork.vue'
+import Discover from '@/views/Discover.vue'
 
 const routes = [
   { path: '/', name: 'Home', component: Home },
   { path: '/media/:id', name: 'MediaDetail', component: MediaDetail },
   { path: '/explore', name: 'ExploreWork', component: ExploreWork },
+  { path: '/discover', name: 'Discover', component: Discover },
   { path: '/search', name: 'Search', component: Search },
   { path: '/history', name: 'History', component: History },
   { path: '/statistics', name: 'Statistics', component: () => import('@/views/Statistics.vue') },

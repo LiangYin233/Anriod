@@ -209,3 +209,26 @@ export interface TagStatistic {
   tag: string
   count: number
 }
+
+// ── Discover (探索/发现) ──
+
+export interface DiscoverItem {
+  source: string
+  source_id: string
+  title: string
+  cover_url: string | null
+  media_type: MediaType
+  external_rating?: number
+  summary?: string
+  year?: number
+}
+
+export interface DiscoverSection {
+  source: string
+  label: string
+  items: DiscoverItem[]
+}
+
+export interface DiscoverResponse {
+  sections: DiscoverSection[]
+}

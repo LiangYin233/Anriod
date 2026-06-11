@@ -1,6 +1,7 @@
 import type {
   CreateMediaInput,
   CreateWatchHistoryInput,
+  DiscoverResponse,
   ImportMediaInput,
   ListMediaQuery,
   Media,
@@ -125,4 +126,5 @@ export const api = {
   migrateCovers: () => apiRequest<{ queued: number }>('/api/sync/covers', { method: 'POST' }),
   fetchDetails: (query: { source: string; source_id: string; type?: string }) =>
     apiRequest<MediaDetails>(`/api/search/details${queryString(query)}`),
+  discover: () => apiRequest<DiscoverResponse>('/api/discover'),
 }

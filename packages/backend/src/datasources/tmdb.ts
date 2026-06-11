@@ -1,4 +1,4 @@
-import type { MediaDetails, MediaType, SearchResult } from '@anriod/shared'
+import type { DiscoverItem, DiscoverSection, MediaDetails, MediaType, SearchResult } from '@anriod/shared'
 import { config } from '../config'
 import { proxyFetchOptions } from '../utils/proxy'
 import type { DataSource } from './types'
@@ -157,6 +157,49 @@ export class TmdbDataSource implements DataSource {
         media_type: TMDB_MEDIA_TYPE[r.media_type] || 'movie',
         external_rating: r.vote_average ? Math.round(r.vote_average * 10) / 10 : undefined,
       }))
+  }
+
+  // ── Discover (trending) ────────────────────────────────
+
+  async getDiscover(): Promise<DiscoverSection[]> {
+    const sections: DiscoverSection[] = []
+    const token = config.datasources.tmdb?.accessToken
+    if (!token) return sections  // TMDB requires access token
+
+    const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+    const baseUrl = config.datasources.tmdb?.baseUrl || 'https://api.themoviedb.org/3'
+    const lang = config.datasources.tmdb?.language || 'zh-CN'
+
+    const fetchTrending = async (mediaType: 'movie' | 'tv'): Promise<DiscoverItem[]> => {
+      const url = `${baseUrl}/trending/${mediaType}/week?language=${lang}`
+      try {
+        const resp = await fetch(url, { headers, ...proxyFetchOptions() })
+        if (!resp.ok) return []
+        const body = await resp.json() as { results: TmdbSearchResult[] }
+        return (body.results || []).slice(0, 10).map((r) => ({
+          source: this.name,
+          source_id: String(r.id),
+          title: r.title || r.name || `TMDB #${r.id}`,
+          cover_url: posterUrl(r.poster_path),
+          media_type: mediaType === 'movie' ? 'movie' as const : 'tv' as const,
+          external_rating: r.vote_average ? Math.round(r.vote_average * 10) / 10 : undefined,
+          summary: r.overview?.slice(0, 200) || undefined,
+          year: yearOf(r.release_date || r.first_air_date)
+        }))
+      } catch {
+        return []
+      }
+    }
+
+    const [movies, tvShows] = await Promise.all([
+      fetchTrending('movie'),
+      fetchTrending('tv')
+    ])
+
+    if (movies.length) sections.push({ source: this.name, label: 'Trending Movies', items: movies })
+    if (tvShows.length) sections.push({ source: this.name, label: 'Trending TV', items: tvShows })
+
+    return sections
   }
 
   // ── GetDetails ──────────────────────────────────────────
