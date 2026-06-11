@@ -397,6 +397,25 @@
 .tauri-app {
   user-select: none;
 }
+
+/* ===================================================
+   SCROLLBAR
+   =================================================== */
+
+.scrollbar-thin::-webkit-scrollbar {
+  height: 4px;
+  width: 4px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: rgba(192, 199, 212, 0.4);
+  border-radius: 2px;
+}
+.dark .scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.15);
+}
 .tauri-app input,
 .tauri-app textarea,
 .tauri-app select {

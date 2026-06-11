@@ -300,7 +300,7 @@ export function deleteMedia(id: string) {
   run('DELETE FROM media WHERE id = ?', [id])
 }
 
-export function isChapterBased(type: string): boolean {
+function isChapterBased(type: string): boolean {
   return type === 'novel' || type === 'manga'
 }
 
@@ -330,9 +330,9 @@ export function updateProgress(id: string, progress: MediaProgress, notes?: stri
     }
   } else if (newVal !== undefined && newVal < oldVal) {
     // User decreased count — delete entries beyond new value
-    const key = useChapter ? "'chapter'" : "'episode'"
+    const key = useChapter ? 'chapter' : 'episode'
     run(
-      `DELETE FROM watch_history WHERE media_id = ? AND CAST(json_extract(progress_to, $.${key}) AS INTEGER) > ?`,
+      `DELETE FROM watch_history WHERE media_id = ? AND CAST(json_extract(progress_to, '$.${key}') AS INTEGER) > ?`,
       [id, newVal]
     )
   }

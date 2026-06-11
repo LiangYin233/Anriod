@@ -120,20 +120,3 @@ onMounted(loadDiscover)
     </template>
   </div>
 </template>
-
-<style scoped>
-/* ── Custom thin scrollbar for horizontal rows ── */
-.scrollbar-thin::-webkit-scrollbar {
-  height: 4px;
-}
-.scrollbar-thin::-webkit-scrollbar-track {
-  background: transparent;
-}
-.scrollbar-thin::-webkit-scrollbar-thumb {
-  background-color: rgba(192, 199, 212, 0.4);
-  border-radius: 2px;
-}
-.dark .scrollbar-thin::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.15);
-}
-</style>

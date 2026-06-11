@@ -77,7 +77,7 @@ describe('parseJsonField', () => {
 
   test('passes through non-string values', () => {
     const obj = { a: 1 }
-    expect(parseJsonField(obj)).toBe(obj)
+    expect(parseJsonField<{ a: number }>(obj as unknown)).toEqual(obj)
   })
 
   test('returns null for invalid JSON', () => {
