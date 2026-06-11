@@ -28,10 +28,11 @@ const showFilters = ref(false)
 const goToPageInput = ref('')
 const tagFilter = ref('')
 const layoutDensity = ref<'default' | 'compact'>('default')
+const source = ref('')
 const airDateFrom = ref('')
 const airDateTo = ref('')
-const epMin = ref('')
-const epMax = ref('')
+const epMin = ref<number | undefined>(undefined)
+const epMax = ref<number | undefined>(undefined)
 
 const sortOptions = [
   { value: 'updated_at:desc', label: '最近修改' },
@@ -51,6 +52,12 @@ const statusOptions = [
   { value: '', label: '全部状态' },
   ...STATUS_VALUES.map((s) => ({ value: s, label: STATUS_LABELS[s] }))
 ]
+const sourceOptions = [
+  { value: '', label: '全部来源' },
+  { value: 'bangumi', label: 'Bangumi' },
+  { value: 'tmdb', label: 'TMDB' },
+  { value: 'manual', label: '手动' },
+]
 
 const totalPages = computed(() => Math.ceil(pagination.value.total / pagination.value.limit))
 const hasPrev = computed(() => pagination.value.page > 1)
@@ -62,6 +69,11 @@ async function loadMedia(page?: number) {
     type: type.value || undefined,
     status: status.value || undefined,
     tag: tagFilter.value || undefined,
+    source: source.value || undefined,
+    air_date_from: airDateFrom.value || undefined,
+    air_date_to: airDateTo.value || undefined,
+    ep_min: epMin.value,
+    ep_max: epMax.value,
     page: page ?? pagination.value.page,
     limit: 20,
     sort: sortBy.value
@@ -141,10 +153,11 @@ function clearFilters() {
   status.value = ''
   keyword.value = ''
   tagFilter.value = ''
+  source.value = ''
   airDateFrom.value = ''
   airDateTo.value = ''
-  epMin.value = ''
-  epMax.value = ''
+  epMin.value = undefined
+  epMax.value = undefined
   onFilterChange()
 }
 
@@ -203,15 +216,32 @@ onMounted(() => {
       </div>
 
       <!-- Advanced filters (toggle) -->
-      <div v-if="showFilters" class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <input v-model="airDateFrom" type="date" class="field" placeholder="上线日期起" @change="onFilterChange" />
-        <input v-model="airDateTo" type="date" class="field" placeholder="上线日期止" @change="onFilterChange" />
-        <input v-model="epMin" type="number" class="field" placeholder="最少集数" min="0" @change="onFilterChange" />
-        <input v-model="epMax" type="number" class="field" placeholder="最多集数" min="0" @change="onFilterChange" />
+      <div v-if="showFilters" class="mt-3 space-y-3">
+        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <AppSelect v-model="source" :options="sourceOptions" variant="field" @change="onFilterChange" />
+          <label class="flex flex-col gap-0.5">
+            <span class="text-caption-xs text-on-surface-variant pl-1">首播日期 ≥</span>
+            <input v-model="airDateFrom" type="date" class="field" @change="onFilterChange" />
+          </label>
+          <label class="flex flex-col gap-0.5">
+            <span class="text-caption-xs text-on-surface-variant pl-1">首播日期 ≤</span>
+            <input v-model="airDateTo" type="date" class="field" @change="onFilterChange" />
+          </label>
+        </div>
+        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <label class="flex flex-col gap-0.5">
+            <span class="text-caption-xs text-on-surface-variant pl-1">最少集数</span>
+            <input v-model.number="epMin" type="number" class="field" min="0" placeholder="例如 12" @change="onFilterChange" />
+          </label>
+          <label class="flex flex-col gap-0.5">
+            <span class="text-caption-xs text-on-surface-variant pl-1">最多集数</span>
+            <input v-model.number="epMax" type="number" class="field" min="0" placeholder="例如 24" @change="onFilterChange" />
+          </label>
+        </div>
       </div>
 
       <!-- Active filter chips -->
-      <div v-if="type || status || tagFilter || airDateFrom || airDateTo || epMin || epMax" class="mt-3 flex flex-wrap gap-2">
+      <div v-if="type || status || tagFilter || source || airDateFrom || airDateTo || epMin !== undefined || epMax !== undefined" class="mt-3 flex flex-wrap gap-2">
         <span v-if="tagFilter" class="chip chip-neutral cursor-pointer" @click="tagFilter = ''; onFilterChange()">
           #{{ tagFilter }}
           <span class="material-symbols-outlined text-[14px]">close</span>
@@ -224,20 +254,24 @@ onMounted(() => {
           {{ STATUS_LABELS[status as Status] }}
           <span class="material-symbols-outlined text-[14px]">close</span>
         </span>
+        <span v-if="source" class="chip chip-neutral cursor-pointer" @click="source = ''; onFilterChange()">
+          来源: {{ source }}
+          <span class="material-symbols-outlined text-[14px]">close</span>
+        </span>
         <span v-if="airDateFrom" class="chip chip-neutral cursor-pointer" @click="airDateFrom = ''; onFilterChange()">
-          上线起 {{ airDateFrom }}
+          首播 ≥ {{ airDateFrom }}
           <span class="material-symbols-outlined text-[14px]">close</span>
         </span>
         <span v-if="airDateTo" class="chip chip-neutral cursor-pointer" @click="airDateTo = ''; onFilterChange()">
-          上线止 {{ airDateTo }}
+          首播 ≤ {{ airDateTo }}
           <span class="material-symbols-outlined text-[14px]">close</span>
         </span>
-        <span v-if="epMin" class="chip chip-neutral cursor-pointer" @click="epMin = ''; onFilterChange()">
-          最少 {{ epMin }} 集
+        <span v-if="epMin !== undefined" class="chip chip-neutral cursor-pointer" @click="epMin = undefined; onFilterChange()">
+          ≥ {{ epMin }} 集
           <span class="material-symbols-outlined text-[14px]">close</span>
         </span>
-        <span v-if="epMax" class="chip chip-neutral cursor-pointer" @click="epMax = ''; onFilterChange()">
-          最多 {{ epMax }} 集
+        <span v-if="epMax !== undefined" class="chip chip-neutral cursor-pointer" @click="epMax = undefined; onFilterChange()">
+          ≤ {{ epMax }} 集
           <span class="material-symbols-outlined text-[14px]">close</span>
         </span>
         <button class="text-caption-xs text-on-surface-variant underline" type="button" @click="clearFilters">清除全部</button>

@@ -195,6 +195,26 @@ export function listMedia(query: ListMediaQuery): PaginatedResponse<Media> {
     params.push(query.tag)
   }
 
+  if (query.air_date_from) {
+    where.push('air_date >= ?')
+    params.push(query.air_date_from)
+  }
+
+  if (query.air_date_to) {
+    where.push('air_date <= ?')
+    params.push(query.air_date_to)
+  }
+
+  if (query.ep_min !== undefined) {
+    where.push('total_episodes >= ?')
+    params.push(query.ep_min)
+  }
+
+  if (query.ep_max !== undefined) {
+    where.push('total_episodes <= ?')
+    params.push(query.ep_max)
+  }
+
   const whereSql = where.length > 0 ? `WHERE ${where.join(' AND ')}` : ''
   const total = get<{ total: number }>(`SELECT COUNT(*) AS total FROM media ${whereSql}`, params)?.total ?? 0
 

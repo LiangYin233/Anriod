@@ -129,6 +129,10 @@ export interface ListMediaQuery {
   limit?: number
   sort?: string
   q?: string
+  air_date_from?: string
+  air_date_to?: string
+  ep_min?: number
+  ep_max?: number
 }
 
 export interface UpdateProgressInput {
