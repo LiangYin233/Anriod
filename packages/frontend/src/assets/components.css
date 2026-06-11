@@ -287,14 +287,15 @@
 
 /* ── Cover image: highest-quality scaling ── */
 .cover-img {
-  /* Modern browsers: smooth = Lanczos / bicubic (CSS Images L4) */
+  /* Firefox 默认已是高质量双线性，保留作为 fallback */
   image-rendering: auto;
-  image-rendering: smooth;
-  /* WebKit/Safari + Chromium/Edge: bicubic interpolation */
+  /* 标准: 优先使用最高质量的缩放算法 (CSS Images L3) */
+  image-rendering: high-quality;
+  /* WebKit/Safari + Chromium/Edge: 触发 bicubic 插值 */
   image-rendering: -webkit-optimize-contrast;
   /* Legacy EdgeHTML */
   -ms-interpolation-mode: bicubic;
-  /* Hint GPU compositing for the img itself */
+  /* 提示 GPU 合成层 */
   will-change: transform;
 }
 
