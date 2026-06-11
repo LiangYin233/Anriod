@@ -3,12 +3,14 @@ import { ref } from 'vue'
 import { useConfig } from '@/composables/useConfig'
 import PageHeader from '@/components/PageHeader.vue'
 import { useToast } from '@/composables/useToast'
-import { apiRequest } from '@/utils/api'
+import { api } from '@/utils/api'
 
 const { backendUrl, apiKey, testing, testMessage, saveConfig, clearConfig, testConnection } = useConfig()
 const toast = useToast()
 const syncing = ref(false)
 const migratingCovers = ref(false)
+const exporting = ref(false)
+const importing = ref(false)
 const urlInput = ref(backendUrl.value || 'http://localhost:8000')
 const keyInput = ref(apiKey.value)
 const showKey = ref(false)
@@ -31,7 +33,7 @@ function clear() {
 async function triggerSync() {
   syncing.value = true
   try {
-    const res = await apiRequest<{ synced: number; errors: string[] }>('/api/sync/trigger', { method: 'POST' })
+    const res = await api.triggerSync()
     toast.success(`已同步 ${res.synced} 条` + (res.errors.length ? `，${res.errors.length} 条失败` : ''))
   } catch (err) {
     toast.error('同步失败: ' + (err instanceof Error ? err.message : String(err)))
@@ -43,12 +45,54 @@ async function triggerSync() {
 async function triggerCoverMigration() {
   migratingCovers.value = true
   try {
-    const res = await apiRequest<{ queued: number }>('/api/sync/covers', { method: 'POST' })
+    const res = await api.migrateCovers()
     toast.success(`已加入下载队列 ${res.queued} 张封面`)
   } catch (err) {
     toast.error('操作失败: ' + (err instanceof Error ? err.message : String(err)))
   } finally {
     migratingCovers.value = false
+  }
+}
+
+async function handleExport() {
+  exporting.value = true
+  try {
+    const data = await api.exportBackup()
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `anriod-backup-${new Date().toISOString().slice(0, 10)}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+    toast.success('备份已下载')
+  } catch (err) {
+    toast.error('导出失败: ' + (err instanceof Error ? err.message : String(err)))
+  } finally {
+    exporting.value = false
+  }
+}
+
+const importInput = ref<HTMLInputElement | null>(null)
+
+function triggerImport() {
+  importInput.value?.click()
+}
+
+async function handleImportFile(e: Event) {
+  const file = (e.target as HTMLInputElement).files?.[0]
+  if (!file) return
+  importing.value = true
+  try {
+    const text = await file.text()
+    const data = JSON.parse(text)
+    await api.importBackup(data)
+    toast.success('备份已导入')
+  } catch (err) {
+    toast.error('导入失败: ' + (err instanceof Error ? err.message : String(err)))
+  } finally {
+    importing.value = false
+    if (importInput.value) importInput.value.value = ''
   }
 }
 </script>
@@ -131,6 +175,33 @@ async function triggerCoverMigration() {
           {{ migratingCovers ? '下载中...' : '下载所有封面' }}
         </button>
       </div>
+    </div>
+
+    <!-- Backup -->
+    <div class="acrylic rounded-xl border border-outline-variant/20 p-6 shadow-sm flex flex-col gap-3">
+      <h3 class="text-title-sm font-semibold text-on-surface mb-1">数据备份</h3>
+      <div class="flex flex-wrap gap-2">
+        <button class="btn-secondary" type="button" :disabled="exporting" @click="handleExport">
+          <span v-if="exporting" class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+          <span v-else class="material-symbols-outlined text-[18px]">download</span>
+          {{ exporting ? '导出中...' : '导出备份' }}
+        </button>
+        <button class="btn-secondary" type="button" :disabled="importing" @click="triggerImport">
+          <span v-if="importing" class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+          <span v-else class="material-symbols-outlined text-[18px]">upload</span>
+          {{ importing ? '导入中...' : '导入备份' }}
+        </button>
+      </div>
+      <p class="text-caption-xs text-on-surface-variant mt-1">
+        备份为 JSON 文件，包含所有媒体、标签和观看记录。导入会覆盖当前数据。
+      </p>
+      <input
+        ref="importInput"
+        type="file"
+        accept=".json"
+        class="hidden"
+        @change="handleImportFile"
+      />
     </div>
 
   </div>

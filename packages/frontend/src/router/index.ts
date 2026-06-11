@@ -7,6 +7,7 @@ const routes = [
   { path: '/search', name: 'Search', component: () => import('@/views/Search.vue') },
   { path: '/history', name: 'History', component: () => import('@/views/History.vue') },
   { path: '/statistics', name: 'Statistics', component: () => import('@/views/Statistics.vue') },
+  { path: '/tags', name: 'Tags', component: () => import('@/views/Tags.vue') },
   { path: '/settings', name: 'Settings', component: () => import('@/views/Settings.vue') }
 ]
 

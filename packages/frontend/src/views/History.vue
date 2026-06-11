@@ -7,10 +7,12 @@ import EmptyState from '@/components/EmptyState.vue'
 import ErrorBanner from '@/components/ErrorBanner.vue'
 import { api } from '@/utils/api'
 import { formatDate } from '@/utils/format'
+import { useToast } from '@/composables/useToast'
 
 const history = ref<WatchHistory[]>([])
 const loading = ref(false)
 const error = ref('')
+const toast = useToast()
 
 async function loadHistory() {
   loading.value = true
@@ -31,6 +33,16 @@ function episodeLabel(h: WatchHistory): string {
     return from && from > 0 && from !== to ? `EP${from} → EP${to}` : `EP${to}`
   }
   return ''
+}
+
+async function deleteEntry(id: number) {
+  try {
+    await api.deleteHistory(id)
+    history.value = history.value.filter((h) => h.id !== id)
+    toast.success('已删除记录')
+  } catch (caught) {
+    toast.error('删除失败: ' + (caught instanceof Error ? caught.message : String(caught)))
+  }
 }
 
 // Group by YYYY-MM
@@ -122,6 +134,17 @@ onMounted(loadHistory)
               </template>
               <span class="ml-1 text-label-sm text-on-surface">{{ item.rating }}/10</span>
             </div>
+
+            <!-- Delete button -->
+            <button
+              class="mt-2 flex items-center gap-1 text-caption-xs text-on-surface-variant hover:text-error transition-colors"
+              type="button"
+              title="删除此记录"
+              @click="deleteEntry(item.id)"
+            >
+              <span class="material-symbols-outlined text-[14px]">delete</span>
+              删除
+            </button>
           </div>
         </div>
       </template>

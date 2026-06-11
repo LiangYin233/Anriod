@@ -6,7 +6,7 @@ import PageHeader from '@/components/PageHeader.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import ErrorBanner from '@/components/ErrorBanner.vue'
 import { useChart } from '@/composables/useChart'
-import { api, apiRequest } from '@/utils/api'
+import { api } from '@/utils/api'
 
 const overview = ref<StatisticsOverview | null>(null)
 const timeline = ref<TimelinePoint[]>([])
@@ -143,7 +143,7 @@ async function loadStatistics() {
       api.overview(),
       api.timeline(),
       api.tagStats(),
-      apiRequest<Array<{ rating: number; count: number }>>('/api/statistics/ratings')
+      api.ratingDistribution()
     ])
     overview.value = o; timeline.value = t; tagStats.value = g; ratingDist.value = rd
     await nextTick()

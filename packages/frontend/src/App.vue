@@ -74,6 +74,7 @@ function toggleSidebar() {
 const navItems = [
   { name: 'Home', label: '媒体库', path: '/', icon: 'video_library' },
   { name: 'Search', label: '搜索导入', path: '/search', icon: 'search_insights' },
+  { name: 'Tags', label: '标签管理', path: '/tags', icon: 'label' },
   { name: 'History', label: '观看记录', path: '/history', icon: 'history' },
   { name: 'Statistics', label: '数据统计', path: '/statistics', icon: 'bar_chart' },
   { name: 'Settings', label: '系统设置', path: '/settings', icon: 'settings' },
@@ -164,8 +165,8 @@ const mainPadding = computed(() => sidebarCollapsed.value ? 'lg:pl-16' : 'lg:pl-
       v-if="mobileDrawerOpen"
       class="fixed left-0 top-0 z-50 flex h-screen w-64 flex-col p-4 acrylic border-r border-black/5 dark:border-white/5 shadow-xl lg:hidden"
     >
-      <div class="mb-6 mt-2 px-2">
-        <h1 class="text-display-lg tracking-widest text-primary">ANRIOD</h1>
+      <div class="mb-6 mt-1 px-2">
+        <img src="/anriod.svg" alt="Anriod" class="sidebar-brand-img h-10" />
       </div>
       <nav class="flex flex-1 flex-col gap-1">
         <RouterLink
