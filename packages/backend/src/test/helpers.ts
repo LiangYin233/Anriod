@@ -46,10 +46,6 @@ export async function initTestEnv() {
   initializeDatabase()
 }
 
-export interface DbSession {
-  run: (sql: string) => void
-}
-
 /** Clear all data from every table. */
 export async function clearAllTables() {
   const { sqlite } = await import('../db/client')

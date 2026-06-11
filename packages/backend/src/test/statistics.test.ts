@@ -6,6 +6,7 @@ let getOverview: any, getTimeline: any, getTagStatistics: any, getRatingDistribu
 
 beforeAll(async () => {
   await initTestEnv()
+  await clearAllTables()
 
   const m = await import('../services/media')
   createMedia = m.createMedia
