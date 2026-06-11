@@ -5,6 +5,8 @@ export interface DataSourceConfig {
   enabled: boolean
   baseUrl: string
   bgmToken?: string
+  accessToken?: string
+  language?: string
 }
 
 export interface AppConfig {
@@ -125,6 +127,11 @@ datasources:
     enabled: true
     base_url: https://api.bgm.tv
     bgm_token: ""
+  tmdb:
+    enabled: true
+    base_url: https://api.themoviedb.org/3
+    access_token: ""
+    language: zh-CN
 `
     try {
       writeFileSync(configPath, defaults, 'utf8')
@@ -157,6 +164,12 @@ export const config: AppConfig = {
       enabled: Boolean(rawConfig.datasources?.bangumi?.enabled ?? true),
       baseUrl: String(rawConfig.datasources?.bangumi?.base_url ?? 'https://api.bgm.tv'),
       bgmToken: String(rawConfig.datasources?.bangumi?.bgm_token ?? '') || undefined
+    },
+    tmdb: {
+      enabled: Boolean(rawConfig.datasources?.tmdb?.enabled ?? true),
+      baseUrl: String(rawConfig.datasources?.tmdb?.base_url ?? 'https://api.themoviedb.org/3'),
+      accessToken: String(rawConfig.datasources?.tmdb?.access_token ?? '') || undefined,
+      language: String(rawConfig.datasources?.tmdb?.language ?? 'zh-CN')
     }
   },
   backendRoot,

@@ -15,3 +15,8 @@ datasources:
     enabled: true
     base_url: https://api.bgm.tv
     bgm_token: ""  # Bangumi access token (可选)
+  tmdb:
+    enabled: true
+    base_url: https://api.themoviedb.org/3
+    access_token: ""  # TMDB API access token (https://www.themoviedb.org/settings/api)
+    language: zh-CN
