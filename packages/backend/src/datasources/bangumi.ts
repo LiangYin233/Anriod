@@ -1,4 +1,4 @@
-import type { DiscoverItem, DiscoverSection, MediaDetails, MediaType, SearchResult } from '@anriod/shared'
+import type { CreditPerson, CreditsResponse, DiscoverItem, DiscoverSection, MediaDetails, MediaType, SearchResult } from '@anriod/shared'
 import { config } from '../config'
 import { proxyFetchOptions } from '../utils/proxy'
 import type { DataSource } from './types'
@@ -244,6 +244,58 @@ export class BangumiDataSource implements DataSource {
       label: `今日放送 (${today.weekday.cn})`,
       items
     }]
+  }
+
+  // ── Credits ────────────────────────────────────────────
+
+  async getCredits(sourceId: string, _mediaType?: MediaType): Promise<CreditsResponse> {
+    const opts = { headers: this.headers, ...this.fetchOptions }
+    const cast: CreditPerson[] = []
+    const crew: CreditPerson[] = []
+
+    // Fetch characters (含声优) and persons (制作人员)
+    const [charResp, personResp] = await Promise.all([
+      fetch(`${this.baseUrl}/v0/subjects/${sourceId}/characters`, opts),
+      fetch(`${this.baseUrl}/v0/subjects/${sourceId}/persons`, opts)
+    ])
+
+    if (charResp.ok) {
+      const characters = await charResp.json() as Array<{
+        name: string
+        images?: { medium?: string } | null
+        actors?: Array<{ name: string; images?: { medium?: string } | null }>
+      }>
+      for (const ch of characters) {
+        // Voice actors for this character
+        if (ch.actors) {
+          for (const actor of ch.actors) {
+            cast.push({
+              name: actor.name,
+              role: '声优',
+              character: ch.name,
+              image: actor.images?.medium || null
+            })
+          }
+        }
+      }
+    }
+
+    if (personResp.ok) {
+      const persons = await personResp.json() as Array<{
+        name: string
+        staff: string
+        images?: { medium?: string } | null
+      }>
+      for (const p of persons) {
+        crew.push({
+          name: p.name,
+          role: p.staff || '制作人员',
+          image: p.images?.medium || null
+        })
+      }
+    }
+
+    return { source: this.name, source_id: sourceId, cast, crew }
   }
 
   // ── GetDetails ──────────────────────────────────────────

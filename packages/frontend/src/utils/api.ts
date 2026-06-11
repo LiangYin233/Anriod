@@ -1,6 +1,7 @@
 import type {
   CreateMediaInput,
   CreateWatchHistoryInput,
+  CreditsResponse,
   DiscoverResponse,
   ImportMediaInput,
   ListMediaQuery,
@@ -126,5 +127,7 @@ export const api = {
   migrateCovers: () => apiRequest<{ queued: number }>('/api/sync/covers', { method: 'POST' }),
   fetchDetails: (query: { source: string; source_id: string; type?: string }) =>
     apiRequest<MediaDetails>(`/api/search/details${queryString(query)}`),
+  fetchCredits: (query: { source: string; source_id: string; type?: string }) =>
+    apiRequest<CreditsResponse>(`/api/search/credits${queryString(query)}`),
   discover: () => apiRequest<DiscoverResponse>('/api/discover'),
 }

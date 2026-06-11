@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import type { MediaDetails } from '@anriod/shared'
+import type { CreditsResponse, MediaDetails } from '@anriod/shared'
 import { MEDIA_TYPES } from '@anriod/shared'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import ErrorBanner from '@/components/ErrorBanner.vue'
@@ -15,11 +15,20 @@ const { openUrl } = useTauri()
 const source = String(route.query.source || '')
 const sourceId = String(route.query.source_id || '')
 const mediaType = String(route.query.type || '')
+const fromPage = String(route.query.from || '')
 
 const detail = ref<MediaDetails | null>(null)
+const credits = ref<CreditsResponse | null>(null)
 const loading = ref(false)
 const error = ref('')
 const importing = ref(false)
+
+const breadcrumb = computed(() => {
+  if (fromPage === 'discover') {
+    return { label: '发现', path: '/discover' }
+  }
+  return { label: '搜索', path: '/search' }
+})
 
 const infoRows = computed(() => {
   if (!detail.value) return []
@@ -45,7 +54,14 @@ async function loadDetails() {
   loading.value = true
   error.value = ''
   try {
-    detail.value = await api.fetchDetails({ source, source_id: sourceId, type: mediaType || undefined })
+    const [detailData, creditsData] = await Promise.all([
+      api.fetchDetails({ source, source_id: sourceId, type: mediaType || undefined }),
+      api.fetchCredits({ source, source_id: sourceId, type: mediaType || undefined }).catch(() => null)
+    ])
+    detail.value = detailData
+    if (creditsData && (creditsData.cast.length > 0 || creditsData.crew.length > 0)) {
+      credits.value = creditsData
+    }
   } catch (caught) {
     error.value = caught instanceof Error ? caught.message : '加载作品详情失败'
   } finally {
@@ -80,7 +96,7 @@ onMounted(loadDetails)
     <div class="flex items-center gap-2 text-body-md text-on-surface-variant">
       <RouterLink to="/" class="transition-colors hover:text-on-surface">媒体库</RouterLink>
       <span class="material-symbols-outlined text-sm">chevron_right</span>
-      <RouterLink to="/search" class="transition-colors hover:text-on-surface">搜索</RouterLink>
+      <RouterLink :to="breadcrumb.path" class="transition-colors hover:text-on-surface">{{ breadcrumb.label }}</RouterLink>
       <span class="material-symbols-outlined text-sm">chevron_right</span>
       <span class="text-on-surface">作品预览</span>
     </div>
@@ -155,6 +171,65 @@ onMounted(loadDetails)
             </div>
           </div>
 
+          <!-- Credits (cast & crew) -->
+          <div v-if="credits && credits.cast.length > 0">
+            <h3 class="mb-unit flex items-center gap-2 text-title-sm text-on-surface">
+              <span class="h-4 w-1 rounded-full bg-primary" />
+              声优 / 演员
+            </h3>
+            <div class="flex gap-4 overflow-x-auto pb-2 -mx-2 px-2 snap-x snap-mandatory scrollbar-thin">
+              <div
+                v-for="person in credits.cast.slice(0, 15)"
+                :key="person.name"
+                class="snap-start shrink-0 w-24 text-center"
+              >
+                <div class="w-16 h-16 mx-auto rounded-full overflow-hidden bg-surface-container-high shadow-sm">
+                  <img
+                    v-if="person.image"
+                    :src="person.image"
+                    :alt="person.name"
+                    class="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                  <div v-else class="flex w-full h-full items-center justify-center bg-surface-variant">
+                    <span class="material-symbols-outlined text-xl text-on-surface-variant">person</span>
+                  </div>
+                </div>
+                <p class="mt-1.5 text-caption-xs font-medium text-on-surface leading-tight line-clamp-2">{{ person.name }}</p>
+                <p v-if="person.character" class="text-[10px] text-on-surface-variant/60 leading-tight line-clamp-1">{{ person.character }}</p>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="credits && credits.crew.length > 0">
+            <h3 class="mb-unit flex items-center gap-2 text-title-sm text-on-surface">
+              <span class="h-4 w-1 rounded-full bg-primary" />
+              制作人员
+            </h3>
+            <div class="flex gap-4 overflow-x-auto pb-2 -mx-2 px-2 snap-x snap-mandatory scrollbar-thin">
+              <div
+                v-for="person in credits.crew.slice(0, 15)"
+                :key="`${person.name}-${person.role}`"
+                class="snap-start shrink-0 w-24 text-center"
+              >
+                <div class="w-16 h-16 mx-auto rounded-full overflow-hidden bg-surface-container-high shadow-sm">
+                  <img
+                    v-if="person.image"
+                    :src="person.image"
+                    :alt="person.name"
+                    class="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                  <div v-else class="flex w-full h-full items-center justify-center bg-surface-variant">
+                    <span class="material-symbols-outlined text-xl text-on-surface-variant">construction</span>
+                  </div>
+                </div>
+                <p class="mt-1.5 text-caption-xs font-medium text-on-surface leading-tight line-clamp-2">{{ person.name }}</p>
+                <p class="text-[10px] text-on-surface-variant/60 leading-tight line-clamp-1">{{ person.role }}</p>
+              </div>
+            </div>
+          </div>
+
           <!-- Synopsis -->
           <div v-if="detail.description">
             <h3 class="mb-unit flex items-center gap-2 text-title-sm text-on-surface">
@@ -216,3 +291,20 @@ onMounted(loadDetails)
     </template>
   </div>
 </template>
+
+<style scoped>
+/* ── Custom thin scrollbar for horizontal rows ── */
+.scrollbar-thin::-webkit-scrollbar {
+  height: 4px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: rgba(192, 199, 212, 0.4);
+  border-radius: 2px;
+}
+.dark .scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+</style>

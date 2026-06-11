@@ -210,6 +210,22 @@ export interface TagStatistic {
   count: number
 }
 
+// ── Credits (演职员表) ──
+
+export interface CreditPerson {
+  name: string
+  role: string
+  character?: string
+  image?: string | null
+}
+
+export interface CreditsResponse {
+  source: string
+  source_id: string
+  cast: CreditPerson[]
+  crew: CreditPerson[]
+}
+
 // ── Discover (探索/发现) ──
 
 export interface DiscoverItem {

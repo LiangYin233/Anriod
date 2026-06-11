@@ -1,4 +1,4 @@
-import type { DiscoverItem, DiscoverSection, MediaDetails, MediaType, SearchResult } from '@anriod/shared'
+import type { CreditPerson, CreditsResponse, DiscoverItem, DiscoverSection, MediaDetails, MediaType, SearchResult } from '@anriod/shared'
 import { config } from '../config'
 import { proxyFetchOptions } from '../utils/proxy'
 import type { DataSource } from './types'
@@ -200,6 +200,45 @@ export class TmdbDataSource implements DataSource {
     if (tvShows.length) sections.push({ source: this.name, label: 'Trending TV', items: tvShows })
 
     return sections
+  }
+
+  // ── Credits ────────────────────────────────────────────
+
+  async getCredits(sourceId: string, mediaType: MediaType = 'movie'): Promise<CreditsResponse> {
+    const token = config.datasources.tmdb?.accessToken
+    if (!token) return { source: this.name, source_id: sourceId, cast: [], crew: [] }
+
+    const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+    const baseUrl = config.datasources.tmdb?.baseUrl || 'https://api.themoviedb.org/3'
+    const endpoint = mediaType === 'tv' ? 'tv' : 'movie'
+    const url = `${baseUrl}/${endpoint}/${sourceId}/credits?language=zh-CN`
+
+    try {
+      const resp = await fetch(url, { headers, ...proxyFetchOptions() })
+      if (!resp.ok) return { source: this.name, source_id: sourceId, cast: [], crew: [] }
+
+      const body = await resp.json() as {
+        cast: Array<{ name: string; character?: string; profile_path?: string | null }>
+        crew: Array<{ name: string; job: string; profile_path?: string | null }>
+      }
+
+      const cast: CreditPerson[] = (body.cast || []).slice(0, 20).map((c) => ({
+        name: c.name,
+        role: '演员',
+        character: c.character || undefined,
+        image: c.profile_path ? `https://image.tmdb.org/t/p/w185${c.profile_path}` : null
+      }))
+
+      const crew: CreditPerson[] = (body.crew || []).slice(0, 20).map((c) => ({
+        name: c.name,
+        role: c.job || '制作人员',
+        image: c.profile_path ? `https://image.tmdb.org/t/p/w185${c.profile_path}` : null
+      }))
+
+      return { source: this.name, source_id: sourceId, cast, crew }
+    } catch {
+      return { source: this.name, source_id: sourceId, cast: [], crew: [] }
+    }
   }
 
   // ── GetDetails ──────────────────────────────────────────

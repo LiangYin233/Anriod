@@ -27,7 +27,7 @@ async function loadDiscover() {
 }
 
 function goToExplore(item: DiscoverSection['items'][number]) {
-  router.push(`/explore?source=${item.source}&source_id=${item.source_id}&type=${item.media_type}`)
+  router.push(`/explore?source=${item.source}&source_id=${item.source_id}&type=${item.media_type}&from=discover`)
 }
 
 function sourceIcon(source: string): string {
