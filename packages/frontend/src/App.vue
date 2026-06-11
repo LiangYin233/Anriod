@@ -16,7 +16,7 @@ router.afterEach(() => { nextTick(() => { pageLoading.value = false }) })
 
 const { toggleTheme, applyStoredTheme } = useConfig()
 const { bind: bindReveal, unbind: unbindReveal } = useReveal()
-const { isTauri, minimizeWindow, toggleMaximize, closeWindow } = useTauri()
+const { isTauri, isDesktop, minimizeWindow, toggleMaximize, closeWindow } = useTauri()
 const sidebarCollapsed = ref(false)
 const mobileDrawerOpen = ref(false)
 const toastRef = ref<InstanceType<typeof Toast> | null>(null)
@@ -222,8 +222,8 @@ const mainPadding = computed(() => sidebarCollapsed.value ? 'lg:pl-16' : 'lg:pl-
             <div class="hidden h-8 w-8 items-center justify-center rounded-full bg-primary-container text-on-primary-container text-label-sm font-bold lg:flex">
               A
             </div>
-            <!-- Window controls (Tauri only) — right of avatar -->
-            <template v-if="isTauri">
+            <!-- Window controls (Desktop Tauri only) — right of avatar -->
+            <template v-if="isDesktop">
               <div class="mx-1 h-5 w-px bg-outline-variant/40" />
               <button class="titlebar-btn-win" type="button" title="最小化" @click="minimizeWindow">
                 <svg width="10" height="10" viewBox="0 0 12 12"><rect x="1" y="5.5" width="10" height="1" fill="currentColor"/></svg>

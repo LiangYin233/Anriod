@@ -1,4 +1,4 @@
-import { ref, readonly } from 'vue'
+import { computed, ref, readonly } from 'vue'
 
 // Tauri 2 global API (available when withGlobalTauri: true)
 declare global {
@@ -106,8 +106,17 @@ export function useTauri() {
     try { await win.close() } catch (e) { console.error('[tauri] close:', e) }
   }
 
+  const isDesktop = computed(() => {
+    try {
+      return !!(window.__TAURI__?.window?.getCurrentWindow)
+    } catch {
+      return false
+    }
+  })
+
   return {
     isTauri: readonly(isTauri),
+    isDesktop,
     openUrl,
     getVersion,
     checkUpdate,
