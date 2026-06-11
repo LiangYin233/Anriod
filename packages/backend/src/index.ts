@@ -27,7 +27,7 @@ app.get('/health', (c) => c.json({ ok: true, service: 'anriod-backend' }))
 
 app.get('/covers/:filename', async (c) => {
   const filename = basename(c.req.param('filename'))
-  const coverFile = Bun.file(join(config.storage.coversDir, filename))
+  const coverFile = Bun.file(join(config.coversDir, filename))
 
   if (await coverFile.exists()) {
     return new Response(coverFile)

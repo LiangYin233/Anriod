@@ -12,21 +12,17 @@ export interface AppConfig {
     port: number
     host: string
   }
-  database: {
-    path: string
-  }
   auth: {
     apiKey: string
   }
   sync: {
     cron: string
   }
-  storage: {
-    coversDir: string
-  }
   proxy?: string
   datasources: Record<string, DataSourceConfig>
   backendRoot: string
+  databasePath: string
+  coversDir: string
 }
 
 /**
@@ -118,17 +114,11 @@ function readYamlConfig(): Record<string, any> {
   port: 8000
   host: 0.0.0.0
 
-database:
-  path: ./data/media.db
-
 auth:
   api_key: "your-secret-api-key-here"
 
 sync:
   cron: "0 3 * * *"
-
-storage:
-  covers_dir: ./data/covers
 
 datasources:
   bangumi:
@@ -155,17 +145,11 @@ export const config: AppConfig = {
     port: Number(rawConfig.server?.port ?? 8000),
     host: String(rawConfig.server?.host ?? '0.0.0.0')
   },
-  database: {
-    path: resolveBackendPath(String(rawConfig.database?.path ?? './data/media.db'))
-  },
   auth: {
     apiKey: String(rawConfig.auth?.api_key ?? 'your-secret-api-key-here')
   },
   sync: {
     cron: String(rawConfig.sync?.cron ?? '0 3 * * *')
-  },
-  storage: {
-    coversDir: resolveBackendPath(String(rawConfig.storage?.covers_dir ?? './data/covers'))
   },
   proxy: String(rawConfig.proxy ?? '') || undefined,
   datasources: {
@@ -175,5 +159,7 @@ export const config: AppConfig = {
       bgmToken: String(rawConfig.datasources?.bangumi?.bgm_token ?? '') || undefined
     }
   },
-  backendRoot
+  backendRoot,
+  databasePath: resolveBackendPath('./data/media.db'),
+  coversDir: resolveBackendPath('./data/covers')
 }

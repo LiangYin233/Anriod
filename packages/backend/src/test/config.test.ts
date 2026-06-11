@@ -39,12 +39,12 @@ describe('config parsing', () => {
     expect(configModule.config.auth.apiKey).toBe('test-api-key')
   })
 
-  test('resolves database path relative to backend root', () => {
-    expect(configModule.config.database.path).toContain('test.db')
+  test('database path is hardcoded relative to backend root', () => {
+    expect(configModule.config.databasePath).toContain('media.db')
   })
 
-  test('resolves covers directory', () => {
-    expect(configModule.config.storage.coversDir).toContain('covers')
+  test('covers directory is hardcoded relative to backend root', () => {
+    expect(configModule.config.coversDir).toContain('covers')
   })
 
   test('disables bangumi datasource', () => {

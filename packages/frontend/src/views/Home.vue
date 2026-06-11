@@ -175,11 +175,11 @@ onMounted(loadMedia)
 
       <!-- Active filter chips -->
       <div v-if="type || status" class="mt-3 flex flex-wrap gap-2">
-        <span v-if="type" class="chip-primary cursor-pointer" @click="type = ''; onFilterChange()">
+        <span v-if="type" class="chip chip-primary cursor-pointer" @click="type = ''; onFilterChange()">
           {{ MEDIA_TYPES[type as MediaType] }}
           <span class="material-symbols-outlined text-[14px]">close</span>
         </span>
-        <span v-if="status" class="chip-secondary cursor-pointer" @click="status = ''; onFilterChange()">
+        <span v-if="status" class="chip chip-secondary cursor-pointer" @click="status = ''; onFilterChange()">
           {{ STATUS_LABELS[status as Status] }}
           <span class="material-symbols-outlined text-[14px]">close</span>
         </span>

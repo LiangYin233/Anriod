@@ -51,7 +51,7 @@ export function triggerCoverMigration(): { queued: number } {
     downloadQueue.add({
       mediaId: row.id,
       coverUrl: row.cover_url,
-      savePath: `${config.storage.coversDir}/${row.id}`
+      savePath: `${config.coversDir}/${row.id}`
     })
   }
 

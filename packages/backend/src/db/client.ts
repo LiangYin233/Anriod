@@ -5,10 +5,10 @@ import { drizzle } from 'drizzle-orm/bun-sqlite'
 import { config } from '../config'
 import * as schema from './schema'
 
-mkdirSync(dirname(config.database.path), { recursive: true })
-mkdirSync(config.storage.coversDir, { recursive: true })
+mkdirSync(dirname(config.databasePath), { recursive: true })
+mkdirSync(config.coversDir, { recursive: true })
 
-export const sqlite = new Database(config.database.path)
+export const sqlite = new Database(config.databasePath)
 sqlite.exec('PRAGMA foreign_keys = ON')
 
 export const db = drizzle(sqlite, { schema })

@@ -262,7 +262,7 @@ export function updateMedia(id: string, input: UpdateMediaInput): Media {
     downloadQueue.add({
       mediaId: id,
       coverUrl,
-      savePath: `${config.storage.coversDir}/${id}`
+      savePath: `${config.coversDir}/${id}`
     })
   }
 
@@ -373,7 +373,7 @@ export async function importMedia(input: ImportMediaInput): Promise<Media> {
     downloadQueue.add({
       mediaId: media.id,
       coverUrl: details.cover_url,
-      savePath: `${config.storage.coversDir}/${media.id}`
+      savePath: `${config.coversDir}/${media.id}`
     })
   }
 
