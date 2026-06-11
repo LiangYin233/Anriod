@@ -64,7 +64,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="app-select" :class="[`variant-${variant}`]">
+  <div class="app-select" :class="[`variant-${variant}`, { open }]">
     <button
       ref="buttonRef"
       type="button"
