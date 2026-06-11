@@ -2,12 +2,14 @@
  * 从 Bangumi 导出用户收藏数据并转为 Anriod 导入格式。
  *
  * 用法:
- *   bun run scripts/import-bgm.ts
+ *   bun run packages/backend/scripts/import-bgm.ts <UID>
  *
  * 前置:
  *   1. 在 config.yaml 的 datasources.bangumi.bgm_token 填入你的 Bangumi token
  *      (https://bgm.tv/dev/app 创建)
- *   2. 设置下面的 BGM_USERNAME
+ *
+ * 示例:
+ *   bun run packages/backend/scripts/import-bgm.ts <UID>
  */
 
 import { readFileSync, writeFileSync } from 'node:fs'
@@ -15,7 +17,11 @@ import { resolve } from 'node:path'
 import { proxyFetchOptions } from '../src/utils/proxy'
 
 // ========== 配置 ==========
-const BGM_USERNAME = 'YOUR_BGM_UID' // 你的 Bangumi 用户名或 UID
+const BGM_USERNAME = process.argv[2]
+if (!BGM_USERNAME) {
+  console.error('请提供 Bangumi UID，例如: bun run packages/backend/scripts/import-bgm.ts <UID>')
+  process.exit(1)
+}
 const BGM_BASE = 'https://api.bgm.tv'
 const BGM_TOKEN = readToken()
 
