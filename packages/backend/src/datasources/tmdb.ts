@@ -1,5 +1,6 @@
 import type { CreditPerson, CreditsResponse, DiscoverItem, DiscoverSection, MediaDetails, MediaType, SearchResult } from '@anriod/shared'
 import { config } from '../config'
+import { MAX_CAST_DISPLAY, MAX_CREW_DISPLAY } from '../constants'
 import { proxyFetchOptions } from '../utils/proxy'
 import type { DataSource } from './types'
 
@@ -223,14 +224,14 @@ export class TmdbDataSource implements DataSource {
         crew: Array<{ name: string; job: string; profile_path?: string | null }>
       }
 
-      const cast: CreditPerson[] = (body.cast || []).slice(0, 20).map((c) => ({
+      const cast: CreditPerson[] = (body.cast || []).slice(0, MAX_CAST_DISPLAY).map((c) => ({
         name: c.name,
         role: '演员',
         character: c.character || undefined,
         image: c.profile_path ? `https://image.tmdb.org/t/p/w185${c.profile_path}` : null
       }))
 
-      const crew: CreditPerson[] = (body.crew || []).slice(0, 20).map((c) => ({
+      const crew: CreditPerson[] = (body.crew || []).slice(0, MAX_CREW_DISPLAY).map((c) => ({
         name: c.name,
         role: c.job || '制作人员',
         image: c.profile_path ? `https://image.tmdb.org/t/p/w185${c.profile_path}` : null

@@ -2,10 +2,11 @@ import type { MediaType, SearchResult } from '@anriod/shared'
 import { dataSources, getDataSource } from '../datasources/registry'
 import { HttpError } from '../middleware/error'
 import { isMediaType } from '../utils/http'
+import { ERROR_MESSAGES } from '../constants'
 
 export async function searchExternal(query: { query?: string; type?: string; source?: string }): Promise<SearchResult[]> {
   const keyword = query.query?.trim()
-  if (!keyword) throw new HttpError(400, 'Search query is required')
+  if (!keyword) throw new HttpError(400, ERROR_MESSAGES.SEARCH_QUERY_REQUIRED)
 
   const mediaType = isMediaType(query.type) ? query.type : undefined
   const sources = query.source ? [query.source] : Object.keys(dataSources)

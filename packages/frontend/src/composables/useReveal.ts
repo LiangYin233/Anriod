@@ -5,6 +5,7 @@
  */
 export function useReveal() {
   let observer: MutationObserver | null = null
+  const boundElements = new Set<Element>()
 
   function handleMouseMove(e: MouseEvent) {
     const target = e.currentTarget as HTMLElement
@@ -14,7 +15,14 @@ export function useReveal() {
   }
 
   function bindElement(el: Element) {
+    if (boundElements.has(el)) return
     el.addEventListener('mousemove', handleMouseMove as EventListener)
+    boundElements.add(el)
+  }
+
+  function unbindElement(el: Element) {
+    el.removeEventListener('mousemove', handleMouseMove as EventListener)
+    boundElements.delete(el)
   }
 
   function bind() {
@@ -38,6 +46,8 @@ export function useReveal() {
   function unbind() {
     observer?.disconnect()
     observer = null
+    boundElements.forEach(unbindElement)
+    boundElements.clear()
   }
 
   return { bind, unbind }

@@ -8,6 +8,7 @@ import type {
 import { all, get, run, type SqlValue } from '../db/helpers'
 import { HttpError } from '../middleware/error'
 import { jsonString, parseJsonField, toInt } from '../utils/http'
+import { DEFAULT_PAGE, DEFAULT_LIMIT, MAX_PAGE, MAX_LIMIT, ERROR_MESSAGES } from '../constants'
 
 interface HistoryRow {
   id: number
@@ -32,12 +33,12 @@ function rowToHistory(row: HistoryRow): WatchHistory {
 
 function assertMediaExists(mediaId: string) {
   const media = get<{ id: string }>('SELECT id FROM media WHERE id = ?', [mediaId])
-  if (!media) throw new HttpError(404, 'Media not found')
+  if (!media) throw new HttpError(404, ERROR_MESSAGES.MEDIA_NOT_FOUND)
 }
 
 export function listHistory(query: { page?: number; limit?: number; media_id?: string }): PaginatedResponse<WatchHistory> {
-  const page = toInt(query.page, 1, 1, 100000)
-  const limit = toInt(query.limit, 20, 1, 100)
+  const page = toInt(query.page, DEFAULT_PAGE, DEFAULT_PAGE, MAX_PAGE)
+  const limit = toInt(query.limit, DEFAULT_LIMIT, DEFAULT_PAGE, MAX_LIMIT)
   const offset = (page - 1) * limit
   const where: string[] = []
   const params: SqlValue[] = []
@@ -73,7 +74,7 @@ export function getHistoryById(id: number): WatchHistory {
      WHERE wh.id = ?`,
     [id]
   )
-  if (!row) throw new HttpError(404, 'History record not found')
+  if (!row) throw new HttpError(404, ERROR_MESSAGES.HISTORY_NOT_FOUND)
   return rowToHistory(row)
 }
 
@@ -109,7 +110,7 @@ export function createWatchHistory(input: CreateWatchHistoryInput): WatchHistory
   )
 
   const id = get<{ id: number }>('SELECT last_insert_rowid() AS id')?.id
-  if (!id) throw new HttpError(500, 'Failed to create history record')
+  if (!id) throw new HttpError(500, ERROR_MESSAGES.HISTORY_CREATE_FAILED)
   return getHistoryById(id)
 }
 

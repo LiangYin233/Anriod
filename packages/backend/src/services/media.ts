@@ -9,6 +9,7 @@ import type {
   UpdateMediaInput
 } from '@anriod/shared'
 import { config } from '../config'
+import { DEFAULT_PAGE, DEFAULT_LIMIT, MAX_PAGE, MAX_LIMIT, MIN_RATING, MAX_RATING, ERROR_MESSAGES } from '../constants'
 import { all, get, run, transaction, type SqlValue } from '../db/helpers'
 import { getDataSource } from '../datasources/registry'
 import { HttpError } from '../middleware/error'
@@ -130,19 +131,19 @@ function normalizeMediaInput(input: CreateMediaInput | UpdateMediaInput): Record
 
 function validateMediaInput(input: CreateMediaInput | UpdateMediaInput, partial = false) {
   if (!partial || input.title !== undefined) {
-    if (!input.title?.trim()) throw new HttpError(400, 'Title is required')
+    if (!input.title?.trim()) throw new HttpError(400, ERROR_MESSAGES.TITLE_REQUIRED)
   }
 
   if (!partial || input.type !== undefined) {
-    if (!isMediaType(input.type)) throw new HttpError(400, 'Invalid media type')
+    if (!isMediaType(input.type)) throw new HttpError(400, ERROR_MESSAGES.INVALID_MEDIA_TYPE)
   }
 
   if (input.status !== undefined && !isStatus(input.status)) {
-    throw new HttpError(400, 'Invalid status')
+    throw new HttpError(400, ERROR_MESSAGES.INVALID_STATUS)
   }
 
-  if (input.rating !== undefined && input.rating !== null && (input.rating < 0 || input.rating > 10)) {
-    throw new HttpError(400, 'Rating must be between 0 and 10')
+  if (input.rating !== undefined && input.rating !== null && (input.rating < MIN_RATING || input.rating > MAX_RATING)) {
+    throw new HttpError(400, ERROR_MESSAGES.INVALID_RATING)
   }
 }
 
@@ -158,20 +159,20 @@ function buildSort(sort = 'updated_at:desc'): string {
 }
 
 export function listMedia(query: ListMediaQuery): PaginatedResponse<Media> {
-  const page = toInt(query.page, 1, 1, 100000)
-  const limit = toInt(query.limit, 20, 1, 100)
+  const page = toInt(query.page, DEFAULT_PAGE, DEFAULT_PAGE, MAX_PAGE)
+  const limit = toInt(query.limit, DEFAULT_LIMIT, DEFAULT_PAGE, MAX_LIMIT)
   const offset = (page - 1) * limit
   const where: string[] = []
   const params: SqlValue[] = []
 
   if (query.type) {
-    if (!isMediaType(query.type)) throw new HttpError(400, 'Invalid media type')
+    if (!isMediaType(query.type)) throw new HttpError(400, ERROR_MESSAGES.INVALID_MEDIA_TYPE)
     where.push('type = ?')
     params.push(query.type)
   }
 
   if (query.status) {
-    if (!isStatus(query.status)) throw new HttpError(400, 'Invalid status')
+    if (!isStatus(query.status)) throw new HttpError(400, ERROR_MESSAGES.INVALID_STATUS)
     where.push('status = ?')
     params.push(query.status)
   }
@@ -182,8 +183,9 @@ export function listMedia(query: ListMediaQuery): PaginatedResponse<Media> {
   }
 
   if (query.q) {
-    where.push('title LIKE ?')
-    params.push(`%${query.q}%`)
+    const escaped = query.q.replace(/[%_]/g, '\\$&')
+    where.push('title LIKE ? ESCAPE ?')
+    params.push(`%${escaped}%`, '\\')
   }
 
   if (query.tag) {
@@ -235,7 +237,7 @@ export function listMedia(query: ListMediaQuery): PaginatedResponse<Media> {
 
 export function getMediaById(id: string): Media {
   const row = get<MediaRow>('SELECT * FROM media WHERE id = ?', [id])
-  if (!row) throw new HttpError(404, 'Media not found')
+  if (!row) throw new HttpError(404, ERROR_MESSAGES.MEDIA_NOT_FOUND)
   return rowToMedia(row)
 }
 
@@ -342,7 +344,7 @@ export function updateProgress(id: string, progress: MediaProgress, notes?: stri
 
 export function updateStatus(id: string, status: Status): Media {
   const current = getMediaById(id)
-  if (!isStatus(status)) throw new HttpError(400, 'Invalid status')
+  if (!isStatus(status)) throw new HttpError(400, ERROR_MESSAGES.INVALID_STATUS)
 
   const now = new Date().toISOString()
   run('UPDATE media SET status = ?, updated_at = ? WHERE id = ?', [status, now, id])
@@ -383,7 +385,7 @@ export function updateStatus(id: string, status: Status): Media {
 
 export async function importMedia(input: ImportMediaInput): Promise<Media> {
   const dataSource = getDataSource(input.source)
-  if (!dataSource) throw new HttpError(400, 'Unknown or disabled data source')
+  if (!dataSource) throw new HttpError(400, ERROR_MESSAGES.UNKNOWN_DATA_SOURCE)
 
   const details = await dataSource.getDetails(input.source_id, input.type)
   const media = createMedia({
@@ -415,10 +417,10 @@ export async function importMedia(input: ImportMediaInput): Promise<Media> {
 
 export async function syncMedia(id: string): Promise<Media> {
   const media = getMediaById(id)
-  if (!media.source || !media.source_id) throw new HttpError(400, 'Media has no data source')
+  if (!media.source || !media.source_id) throw new HttpError(400, ERROR_MESSAGES.MEDIA_NO_SOURCE)
 
   const dataSource = getDataSource(media.source)
-  if (!dataSource) throw new HttpError(400, 'Unknown or disabled data source')
+  if (!dataSource) throw new HttpError(400, ERROR_MESSAGES.UNKNOWN_DATA_SOURCE)
 
   const details = await dataSource.getDetails(media.source_id, media.type)
   return updateMedia(id, {

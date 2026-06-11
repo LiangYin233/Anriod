@@ -91,7 +91,6 @@ function readYamlConfig(): Record<string, any> {
   if (!existsSync(configPath)) {
     try {
       writeFileSync(configPath, DEFAULT_YAML, 'utf8')
-      console.log('Created default config.yaml')
     } catch {
       // read-only filesystem, keep defaults in memory
     }

@@ -10,16 +10,12 @@ export function startSyncScheduler() {
   if (job) return job
 
   const cronExpr = config.sync.cron
-  if (!cronExpr) {
-    console.log('Sync scheduler disabled (cron is empty)')
-    return
-  }
+  if (!cronExpr) return
 
   job = new Cron(cronExpr, async () => {
     await runSync()
   })
 
-  console.log(`Sync scheduler started: ${cronExpr}`)
   return job
 }
 

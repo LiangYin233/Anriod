@@ -2,6 +2,7 @@ import { Hono } from 'hono'
 import type { DiscoverResponse, DiscoverSection } from '@anriod/shared'
 import { dataSources } from '../datasources/registry'
 import { HttpError } from '../middleware/error'
+import { ERROR_MESSAGES } from '../constants'
 
 // ── In-memory cache ──
 let cached: { data: DiscoverResponse; expiresAt: number } | null = null
@@ -31,7 +32,7 @@ discoverRoutes.get('/', async (c) => {
   const sourceNames = Object.keys(dataSources)
 
   if (sourceNames.length === 0) {
-    throw new HttpError(400, 'No data sources are enabled. Check your config.yaml.')
+    throw new HttpError(400, ERROR_MESSAGES.NO_DATA_SOURCES)
   }
 
   for (const [name, ds] of Object.entries(dataSources)) {

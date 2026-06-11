@@ -3,6 +3,7 @@ import { isMediaType } from '../utils/http'
 import { getDataSource, listDataSources } from '../datasources/registry'
 import { searchExternal } from '../services/search'
 import { HttpError } from '../middleware/error'
+import { ERROR_MESSAGES } from '../constants'
 import type { CreditsResponse } from '@anriod/shared'
 
 export const searchRoutes = new Hono()
@@ -39,13 +40,13 @@ searchRoutes.get('/details', async (c) => {
   const mediaType = c.req.query('type')
 
   if (!sourceName || !sourceId) {
-    throw new HttpError(400, 'source and source_id are required')
+    throw new HttpError(400, ERROR_MESSAGES.SOURCE_ID_REQUIRED)
   }
 
   const ds = getDataSource(sourceName)
   if (!ds) {
     const available = listDataSources().join(', ')
-    throw new HttpError(400, `Unknown data source "${sourceName}". Available: ${available}`)
+    throw new HttpError(400, `${ERROR_MESSAGES.UNKNOWN_DATA_SOURCE}。可用数据源：${available}`)
   }
 
   const type = mediaType && isMediaType(mediaType) ? mediaType : undefined
@@ -64,17 +65,17 @@ searchRoutes.get('/credits', async (c) => {
   const mediaType = c.req.query('type')
 
   if (!sourceName || !sourceId) {
-    throw new HttpError(400, 'source and source_id are required')
+    throw new HttpError(400, ERROR_MESSAGES.SOURCE_ID_REQUIRED)
   }
 
   const ds = getDataSource(sourceName)
   if (!ds) {
     const available = listDataSources().join(', ')
-    throw new HttpError(400, `Unknown data source "${sourceName}". Available: ${available}`)
+    throw new HttpError(400, `${ERROR_MESSAGES.UNKNOWN_DATA_SOURCE}。可用数据源：${available}`)
   }
 
   if (typeof ds.getCredits !== 'function') {
-    throw new HttpError(400, `Data source "${sourceName}" does not support credits`)
+    throw new HttpError(400, ERROR_MESSAGES.DATA_SOURCE_NO_CREDITS)
   }
 
   const type = mediaType && isMediaType(mediaType) ? mediaType : undefined

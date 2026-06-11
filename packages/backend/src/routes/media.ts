@@ -14,6 +14,7 @@ import {
 } from '../services/media'
 import { listHistoryForMedia } from '../services/history'
 import { readJson, toInt } from '../utils/http'
+import { DEFAULT_LIMIT, MAX_LIMIT } from '../constants'
 
 export const mediaRoutes = new Hono()
 
@@ -25,7 +26,7 @@ mediaRoutes.get('/', (c) => {
       tag: c.req.query('tag'),
       source: c.req.query('source'),
       page: toInt(c.req.query('page'), 1),
-      limit: toInt(c.req.query('limit'), 20, 1, 100),
+      limit: toInt(c.req.query('limit'), DEFAULT_LIMIT, 1, MAX_LIMIT),
       sort: c.req.query('sort'),
       q: c.req.query('q')
     })

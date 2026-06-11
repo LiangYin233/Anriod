@@ -1,6 +1,7 @@
 import type { Tag } from '@anriod/shared'
 import { all, get, run, transaction } from '../db/helpers'
 import { HttpError } from '../middleware/error'
+import { ERROR_MESSAGES } from '../constants'
 
 export function listTags(): Tag[] {
   return all<Tag>('SELECT id, name, created_at FROM tags ORDER BY name ASC')
@@ -16,11 +17,11 @@ export function getTagByName(name: string): Tag | null {
 
 export function createTag(name: string): Tag {
   const normalized = name.trim()
-  if (!normalized) throw new HttpError(400, 'Tag name is required')
+  if (!normalized) throw new HttpError(400, ERROR_MESSAGES.TAG_NAME_REQUIRED)
 
   run('INSERT OR IGNORE INTO tags (name) VALUES (?)', [normalized])
   const tag = getTagByName(normalized)
-  if (!tag) throw new HttpError(500, 'Failed to create tag')
+  if (!tag) throw new HttpError(500, ERROR_MESSAGES.TAG_CREATE_FAILED)
   return tag
 }
 
@@ -40,7 +41,7 @@ export function getTagsForMedia(mediaId: string): string[] {
 }
 
 export function addTagToMedia(mediaId: string, tagId: number) {
-  if (!getTagById(tagId)) throw new HttpError(404, 'Tag not found')
+  if (!getTagById(tagId)) throw new HttpError(404, ERROR_MESSAGES.TAG_NOT_FOUND)
   run('INSERT OR IGNORE INTO media_tags (media_id, tag_id) VALUES (?, ?)', [mediaId, tagId])
 }
 

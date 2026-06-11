@@ -1,4 +1,5 @@
 import type { Context } from 'hono'
+import { ERROR_MESSAGES } from '../constants'
 
 export class HttpError extends Error {
   constructor(
@@ -12,7 +13,7 @@ export class HttpError extends Error {
 }
 
 export function notFound(c: Context) {
-  return c.json({ error: 'Not Found' }, 404)
+  return c.json({ error: ERROR_MESSAGES.NOT_FOUND }, 404)
 }
 
 export function handleError(error: unknown, c: Context) {
@@ -23,9 +24,9 @@ export function handleError(error: unknown, c: Context) {
   if (error instanceof Error) {
     console.error(error)
     const status = error.message === 'Invalid JSON body' ? 400 : 500
-    return c.json({ error: status === 400 ? error.message : 'Internal Server Error' }, status)
+    return c.json({ error: status === 400 ? ERROR_MESSAGES.INVALID_JSON : ERROR_MESSAGES.INTERNAL_SERVER_ERROR }, status)
   }
 
   console.error(error)
-  return c.json({ error: 'Internal Server Error' }, 500)
+  return c.json({ error: ERROR_MESSAGES.INTERNAL_SERVER_ERROR }, 500)
 }

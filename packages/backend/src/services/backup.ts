@@ -2,6 +2,7 @@ import type { Media, Tag, WatchHistory } from '@anriod/shared'
 import { all, run, transaction } from '../db/helpers'
 import { HttpError } from '../middleware/error'
 import { jsonString, parseJsonField } from '../utils/http'
+import { ERROR_MESSAGES } from '../constants'
 
 export interface ExportData {
   version: 1
@@ -17,17 +18,28 @@ export function exportAll(): ExportData {
     source_metadata: string | null
   }>('SELECT * FROM media ORDER BY created_at ASC')
 
+  // Fetch all media_tags in one query
+  const allMediaTags = all<{ media_id: string; name: string }>(
+    `SELECT mt.media_id, t.name
+     FROM media_tags mt
+     INNER JOIN tags t ON t.id = mt.tag_id
+     ORDER BY mt.media_id, t.name ASC`
+  )
+
+  // Group tags by media_id
+  const tagsByMediaId = new Map<string, string[]>()
+  for (const row of allMediaTags) {
+    if (!tagsByMediaId.has(row.media_id)) {
+      tagsByMediaId.set(row.media_id, [])
+    }
+    tagsByMediaId.get(row.media_id)!.push(row.name)
+  }
+
   const media: Media[] = mediaRows.map((row) => ({
     ...row,
     current_progress: parseJsonField(row.current_progress),
     source_metadata: parseJsonField(row.source_metadata),
-    tags: all<{ name: string }>(
-      `SELECT t.name FROM tags t
-       INNER JOIN media_tags mt ON mt.tag_id = t.id
-       WHERE mt.media_id = ?
-       ORDER BY t.name ASC`,
-      [row.id]
-    ).map((t) => t.name)
+    tags: tagsByMediaId.get(row.id) || []
   }))
 
   const tags = all<Tag>('SELECT * FROM tags ORDER BY id ASC')
@@ -48,11 +60,11 @@ export function exportAll(): ExportData {
 
 export function importAll(data: ExportData) {
   if (!data || data.version !== 1) {
-    throw new HttpError(400, 'Invalid export data format')
+    throw new HttpError(400, ERROR_MESSAGES.INVALID_EXPORT_FORMAT)
   }
 
   if (!Array.isArray(data.media) || !Array.isArray(data.tags) || !Array.isArray(data.watch_history)) {
-    throw new HttpError(400, 'Export data is missing required arrays')
+    throw new HttpError(400, ERROR_MESSAGES.EXPORT_MISSING_ARRAYS)
   }
 
   transaction(() => {
