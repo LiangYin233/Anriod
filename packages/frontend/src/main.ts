@@ -24,6 +24,9 @@ if (isTauri) {
     if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return
     e.preventDefault()
   })
+
+  // Disable middle-click auto-scroll panning (WebView2 default)
+  window.addEventListener('auxclick', (e) => { e.preventDefault() }, { passive: false })
 }
 
 app.mount('#app')
