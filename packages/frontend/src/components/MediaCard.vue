@@ -109,8 +109,8 @@ function cancelEdit() {
       />
     </div>
 
-    <!-- Info -->
-    <div class="flex flex-1 flex-col p-3">
+    <!-- Info (min-h ensures consistent card height with/without rating) -->
+    <div class="flex flex-1 flex-col p-3 min-h-[92px]">
       <RouterLink :to="`/media/${media.id}`" class="truncate font-semibold text-on-surface hover:text-primary transition-colors">
         {{ media.title }}
       </RouterLink>

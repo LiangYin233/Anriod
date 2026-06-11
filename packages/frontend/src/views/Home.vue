@@ -27,6 +27,7 @@ const status = ref<Status | ''>('')
 const showFilters = ref(false)
 const goToPageInput = ref('')
 const tagFilter = ref('')
+const layoutDensity = ref<'default' | 'compact'>('default')
 
 const sortOptions = [
   { value: 'updated_at:desc', label: '最近修改' },
@@ -220,9 +221,14 @@ onMounted(() => {
     <template v-else>
       <div class="flex items-center justify-between">
         <AppSelect v-model="sortBy" :options="sortOptions" variant="minimal" @change="onFilterChange" />
+        <button class="btn-icon" type="button" @click="layoutDensity = layoutDensity === 'default' ? 'compact' : 'default'" :title="layoutDensity === 'default' ? '切换紧凑布局' : '切换默认布局'">
+          <span class="material-symbols-outlined">{{ layoutDensity === 'default' ? 'grid_view' : 'grid_on' }}</span>
+        </button>
       </div>
 
-      <div class="grid gap-gutter grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+      <div :class="layoutDensity === 'compact'
+        ? 'grid gap-2 grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'
+        : 'grid gap-gutter grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'">
         <div v-for="media in mediaList" :key="media.id" class="relative group/card">
           <MediaCard :media="media" @increment="handleIncrement" @set-progress="handleSetProgress" @status="handleStatus" />
           <button
