@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, provide, ref, watch } from 'vue'
-import { RouterLink, RouterView, useRoute } from 'vue-router'
+import { computed, nextTick, onMounted, onUnmounted, provide, ref, watch } from 'vue'
+import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 import { useConfig } from '@/composables/useConfig'
 import { useReveal } from '@/composables/useReveal'
 import { useTauri } from '@/composables/useTauri'
@@ -8,6 +8,12 @@ import { TOAST_KEY, type ToastAPI } from '@/composables/useToast'
 import Toast from '@/components/Toast.vue'
 
 const route = useRoute()
+const router = useRouter()
+const pageLoading = ref(false)
+
+router.beforeEach(() => { pageLoading.value = true })
+router.afterEach(() => { nextTick(() => { pageLoading.value = false }) })
+
 const { toggleTheme, applyStoredTheme } = useConfig()
 const { bind: bindReveal, unbind: unbindReveal } = useReveal()
 const { isTauri, getVersion, minimizeWindow, toggleMaximize, closeWindow } = useTauri()
@@ -240,6 +246,18 @@ const mainPadding = computed(() => sidebarCollapsed.value ? 'lg:pl-16' : 'lg:pl-
         <div class="px-container-padding py-6 lg:px-8">
           <RouterView />
         </div>
+        <!-- Page loading overlay for lazy routes (Statistics) -->
+        <Transition name="fade">
+          <div
+            v-if="pageLoading"
+            class="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
+          >
+            <div class="flex flex-col items-center gap-3">
+              <span class="material-symbols-outlined animate-spin text-3xl text-primary">progress_activity</span>
+              <span class="text-label-sm text-on-surface-variant">加载中...</span>
+            </div>
+          </div>
+        </Transition>
       </main>
     </div>
     <Toast ref="toastRef" />

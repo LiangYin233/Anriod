@@ -104,3 +104,13 @@ textarea {
 ::-webkit-scrollbar-thumb:hover { background: #c0c7d4; }
 .dark ::-webkit-scrollbar-thumb { background: #3a3a3a; }
 .dark ::-webkit-scrollbar-thumb:hover { background: #5a5a5a; }
+
+/* ===== Page transition ===== */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.15s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
