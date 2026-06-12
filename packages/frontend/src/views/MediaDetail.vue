@@ -2,7 +2,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import type { CreditsResponse, Episode, Media, MediaType, Status, WatchHistory } from '@anriod/shared'
-import { MEDIA_TYPES, MEDIA_TYPE_VALUES, STATUS_LABELS, STATUS_VALUES } from '@anriod/shared'
+import { EPISODE_TYPE_LABELS, MEDIA_TYPES, MEDIA_TYPE_VALUES, STATUS_LABELS, STATUS_VALUES } from '@anriod/shared'
 import { api } from '@/utils/api'
 import { getCoverSrc } from '@/utils/cover'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
@@ -65,16 +65,6 @@ const episodes = computed(() => {
 const specialEpisodes = computed(() => episodes.value.filter(ep => ep.type === 1))
 const otherEpisodes = computed(() => episodes.value.filter(ep => ep.type > 1))
 
-const EPISODE_TYPE_LABELS: Record<number, string> = {
-  0: '本篇',
-  1: 'SP',
-  2: 'OP',
-  3: 'ED',
-  4: 'PV',
-  5: 'MAD',
-  6: '其他'
-}
-
 const editTypeOptions = MEDIA_TYPE_VALUES.map((mt) => ({ value: mt, label: MEDIA_TYPES[mt] }))
 const statusOptions = STATUS_VALUES.map((s) => ({ value: s, label: STATUS_LABELS[s] }))
 
@@ -100,28 +90,37 @@ async function loadDetail() {
   loading.value = true
   error.value = ''
   try {
+    // Fetch media first to get source_id for credits
     media.value = await api.getMedia(mediaId.value)
     fillForm(media.value)
-    history.value = (await api.listHistory({ media_id: mediaId.value })).data
 
-    // Load credits if media has source_id
+    // Then parallelize history and credits loading
+    const promises: Promise<any>[] = [
+      api.listHistory({ media_id: mediaId.value }).then(res => res.data)
+    ]
+
+    // Add credits loading if source_id is available
     if (media.value.source_id && media.value.source) {
-      try {
-        const creditsData = await api.fetchCredits({
+      promises.push(
+        api.fetchCredits({
           source: media.value.source,
           source_id: media.value.source_id,
           type: media.value.type
+        }).catch(err => {
+          console.warn('Failed to load credits:', err)
+          return null
         })
-        if (creditsData && (creditsData.cast.length > 0 || creditsData.crew.length > 0)) {
-          credits.value = creditsData
-        }
-      } catch (err) {
-        // Credits loading is optional, don't fail the whole page
-        console.warn('Failed to load credits:', err)
-      }
+      )
     }
 
-    // Build progress→notes map from history data (supports both episode and chapter)
+    const [historyData, creditsData] = await Promise.all(promises)
+
+    history.value = historyData
+    if (creditsData && (creditsData.cast?.length > 0 || creditsData.crew?.length > 0)) {
+      credits.value = creditsData
+    }
+
+    // Build progress→notes map from history data
     const notes: Record<number, string> = {}
     for (const h of history.value) {
       const to = progressVal(h.progress_to)

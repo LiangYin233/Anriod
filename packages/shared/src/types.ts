@@ -33,7 +33,6 @@ export interface MediaProgress {
   hours_played?: number
   achievements_unlocked?: number
   has_platinum?: boolean
-  special_episode?: string  // For tracking SP episodes like "SP1", "OVA2"
   [key: string]: unknown
 }
 
@@ -161,6 +160,16 @@ export interface Episode {
   name_cn?: string
   duration?: string
   airdate?: string
+}
+
+export const EPISODE_TYPE_LABELS: Record<number, string> = {
+  0: '本篇',
+  1: 'SP',
+  2: 'OP',
+  3: 'ED',
+  4: 'PV',
+  5: 'MAD',
+  6: '其他'
 }
 
 export interface MediaDetails {
