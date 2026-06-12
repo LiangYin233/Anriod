@@ -411,6 +411,53 @@ onMounted(loadDetail)
             </div>
           </div>
 
+          <!-- Special Episodes (SP/OVA) -->
+          <div v-if="specialEpisodes.length > 0" class="glass-card rounded-xl p-stack-md shadow-sm">
+            <h3 class="mb-unit flex items-center gap-2 text-title-sm text-on-surface">
+              <span class="h-4 w-1 rounded-full bg-primary" />
+              特别篇 / OVA
+            </h3>
+            <div class="flex flex-col gap-2">
+              <div
+                v-for="spEp in specialEpisodes"
+                :key="spEp.ep"
+                class="flex items-center gap-3 rounded-lg border border-outline-variant/20 bg-surface-container-low p-3 transition-colors hover:bg-surface-container-high"
+              >
+                <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-tertiary-container">
+                  <span class="text-label-sm font-bold text-on-tertiary-container">SP</span>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-body-sm font-medium text-on-surface">{{ spEp.name_cn || spEp.name || `SP ${spEp.ep}` }}</p>
+                  <p v-if="spEp.name_cn && spEp.name" class="text-caption-xs text-on-surface-variant truncate">{{ spEp.name }}</p>
+                </div>
+                <span class="shrink-0 rounded-full bg-surface-container px-2.5 py-0.5 text-[10px] font-medium text-on-surface-variant">
+                  {{ spEp.ep }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Other Episodes (OP/ED/PV) -->
+          <div v-if="otherEpisodes.length > 0" class="glass-card rounded-xl p-stack-md shadow-sm">
+            <details>
+              <summary class="cursor-pointer flex items-center gap-2 text-title-sm text-on-surface hover:text-primary">
+                <span class="h-4 w-1 rounded-full bg-primary" />
+                OP / ED / PV
+                <span class="text-caption-xs text-on-surface-variant">({{ otherEpisodes.length }})</span>
+              </summary>
+              <div class="mt-3 flex flex-col gap-1">
+                <div
+                  v-for="otherEp in otherEpisodes"
+                  :key="otherEp.ep"
+                  class="flex items-center justify-between rounded px-2 py-1.5 text-caption-sm hover:bg-surface-container"
+                >
+                  <span class="text-on-surface">{{ otherEp.name_cn || otherEp.name || `${EPISODE_TYPE_LABELS[otherEp.type]} ${otherEp.ep}` }}</span>
+                  <span class="rounded bg-surface-variant px-1.5 py-0.5 text-[9px] text-on-surface-variant">{{ EPISODE_TYPE_LABELS[otherEp.type] }}</span>
+                </div>
+              </div>
+            </details>
+          </div>
+
           <!-- Synopsis -->
           <div v-if="media.description">
             <h3 class="mb-unit flex items-center gap-2 text-title-sm text-on-surface">
