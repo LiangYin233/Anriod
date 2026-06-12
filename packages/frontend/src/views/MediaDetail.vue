@@ -345,7 +345,7 @@ onMounted(loadDetail)
                 <button
                   class="btn-icon"
                   type="button"
-                  :disabled="media.total_episodes && episode >= media.total_episodes"
+                  :disabled="!!(media.total_episodes && episode >= media.total_episodes)"
                   @click="episode = Math.min(media.total_episodes || Infinity, episode + 1); saveProgress()"
                 >
                   <span class="material-symbols-outlined">add</span>
