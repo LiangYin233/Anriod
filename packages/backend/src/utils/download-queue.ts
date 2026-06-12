@@ -63,7 +63,8 @@ class DownloadQueue {
   }
 
   private updateMediaCoverPath(mediaId: string, path: string) {
-    run('UPDATE media SET cover_local_path = ?, updated_at = ? WHERE id = ?', [path, new Date().toISOString(), mediaId])
+    // 下载成功后，清空远程 URL，只保留本地路径
+    run('UPDATE media SET cover_local_path = ?, cover_url = NULL, updated_at = ? WHERE id = ?', [path, new Date().toISOString(), mediaId])
   }
 }
 
