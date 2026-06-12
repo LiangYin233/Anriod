@@ -95,11 +95,13 @@ const mainPadding = computed(() => sidebarCollapsed.value ? 'lg:pl-16' : 'lg:pl-
   <div class="h-screen flex flex-col overflow-hidden bg-background text-on-background antialiased" :class="{ 'tauri-app': isTauri }">
 
     <!-- Mobile backdrop -->
-    <div
-      v-if="mobileDrawerOpen"
-      class="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm xl:hidden"
-      @click="mobileDrawerOpen = false"
-    />
+    <Transition name="backdrop">
+      <div
+        v-if="mobileDrawerOpen"
+        class="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm xl:hidden"
+        @click="mobileDrawerOpen = false"
+      />
+    </Transition>
 
     <!-- ============================================ -->
     <!-- SIDEBAR                                       -->
@@ -275,9 +277,12 @@ const mainPadding = computed(() => sidebarCollapsed.value ? 'lg:pl-16' : 'lg:pl-
 }
 
 /* Mobile drawer transition */
-.drawer-enter-active,
+.drawer-enter-active {
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 .drawer-leave-active {
-  transition: transform 0.3s ease-out;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.6, 1);
 }
 
 .drawer-enter-from {
@@ -286,5 +291,19 @@ const mainPadding = computed(() => sidebarCollapsed.value ? 'lg:pl-16' : 'lg:pl-
 
 .drawer-leave-to {
   transform: translateX(-100%);
+}
+
+/* Mobile backdrop transition */
+.backdrop-enter-active {
+  transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.backdrop-leave-active {
+  transition: opacity 0.2s cubic-bezier(0.4, 0, 1, 1);
+}
+
+.backdrop-enter-from,
+.backdrop-leave-to {
+  opacity: 0;
 }
 </style>
