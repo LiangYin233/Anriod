@@ -62,7 +62,6 @@ const episodes = computed(() => {
   return (metadata.episodes || []) as Episode[]
 })
 
-const mainEpisodes = computed(() => episodes.value.filter(ep => ep.type === 0))
 const specialEpisodes = computed(() => episodes.value.filter(ep => ep.type === 1))
 const otherEpisodes = computed(() => episodes.value.filter(ep => ep.type > 1))
 
