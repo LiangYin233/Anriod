@@ -57,6 +57,14 @@ interface InfoboxItem {
   value: InfoboxValue
 }
 
+interface BangumiEpisode {
+  id: number
+  type: number  // 0=本篇, 1=SP, 2=OP, 3=ED, 4=预告, 5=MAD, 6=其他
+  name: string
+  name_cn: string
+  ep?: number | string
+}
+
 interface BangumiSubject {
   id: number
   type: number
@@ -116,7 +124,8 @@ function infoboxField(infobox: InfoboxItem[] | undefined, keys: string[]): strin
 function studioOf(subject: BangumiSubject): string | undefined {
   return infoboxField(subject.infobox, [
     '动画制作', '製作', '制作', '制作公司', '开发', '開發',
-    '原作', '制作团队', '开发商', '发行', 'Studio'
+    '原作', '原作者', '作者', '著者', '漫画', '小说', '轻小说',
+    '制作团队', '开发商', '发行', 'Studio', 'Author'
   ])
 }
 
