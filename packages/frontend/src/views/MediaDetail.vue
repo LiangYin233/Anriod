@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import type { CreditsResponse, Media, MediaType, Status, WatchHistory } from '@anriod/shared'
+import type { CreditsResponse, Episode, Media, MediaType, Status, WatchHistory } from '@anriod/shared'
 import { MEDIA_TYPES, MEDIA_TYPE_VALUES, STATUS_LABELS, STATUS_VALUES } from '@anriod/shared'
 import { api } from '@/utils/api'
 import { getCoverSrc } from '@/utils/cover'
@@ -54,6 +54,27 @@ const editCoverUrl = ref('')
 const editExternalRating = ref<number | null>(null)
 const editDescription = ref('')
 const showMore = ref(false)
+
+// Episode list from source metadata
+const episodes = computed(() => {
+  if (!media.value?.source_metadata) return []
+  const metadata = media.value.source_metadata as any
+  return (metadata.episodes || []) as Episode[]
+})
+
+const mainEpisodes = computed(() => episodes.value.filter(ep => ep.type === 0))
+const specialEpisodes = computed(() => episodes.value.filter(ep => ep.type === 1))
+const otherEpisodes = computed(() => episodes.value.filter(ep => ep.type > 1))
+
+const EPISODE_TYPE_LABELS: Record<number, string> = {
+  0: '本篇',
+  1: 'SP',
+  2: 'OP',
+  3: 'ED',
+  4: 'PV',
+  5: 'MAD',
+  6: '其他'
+}
 
 const editTypeOptions = MEDIA_TYPE_VALUES.map((mt) => ({ value: mt, label: MEDIA_TYPES[mt] }))
 const statusOptions = STATUS_VALUES.map((s) => ({ value: s, label: STATUS_LABELS[s] }))
