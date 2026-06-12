@@ -363,15 +363,17 @@ export class BangumiDataSource implements DataSource {
 
             // Count only main episodes (type=0) for total_episodes
             const mainEpisodes = epData.data.filter((ep: BangumiEpisode) => ep.type === 0)
-            actualEpisodeCount = mainEpisodes.length
+            const mainCount = mainEpisodes.length
 
             // Fallback to original count if no main episodes found (all-SP series)
-            if (actualEpisodeCount === 0 && (subject.total_episodes || subject.eps)) {
+            if (mainCount === 0 && (subject.total_episodes || subject.eps)) {
               actualEpisodeCount = subject.total_episodes ?? subject.eps
               logger.warn(`[Bangumi] No main episodes found for ${sourceId}, using subject.total_episodes=${actualEpisodeCount}`)
+            } else {
+              actualEpisodeCount = mainCount
             }
 
-            logger.info(`[Bangumi] 正片: ${actualEpisodeCount}, SP等: ${epData.data.length - (actualEpisodeCount || 0)}`)
+            logger.info(`[Bangumi] 正片: ${actualEpisodeCount}, SP等: ${epData.data.length - (actualEpisodeCount ?? 0)}`)
           }
         }
       } catch (err) {
