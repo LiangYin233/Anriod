@@ -38,7 +38,20 @@ export default defineConfig({
     // Don't minify for debug builds during development
     minify: !process.env.TAURI_ENV_DEBUG ? 'esbuild' : false,
     // Generate sourcemaps for debugging in Tauri devtools
-    sourcemap: !!process.env.TAURI_ENV_DEBUG
+    sourcemap: !!process.env.TAURI_ENV_DEBUG,
+    // Don't inline font files, output to separate directory
+    assetsInlineLimit: 0,
+    rollupOptions: {
+      output: {
+        assetFileNames: (assetInfo) => {
+          // Put font files in dedicated fonts directory
+          if (assetInfo.name?.match(/\.(woff2?|ttf|eot)$/)) {
+            return 'fonts/[name]-[hash][extname]'
+          }
+          return 'assets/[name]-[hash][extname]'
+        }
+      }
+    }
   },
 
   // Clear console on Tauri dev

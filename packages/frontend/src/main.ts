@@ -2,6 +2,7 @@ import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router'
 import { useConfig } from './composables/useConfig'
+import '@material-symbols/font-400/outlined.css'
 import './style.css'
 import './assets/components.css'
 

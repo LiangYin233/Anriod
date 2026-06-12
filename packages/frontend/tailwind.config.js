@@ -74,7 +74,18 @@ export default {
         gutter: '16px',
       },
       fontFamily: {
-        sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+        sans: [
+          '-apple-system',
+          'BlinkMacSystemFont',
+          'Segoe UI',
+          'PingFang SC',
+          'Hiragino Sans GB',
+          'Microsoft YaHei',
+          'Helvetica Neue',
+          'Helvetica',
+          'Arial',
+          'sans-serif'
+        ],
       },
       fontSize: {
         'display-lg': ['42px', { lineHeight: '52px', letterSpacing: '-0.02em', fontWeight: '700' }],

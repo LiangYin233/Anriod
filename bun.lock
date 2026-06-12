@@ -36,6 +36,7 @@
         "vue-router": "^4.3.0",
       },
       "devDependencies": {
+        "@material-symbols/font-400": "^0.45.1",
         "@tauri-apps/cli": "^2.0.0",
         "@types/node": "^20.11.0",
         "@vitejs/plugin-vue": "^5.0.0",
@@ -124,6 +125,8 @@
     "@jridgewell/trace-mapping": ["@jridgewell/trace-mapping@0.3.31", "", { "dependencies": { "@jridgewell/resolve-uri": "^3.1.0", "@jridgewell/sourcemap-codec": "^1.4.14" } }, "sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw=="],
 
     "@kurkle/color": ["@kurkle/color@0.3.4", "", {}, "sha512-M5UknZPHRu3DEDWoipU6sE8PdkZ6Z/S+v4dD+Ke8IaNlpdSQah50lz1KtcFBa2vsdOnwbbnxJwVM4wty6udA5w=="],
+
+    "@material-symbols/font-400": ["@material-symbols/font-400@0.45.1", "", {}, "sha512-XdCFQC1xIgDRhaPVxMAwP02yf18PqAeOZg6P9heQpH6lA+7exP+Ng4n3XCK1vYx0FLXw8mGevYEut1uzB6FryA=="],
 
     "@nodelib/fs.scandir": ["@nodelib/fs.scandir@2.1.5", "", { "dependencies": { "@nodelib/fs.stat": "2.0.5", "run-parallel": "^1.1.9" } }, "sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g=="],
 
