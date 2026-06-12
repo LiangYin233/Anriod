@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { computed, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import type { Media, MediaType, Status } from '@anriod/shared'
 import { MEDIA_TYPES, MEDIA_TYPE_VALUES, STATUS_LABELS, STATUS_VALUES } from '@anriod/shared'
 import MediaCard from '@/components/MediaCard.vue'
@@ -16,7 +16,8 @@ import { useToast } from '@/composables/useToast'
 import { api, getStoredConfig, normalizeBackendUrl } from '@/utils/api'
 
 const route = useRoute()
-const { mediaList, pagination, statusCounts, loading, error, fetchMedia, incrementProgress, setStatus, removeMedia } = useMedia()
+const router = useRouter()
+const { mediaList, pagination, statusCounts, loading, error, fetchMedia, incrementProgress, setStatus, removeMedia, refreshCurrentQuery } = useMedia()
 const toast = useToast()
 const modalVisible = ref(false)
 const modalMediaId = ref('')
@@ -34,6 +35,7 @@ const airDateFrom = ref('')
 const airDateTo = ref('')
 const epMin = ref<number | undefined>(undefined)
 const epMax = ref<number | undefined>(undefined)
+const hasLoadedOnce = ref(false)
 
 const sortOptions = [
   { value: 'updated_at:desc', label: '最近修改' },
@@ -42,7 +44,23 @@ const sortOptions = [
   { value: 'rating:desc', label: '评分最高' },
   { value: 'title:asc', label: '标题 A-Z' },
 ]
-const sortBy = ref(sortOptions[0].value)
+
+const STORAGE_KEY_SORT = 'anriod_media_sort'
+
+// Restore sort preference from localStorage
+function getSavedSort(): string {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY_SORT)
+    if (saved && sortOptions.some(opt => opt.value === saved)) {
+      return saved
+    }
+  } catch (e) {
+    console.warn('Failed to read sort preference from localStorage:', e)
+  }
+  return sortOptions[0].value
+}
+
+const sortBy = ref(getSavedSort())
 
 const typeOptions = [
   { value: '', label: '全部类型' },
@@ -83,7 +101,7 @@ const totalPages = computed(() => Math.ceil(pagination.value.total / pagination.
 const hasPrev = computed(() => pagination.value.page > 1)
 const hasNext = computed(() => pagination.value.page < totalPages.value)
 
-async function loadMedia(page?: number) {
+async function loadMedia(page?: number, forceRefresh = false) {
   await fetchMedia({
     q: keyword.value || undefined,
     type: type.value || undefined,
@@ -97,12 +115,42 @@ async function loadMedia(page?: number) {
     page: page ?? pagination.value.page,
     limit: 20,
     sort: sortBy.value
-  })
+  }, forceRefresh)
+}
+
+function syncFiltersToUrl() {
+  const query: Record<string, string> = {}
+
+  if (keyword.value) query.q = keyword.value
+  if (type.value) query.type = type.value
+  if (status.value) query.status = status.value
+  if (tagFilter.value) query.tag = tagFilter.value
+  if (source.value) query.source = source.value
+  if (sortBy.value) query.sort = sortBy.value
+  if (airDateFrom.value) query.air_date_from = airDateFrom.value
+  if (airDateTo.value) query.air_date_to = airDateTo.value
+  if (epMin.value !== undefined) query.ep_min = String(epMin.value)
+  if (epMax.value !== undefined) query.ep_max = String(epMax.value)
+
+  router.replace({ query })
+}
+
+function saveSortPreference(value: string) {
+  try {
+    localStorage.setItem(STORAGE_KEY_SORT, value)
+  } catch (e) {
+    console.warn('Failed to save sort preference to localStorage:', e)
+  }
 }
 
 function onFilterChange() {
+  syncFiltersToUrl()
   loadMedia(1)
   goToPageInput.value = ''
+}
+
+function forceRefresh() {
+  loadMedia(pagination.value.page, true)
 }
 
 function prevPage() {
@@ -158,6 +206,8 @@ async function handleDelete() {
   modalVisible.value = false
   await removeMedia(id)
   toast.success('已删除')
+  // After deletion, refresh to get updated counts
+  await refreshCurrentQuery()
 }
 
 function getCoverSrc(media: Media): string {
@@ -180,15 +230,52 @@ function clearFilters() {
   epMin.value = undefined
   epMax.value = undefined
   showAllChips.value = false
+  sortBy.value = sortOptions[0].value
   onFilterChange()
 }
 
-onMounted(() => {
-  const tagParam = route.query.tag as string | undefined
-  if (tagParam) {
-    tagFilter.value = tagParam
+function restoreFiltersFromUrl() {
+  const q = route.query
+
+  if (q.q) keyword.value = String(q.q)
+  if (q.type) type.value = String(q.type) as MediaType | ''
+  if (q.status) status.value = String(q.status) as Status | ''
+  if (q.tag) tagFilter.value = String(q.tag)
+  if (q.source) source.value = String(q.source)
+
+  // Restore sort from URL with priority over localStorage
+  if (q.sort) {
+    const urlSort = String(q.sort)
+    if (sortOptions.some(opt => opt.value === urlSort)) {
+      sortBy.value = urlSort
+    }
   }
+
+  if (q.air_date_from) airDateFrom.value = String(q.air_date_from)
+  if (q.air_date_to) airDateTo.value = String(q.air_date_to)
+  if (q.ep_min) epMin.value = parseInt(String(q.ep_min))
+  if (q.ep_max) epMax.value = parseInt(String(q.ep_max))
+}
+
+onMounted(() => {
+  restoreFiltersFromUrl()
+  // After restoring from URL, sync current state back to URL
+  syncFiltersToUrl()
   loadMedia()
+  hasLoadedOnce.value = true
+})
+
+// Watch for external URL changes (e.g., from Tags page)
+watch(() => route.query, () => {
+  if (route.name === 'Home' && hasLoadedOnce.value) {
+    restoreFiltersFromUrl()
+    loadMedia()
+  }
+})
+
+// Watch sortBy changes and persist to localStorage
+watch(sortBy, (newSort) => {
+  saveSortPreference(newSort)
 })
 </script>
 
@@ -213,7 +300,7 @@ onMounted(() => {
             {{ STATUS_LABELS[s] }} {{ statusCounts[s] || 0 }}
           </span>
         </div>
-        <button class="btn-ghost" type="button" @click="onFilterChange">
+        <button class="btn-ghost" type="button" @click="forceRefresh">
           <span class="material-symbols-outlined text-[18px]">refresh</span>
         </button>
       </template>
