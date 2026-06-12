@@ -371,7 +371,7 @@ export class BangumiDataSource implements DataSource {
               logger.warn(`[Bangumi] No main episodes found for ${sourceId}, using subject.total_episodes=${actualEpisodeCount}`)
             }
 
-            logger.info(`[Bangumi] 正片: ${actualEpisodeCount}, SP等: ${epData.data.length - actualEpisodeCount}`)
+            logger.info(`[Bangumi] 正片: ${actualEpisodeCount}, SP等: ${epData.data.length - (actualEpisodeCount || 0)}`)
           }
         }
       } catch (err) {
