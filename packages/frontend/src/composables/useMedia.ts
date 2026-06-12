@@ -18,13 +18,51 @@ function nextProgress(media: Media): MediaProgress {
   return current
 }
 
-export function useMedia() {
-  const mediaList = ref<Media[]>([])
-  const pagination = ref<PaginatedResponse<Media>['pagination']>({ page: 1, limit: 20, total: 0 })
-  const statusCounts = ref<Record<string, number>>({})
-  const loading = ref(false)
-  const error = ref('')
-  async function fetchMedia(filters: ListMediaQuery = {}) {
+function createQueryKey(filters: ListMediaQuery): string {
+  return JSON.stringify({
+    q: filters.q ?? '',
+    type: filters.type ?? '',
+    status: filters.status ?? '',
+    tag: filters.tag ?? '',
+    source: filters.source ?? '',
+    page: filters.page ?? 1,
+    limit: filters.limit ?? 20,
+    sort: filters.sort ?? '',
+    air_date_from: filters.air_date_from ?? '',
+    air_date_to: filters.air_date_to ?? '',
+    ep_min: filters.ep_min ?? '',
+    ep_max: filters.ep_max ?? ''
+  })
+}
+
+// Global singleton state (shared across all component instances)
+const mediaList = ref<Media[]>([])
+const pagination = ref<PaginatedResponse<Media>['pagination']>({ page: 1, limit: 20, total: 0 })
+const statusCounts = ref<Record<string, number>>({})
+const loading = ref(false)
+const error = ref('')
+const cache = ref<Map<string, { data: PaginatedResponse<Media>; timestamp: number }>>(new Map())
+const lastQueryKey = ref<string>('')
+const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
+
+async function fetchMedia(filters: ListMediaQuery = {}, forceRefresh = false) {
+    const queryKey = createQueryKey(filters)
+    lastQueryKey.value = queryKey
+
+    // Check cache if not forcing refresh
+    if (!forceRefresh && cache.value.has(queryKey)) {
+      const cached = cache.value.get(queryKey)!
+      const age = Date.now() - cached.timestamp
+
+      if (age < CACHE_TTL) {
+        // Use cached data
+        mediaList.value = cached.data.data
+        pagination.value = cached.data.pagination
+        statusCounts.value = cached.data.status_counts ?? {}
+        return cached.data
+      }
+    }
+
     loading.value = true
     error.value = ''
 
@@ -33,6 +71,13 @@ export function useMedia() {
         ...filters,
         limit: filters.limit ?? 20
       })
+
+      // Update cache
+      cache.value.set(queryKey, {
+        data: result,
+        timestamp: Date.now()
+      })
+
       mediaList.value = result.data
       pagination.value = result.pagination
       statusCounts.value = result.status_counts ?? {}
@@ -40,28 +85,48 @@ export function useMedia() {
     } catch (caught) {
       error.value = caught instanceof Error ? caught.message : '加载媒体列表失败'
       throw caught
-    } finally {
-      loading.value = false
-    }
   }
+}
 
-  async function incrementProgress(media: Media) {
+async function incrementProgress(media: Media) {
     const updated = await api.updateProgress(media.id, { current_progress: nextProgress(media) })
     mediaList.value = mediaList.value.map((item) => (item.id === updated.id ? updated : item))
-    return updated
-  }
 
-  async function setStatus(media: Media, status: Status) {
+  return updated
+}
+
+async function setStatus(media: Media, status: Status) {
     const updated = await api.updateStatus(media.id, { status })
     mediaList.value = mediaList.value.map((item) => (item.id === updated.id ? updated : item))
-    return updated
-  }
 
-  async function removeMedia(id: string) {
+  return updated
+}
+
+async function removeMedia(id: string) {
     await api.deleteMedia(id)
     mediaList.value = mediaList.value.filter((item) => item.id !== id)
-  }
 
+  invalidateCache()
+}
+
+function invalidateCache() {
+  cache.value.clear()
+}
+
+function refreshCurrentQuery() {
+    // Force refresh the last query
+    if (lastQueryKey.value) {
+      const cachedEntry = cache.value.get(lastQueryKey.value)
+      if (cachedEntry) {
+        const filters = JSON.parse(lastQueryKey.value) as ListMediaQuery
+        return fetchMedia(filters, true)
+      }
+  }
+  return Promise.resolve()
+}
+
+// Export as singleton - all components share the same state
+export function useMedia() {
   return {
     mediaList,
     pagination,
@@ -71,6 +136,8 @@ export function useMedia() {
     fetchMedia,
     incrementProgress,
     setStatus,
-    removeMedia
+    removeMedia,
+    invalidateCache,
+    refreshCurrentQuery
   }
 }
