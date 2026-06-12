@@ -85,7 +85,9 @@ async function fetchMedia(filters: ListMediaQuery = {}, forceRefresh = false) {
     } catch (caught) {
       error.value = caught instanceof Error ? caught.message : '加载媒体列表失败'
       throw caught
-  }
+    } finally {
+      loading.value = false
+    }
 }
 
 async function incrementProgress(media: Media) {
