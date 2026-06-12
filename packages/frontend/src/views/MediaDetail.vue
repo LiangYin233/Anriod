@@ -342,7 +342,12 @@ onMounted(loadDetail)
                 </button>
                 <span class="text-label-sm font-bold text-primary tabular-nums w-10 text-center">{{ episode }}</span>
                 <span class="text-caption-xs text-on-surface-variant">/ {{ media.total_episodes }}</span>
-                <button class="btn-icon" type="button" @click="episode = episode + 1; saveProgress()">
+                <button
+                  class="btn-icon"
+                  type="button"
+                  :disabled="media.total_episodes && episode >= media.total_episodes"
+                  @click="episode = Math.min(media.total_episodes || Infinity, episode + 1); saveProgress()"
+                >
                   <span class="material-symbols-outlined">add</span>
                 </button>
               </div>

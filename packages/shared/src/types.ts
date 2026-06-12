@@ -172,6 +172,14 @@ export const EPISODE_TYPE_LABELS: Record<number, string> = {
   6: '其他'
 }
 
+// Valid episode type range for validation
+export const EPISODE_TYPE_MIN = 0
+export const EPISODE_TYPE_MAX = 6
+
+export function isValidEpisodeType(type: number): boolean {
+  return type >= EPISODE_TYPE_MIN && type <= EPISODE_TYPE_MAX
+}
+
 export interface MediaDetails {
   source: string
   source_id: string

@@ -353,13 +353,15 @@ export class BangumiDataSource implements DataSource {
           const epData = await epResponse.json() as { total?: number; data?: BangumiEpisode[] }
 
           if (epData.data) {
-            // Extract full episode list
-            episodeList = epData.data.map(ep => ({
-              ep: ep.ep !== undefined ? ep.ep : ep.id,
-              type: ep.type,
-              name: ep.name,
-              name_cn: ep.name_cn
-            }))
+            // Extract full episode list with validation
+            episodeList = epData.data
+              .filter((ep: BangumiEpisode) => ep.type !== undefined && ep.type >= 0 && ep.type <= 6)
+              .map(ep => ({
+                ep: ep.ep !== undefined ? ep.ep : ep.id,
+                type: ep.type,
+                name: ep.name,
+                name_cn: ep.name_cn
+              }))
 
             // Count only main episodes (type=0) for total_episodes
             const mainEpisodes = epData.data.filter((ep: BangumiEpisode) => ep.type === 0)
