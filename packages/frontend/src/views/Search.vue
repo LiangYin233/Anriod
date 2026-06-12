@@ -10,6 +10,7 @@ import ErrorBanner from '@/components/ErrorBanner.vue'
 import AppSelect from '@/components/AppSelect.vue'
 import { api } from '@/utils/api'
 import { useToast } from '@/composables/useToast'
+import { useAsyncState } from '@/composables/useAsyncState'
 
 const query = ref('')
 const searched = ref(false)
@@ -19,8 +20,7 @@ const sourceOptions = computed(() => sources.value.map((s) => ({ value: s.name, 
 const mediaTypeOptions = MEDIA_TYPE_VALUES.map((mt) => ({ value: mt, label: MEDIA_TYPES[mt] }))
 const manualStatusOptions = STATUS_VALUES.map((s) => ({ value: s, label: STATUS_LABELS[s] }))
 const results = ref<SearchResult[]>([])
-const loading = ref(false)
-const error = ref('')
+const { loading, error, execute } = useAsyncState()
 const importingId = ref('')
 const toast = useToast()
 

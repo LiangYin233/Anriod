@@ -6,14 +6,14 @@ import PageHeader from '@/components/PageHeader.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import ErrorBanner from '@/components/ErrorBanner.vue'
 import { useChart } from '@/composables/useChart'
+import { useAsyncState } from '@/composables/useAsyncState'
 import { api } from '@/utils/api'
 
 const overview = ref<StatisticsOverview | null>(null)
 const timeline = ref<TimelinePoint[]>([])
 const tagStats = ref<TagStatistic[]>([])
 const ratingDist = ref<Array<{ rating: number; count: number }>>([])
-const loading = ref(false)
-const error = ref('')
+const { loading, error, execute } = useAsyncState()
 const chartTrigger = ref(0)
 
 // Canvas refs
@@ -182,9 +182,7 @@ useChart(ratingCanvas, () => {
 // ── Data loading ───────────────────────────────────────
 
 async function loadStatistics() {
-  loading.value = true
-  error.value = ''
-  try {
+  await execute(async () => {
     const [o, t, g, rd] = await Promise.all([
       api.overview(),
       api.timeline(),
@@ -194,11 +192,7 @@ async function loadStatistics() {
     overview.value = o; timeline.value = t; tagStats.value = g; ratingDist.value = rd
     await nextTick()
     chartTrigger.value++
-  } catch (caught) {
-    error.value = caught instanceof Error ? caught.message : '加载统计失败'
-  } finally {
-    loading.value = false
-  }
+  }, '加载统计失败')
 }
 
 onMounted(loadStatistics)

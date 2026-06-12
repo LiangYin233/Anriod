@@ -7,6 +7,7 @@ import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import ErrorBanner from '@/components/ErrorBanner.vue'
 import { api } from '@/utils/api'
 import { useTauri } from '@/composables/useTauri'
+import { useAsyncState } from '@/composables/useAsyncState'
 
 const route = useRoute()
 const router = useRouter()
@@ -19,8 +20,7 @@ const fromPage = String(route.query.from || '')
 
 const detail = ref<MediaDetails | null>(null)
 const credits = ref<CreditsResponse | null>(null)
-const loading = ref(false)
-const error = ref('')
+const { loading, error, execute } = useAsyncState()
 const importing = ref(false)
 
 const breadcrumb = computed(() => {

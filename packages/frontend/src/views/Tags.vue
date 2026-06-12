@@ -8,32 +8,26 @@ import ErrorBanner from '@/components/ErrorBanner.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import Modal from '@/components/Modal.vue'
 import { useToast } from '@/composables/useToast'
+import { useAsyncState } from '@/composables/useAsyncState'
 import { api } from '@/utils/api'
 
 const router = useRouter()
 const tags = ref<(Tag & { count: number })[]>([])
-const loading = ref(false)
-const error = ref('')
+const { loading, error, execute } = useAsyncState()
 const toast = useToast()
 
 const deleteTarget = ref<{ id: number; name: string } | null>(null)
 const modalVisible = ref(false)
 
 async function loadTags() {
-  loading.value = true
-  error.value = ''
-  try {
+  await execute(async () => {
     const [tagList, tagStats] = await Promise.all([
       api.listTags(),
       api.tagStats()
     ])
     const countMap = new Map(tagStats.map((s) => [s.tag, s.count]))
     tags.value = tagList.map((t) => ({ ...t, count: countMap.get(t.name) ?? 0 }))
-  } catch (caught) {
-    error.value = caught instanceof Error ? caught.message : '加载标签失败'
-  } finally {
-    loading.value = false
-  }
+  }, '加载标签失败')
 }
 
 function goToMedia(tagName: string) {

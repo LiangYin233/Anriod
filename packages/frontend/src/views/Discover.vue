@@ -7,23 +7,17 @@ import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import ErrorBanner from '@/components/ErrorBanner.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import { api } from '@/utils/api'
+import { useAsyncState } from '@/composables/useAsyncState'
 
 const router = useRouter()
 const sections = ref<DiscoverSection[]>([])
-const loading = ref(false)
-const error = ref('')
+const { loading, error, execute } = useAsyncState()
 
 async function loadDiscover() {
-  loading.value = true
-  error.value = ''
-  try {
+  await execute(async () => {
     const data = await api.discover()
     sections.value = data.sections
-  } catch (caught) {
-    error.value = caught instanceof Error ? caught.message : '加载发现页失败'
-  } finally {
-    loading.value = false
-  }
+  }, '加载发现页失败')
 }
 
 function goToExplore(item: DiscoverSection['items'][number]) {

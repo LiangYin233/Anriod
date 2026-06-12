@@ -9,22 +9,16 @@ import { api } from '@/utils/api'
 import { formatDate } from '@/utils/format'
 import { progressVal } from '@/utils/progress'
 import { useToast } from '@/composables/useToast'
+import { useAsyncState } from '@/composables/useAsyncState'
 
 const history = ref<WatchHistory[]>([])
-const loading = ref(false)
-const error = ref('')
+const { loading, error, execute } = useAsyncState()
 const toast = useToast()
 
 async function loadHistory() {
-  loading.value = true
-  error.value = ''
-  try {
+  await execute(async () => {
     history.value = (await api.listHistory({ page: 1, limit: 500 })).data
-  } catch (caught) {
-    error.value = caught instanceof Error ? caught.message : '加载历史失败'
-  } finally {
-    loading.value = false
-  }
+  }, '加载历史失败')
 }
 
 function episodeLabel(h: WatchHistory): string {
