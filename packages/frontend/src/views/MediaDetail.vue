@@ -58,12 +58,13 @@ const showMore = ref(false)
 // Episode list from source metadata
 const episodes = computed(() => {
   if (!media.value?.source_metadata) return []
-  const metadata = media.value.source_metadata as any
-  return (metadata.episodes || []) as Episode[]
+  const metadata = media.value.source_metadata
+  if (!metadata || typeof metadata !== 'object') return []
+  return (Array.isArray((metadata as any).episodes) ? (metadata as any).episodes : []) as Episode[]
 })
 
-const specialEpisodes = computed(() => episodes.value.filter(ep => ep.type === 1))
-const otherEpisodes = computed(() => episodes.value.filter(ep => ep.type > 1))
+const specialEpisodes = computed(() => episodes.value.filter(ep => ep?.type === 1))
+const otherEpisodes = computed(() => episodes.value.filter(ep => ep?.type && ep.type > 1))
 
 const editTypeOptions = MEDIA_TYPE_VALUES.map((mt) => ({ value: mt, label: MEDIA_TYPES[mt] }))
 const statusOptions = STATUS_VALUES.map((s) => ({ value: s, label: STATUS_LABELS[s] }))

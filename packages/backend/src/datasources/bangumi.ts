@@ -345,6 +345,8 @@ export class BangumiDataSource implements DataSource {
     // For anime/tv types, fetch full episode list
     if ((resolvedType === 'anime' || resolvedType === 'tv') && sourceId) {
       try {
+        // Note: Bangumi API limit=300 may truncate long series (One Piece, Detective Conan)
+        // TODO: Add pagination if series has >300 episodes
         const episodesUrl = `${this.baseUrl}/v0/episodes?subject_id=${sourceId}&limit=300`
         const epResponse = await fetch(episodesUrl, { headers, ...this.fetchOptions })
         if (epResponse.ok) {
@@ -353,7 +355,7 @@ export class BangumiDataSource implements DataSource {
           if (epData.data) {
             // Extract full episode list
             episodeList = epData.data.map(ep => ({
-              ep: ep.ep ?? ep.id,
+              ep: ep.ep !== undefined ? ep.ep : ep.id,
               type: ep.type,
               name: ep.name,
               name_cn: ep.name_cn
@@ -362,6 +364,13 @@ export class BangumiDataSource implements DataSource {
             // Count only main episodes (type=0) for total_episodes
             const mainEpisodes = epData.data.filter((ep: BangumiEpisode) => ep.type === 0)
             actualEpisodeCount = mainEpisodes.length
+
+            // Fallback to original count if no main episodes found (all-SP series)
+            if (actualEpisodeCount === 0 && (subject.total_episodes || subject.eps)) {
+              actualEpisodeCount = subject.total_episodes ?? subject.eps
+              logger.warn(`[Bangumi] No main episodes found for ${sourceId}, using subject.total_episodes=${actualEpisodeCount}`)
+            }
+
             logger.info(`[Bangumi] 正片: ${actualEpisodeCount}, SP等: ${epData.data.length - actualEpisodeCount}`)
           }
         }
