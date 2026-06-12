@@ -23,6 +23,10 @@ packages/frontend/src-tauri/target/
 # Tauri generated mobile project — tracked so others can build without re-init
 # packages/frontend/src-tauri/gen/android/
 
+# Keystore files (sensitive!)
+*.jks
+*.keystore
+
 # Other Tauri gen schemas are build artifacts
 packages/frontend/src-tauri/gen/schemas/
 
