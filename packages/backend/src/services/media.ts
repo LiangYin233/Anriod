@@ -27,7 +27,6 @@ interface MediaRow {
   notes: string | null
   current_progress: string | null
   cover_url: string | null
-  cover_local_path: string | null
   description: string | null
   external_rating: number | null
   air_date: string | null
@@ -59,7 +58,6 @@ const INSERT_FIELDS = [
   'notes',
   'current_progress',
   'cover_url',
-  'cover_local_path',
   'description',
   'external_rating',
   'air_date',
@@ -81,7 +79,6 @@ const UPDATE_FIELDS = [
   'notes',
   'current_progress',
   'cover_url',
-  'cover_local_path',
   'description',
   'external_rating',
   'air_date',
@@ -114,7 +111,6 @@ function normalizeMediaInput(input: CreateMediaInput | UpdateMediaInput): Record
     notes: input.notes,
     current_progress: input.current_progress === undefined ? undefined : jsonString(input.current_progress),
     cover_url: input.cover_url,
-    cover_local_path: input.cover_local_path,
     description: input.description,
     external_rating: input.external_rating,
     air_date: input.air_date,
@@ -286,7 +282,7 @@ export function updateMedia(id: string, input: UpdateMediaInput): Media {
   // If cover_url is a remote link, trigger local download
   const updated = getMediaById(id)
   const coverUrl = updated.cover_url
-  if (typeof coverUrl === 'string' && coverUrl.startsWith('http') && !updated.cover_local_path) {
+  if (typeof coverUrl === 'string' && coverUrl.startsWith('http')) {
     downloadQueue.add({
       mediaId: id,
       coverUrl,

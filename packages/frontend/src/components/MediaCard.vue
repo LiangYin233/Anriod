@@ -18,12 +18,20 @@ const editValue = ref(0)
 const editInput = ref<HTMLInputElement | null>(null)
 
 const coverSrc = computed(() => {
-  if (props.media.cover_local_path) {
-    const filename = props.media.cover_local_path.split(/[\\/]/).pop()
-    const { backendUrl } = getStoredConfig()
-    if (filename && backendUrl) return `${normalizeBackendUrl(backendUrl)}/covers/${encodeURIComponent(filename)}`
+  if (!props.media.cover_url) return ''
+
+  // If it's a remote URL, return as-is
+  if (props.media.cover_url.startsWith('http')) {
+    return props.media.cover_url
   }
-  return props.media.cover_url || ''
+
+  // If it's a local path (e.g., "/covers/123.jpg"), prepend backend URL
+  const { backendUrl } = getStoredConfig()
+  if (backendUrl) {
+    return `${normalizeBackendUrl(backendUrl)}${props.media.cover_url}`
+  }
+
+  return props.media.cover_url
 })
 
 const currentEp = computed(() => {

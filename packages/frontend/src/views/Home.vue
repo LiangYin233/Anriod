@@ -211,12 +211,20 @@ async function handleDelete() {
 }
 
 function getCoverSrc(media: Media): string {
-  if (media.cover_local_path) {
-    const filename = media.cover_local_path.split(/[\\/]/).pop()
-    const { backendUrl } = getStoredConfig()
-    if (filename && backendUrl) return `${normalizeBackendUrl(backendUrl)}/covers/${encodeURIComponent(filename)}`
+  if (!media.cover_url) return ''
+
+  // If it's a remote URL, return as-is
+  if (media.cover_url.startsWith('http')) {
+    return media.cover_url
   }
-  return media.cover_url || ''
+
+  // If it's a local path (e.g., "/covers/123.jpg"), prepend backend URL
+  const { backendUrl } = getStoredConfig()
+  if (backendUrl) {
+    return `${normalizeBackendUrl(backendUrl)}${media.cover_url}`
+  }
+
+  return media.cover_url
 }
 
 function clearFilters() {

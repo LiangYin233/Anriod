@@ -73,13 +73,20 @@ const editTypeOptions = MEDIA_TYPE_VALUES.map((mt) => ({ value: mt, label: MEDIA
 const statusOptions = STATUS_VALUES.map((s) => ({ value: s, label: STATUS_LABELS[s] }))
 
 const coverSrc = computed(() => {
-  if (!media.value) return ''
-  if (media.value.cover_local_path) {
-    const filename = media.value.cover_local_path.split(/[\\/]/).pop()
-    const { backendUrl } = getStoredConfig()
-    if (filename && backendUrl) return `${normalizeBackendUrl(backendUrl)}/covers/${encodeURIComponent(filename)}`
+  if (!media.value?.cover_url) return ''
+
+  // If it's a remote URL, return as-is
+  if (media.value.cover_url.startsWith('http')) {
+    return media.value.cover_url
   }
-  return media.value.cover_url || ''
+
+  // If it's a local path (e.g., "/covers/123.jpg"), prepend backend URL
+  const { backendUrl } = getStoredConfig()
+  if (backendUrl) {
+    return `${normalizeBackendUrl(backendUrl)}${media.value.cover_url}`
+  }
+
+  return media.value.cover_url
 })
 
 function fillForm(item: Media) {

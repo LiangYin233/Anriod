@@ -15,7 +15,6 @@ export const media = sqliteTable(
     currentProgress: text('current_progress', { mode: 'json' }).$type<MediaProgress>(),
 
     coverUrl: text('cover_url'),
-    coverLocalPath: text('cover_local_path'),
     description: text('description'),
     externalRating: real('external_rating'),
     airDate: text('air_date'),

@@ -63,8 +63,16 @@ class DownloadQueue {
   }
 
   private updateMediaCoverPath(mediaId: string, path: string) {
-    // 下载成功后，清空远程 URL，只保留本地路径
-    run('UPDATE media SET cover_local_path = ?, cover_url = NULL, updated_at = ? WHERE id = ?', [path, new Date().toISOString(), mediaId])
+    // Extract just the filename for the URL path
+    const filename = path.split(/[\\/]/).pop()
+    if (!filename) {
+      logger.error(`Invalid path for media ${mediaId}: ${path}`)
+      return
+    }
+
+    // Store local path in cover_url field (e.g., "/covers/123.jpg")
+    const localUrl = `/covers/${filename}`
+    run('UPDATE media SET cover_url = ?, updated_at = ? WHERE id = ?', [localUrl, new Date().toISOString(), mediaId])
   }
 }
 

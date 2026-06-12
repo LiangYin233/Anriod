@@ -45,7 +45,6 @@ export interface Media {
   notes: string | null
   current_progress: MediaProgress | null
   cover_url: string | null
-  cover_local_path: string | null
   description: string | null
   external_rating: number | null
   air_date: string | null
@@ -105,7 +104,6 @@ export interface CreateMediaInput {
   notes?: string | null
   current_progress?: MediaProgress | null
   cover_url?: string | null
-  cover_local_path?: string | null
   description?: string | null
   external_rating?: number | null
   air_date?: string | null

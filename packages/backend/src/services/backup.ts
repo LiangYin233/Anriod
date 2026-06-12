@@ -88,11 +88,11 @@ export function importAll(data: ExportData) {
       run(
         `INSERT INTO media (
           id, title, type, status, rating, notes, current_progress,
-          cover_url, cover_local_path, description, external_rating,
+          cover_url, description, external_rating,
           air_date, total_episodes, studio, source_metadata,
           source, source_id, source_url, synced_at,
           created_at, updated_at
-        ) VALUES (${Array.from({ length: 21 }, () => '?').join(', ')})`,
+        ) VALUES (${Array.from({ length: 20 }, () => '?').join(', ')})`,
         [
           item.id,
           item.title,
@@ -102,7 +102,6 @@ export function importAll(data: ExportData) {
           item.notes ?? null,
           jsonString(item.current_progress),
           item.cover_url ?? null,
-          item.cover_local_path ?? null,
           item.description ?? null,
           item.external_rating ?? null,
           item.air_date ?? null,
