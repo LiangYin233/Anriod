@@ -13,7 +13,8 @@ import Modal from '@/components/Modal.vue'
 import AppSelect from '@/components/AppSelect.vue'
 import { useMedia } from '@/composables/useMedia'
 import { useToast } from '@/composables/useToast'
-import { api, getStoredConfig, normalizeBackendUrl } from '@/utils/api'
+import { api } from '@/utils/api'
+import { getCoverSrc } from '@/utils/cover'
 
 const route = useRoute()
 const router = useRouter()
@@ -208,23 +209,6 @@ async function handleDelete() {
   toast.success('已删除')
   // After deletion, refresh to get updated counts
   await refreshCurrentQuery()
-}
-
-function getCoverSrc(media: Media): string {
-  if (!media.cover_url) return ''
-
-  // If it's a remote URL, return as-is
-  if (media.cover_url.startsWith('http')) {
-    return media.cover_url
-  }
-
-  // If it's a local path (e.g., "/covers/123.jpg"), prepend backend URL
-  const { backendUrl } = getStoredConfig()
-  if (backendUrl) {
-    return `${normalizeBackendUrl(backendUrl)}${media.cover_url}`
-  }
-
-  return media.cover_url
 }
 
 function clearFilters() {
@@ -443,7 +427,7 @@ watch(sortBy, (newSort) => {
           >
             <!-- Cover (flush with card top/bottom/left) -->
             <div class="cover-wrapper w-[72px] h-24 shrink-0 overflow-hidden bg-surface-variant self-stretch">
-              <img v-if="getCoverSrc(media)" :src="getCoverSrc(media)" class="cover-img w-full h-full object-cover" />
+              <img v-if="getCoverSrc(media.cover_url)" :src="getCoverSrc(media.cover_url)" class="cover-img w-full h-full object-cover" />
               <span v-else class="flex h-full w-full items-center justify-center">
                 <span class="material-symbols-outlined text-[24px] text-on-surface-variant">movie</span>
               </span>

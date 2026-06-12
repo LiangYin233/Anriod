@@ -3,7 +3,7 @@ import { computed, nextTick, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import type { Media, Status } from '@anriod/shared'
 import { MEDIA_TYPES, STATUS_LABELS } from '@anriod/shared'
-import { getStoredConfig, normalizeBackendUrl } from '@/utils/api'
+import { getCoverSrc } from '@/utils/cover'
 
 const props = defineProps<{ media: Media }>()
 
@@ -17,22 +17,7 @@ const editing = ref(false)
 const editValue = ref(0)
 const editInput = ref<HTMLInputElement | null>(null)
 
-const coverSrc = computed(() => {
-  if (!props.media.cover_url) return ''
-
-  // If it's a remote URL, return as-is
-  if (props.media.cover_url.startsWith('http')) {
-    return props.media.cover_url
-  }
-
-  // If it's a local path (e.g., "/covers/123.jpg"), prepend backend URL
-  const { backendUrl } = getStoredConfig()
-  if (backendUrl) {
-    return `${normalizeBackendUrl(backendUrl)}${props.media.cover_url}`
-  }
-
-  return props.media.cover_url
-})
+const coverSrc = computed(() => getCoverSrc(props.media.cover_url))
 
 const currentEp = computed(() => {
   const p = props.media.current_progress

@@ -4,7 +4,7 @@ import { useRoute } from 'vue-router'
 import type { Media, MediaProgress, MediaType, Status, WatchHistory } from '@anriod/shared'
 import { MEDIA_TYPES, MEDIA_TYPE_VALUES, STATUS_LABELS, STATUS_VALUES } from '@anriod/shared'
 import { api } from '@/utils/api'
-import { getStoredConfig, normalizeBackendUrl } from '@/utils/api'
+import { getCoverSrc } from '@/utils/cover'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import ErrorBanner from '@/components/ErrorBanner.vue'
 import AppSelect from '@/components/AppSelect.vue'
@@ -72,22 +72,7 @@ const showMore = ref(false)
 const editTypeOptions = MEDIA_TYPE_VALUES.map((mt) => ({ value: mt, label: MEDIA_TYPES[mt] }))
 const statusOptions = STATUS_VALUES.map((s) => ({ value: s, label: STATUS_LABELS[s] }))
 
-const coverSrc = computed(() => {
-  if (!media.value?.cover_url) return ''
-
-  // If it's a remote URL, return as-is
-  if (media.value.cover_url.startsWith('http')) {
-    return media.value.cover_url
-  }
-
-  // If it's a local path (e.g., "/covers/123.jpg"), prepend backend URL
-  const { backendUrl } = getStoredConfig()
-  if (backendUrl) {
-    return `${normalizeBackendUrl(backendUrl)}${media.value.cover_url}`
-  }
-
-  return media.value.cover_url
-})
+const coverSrc = computed(() => getCoverSrc(media.value?.cover_url))
 
 function fillForm(item: Media) {
   title.value = item.title
