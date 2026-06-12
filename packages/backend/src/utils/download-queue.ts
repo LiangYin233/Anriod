@@ -2,6 +2,7 @@ import { mkdir } from 'node:fs/promises'
 import { dirname, extname } from 'node:path'
 import { run } from '../db/helpers'
 import { proxyFetchOptions } from './proxy'
+import { logger } from '../logger'
 
 interface DownloadTask {
   mediaId: string
@@ -24,6 +25,7 @@ class DownloadQueue {
 
   add(task: DownloadTask) {
     this.queue.push(task)
+    logger.info(`封面下载队列 +1 (${this.queue.length}): ${task.mediaId}`)
     void this.process()
   }
 
@@ -37,8 +39,9 @@ class DownloadQueue {
       try {
         const savedPath = await this.downloadCover(task)
         this.updateMediaCoverPath(task.mediaId, savedPath)
+        logger.success(`封面下载完成: ${task.mediaId}`)
       } catch (error) {
-        console.error(`Failed to download cover for ${task.mediaId}:`, error)
+        logger.error(`封面下载失败 ${task.mediaId}: ${error}`)
       }
     }
 

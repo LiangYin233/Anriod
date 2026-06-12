@@ -22,7 +22,11 @@ initializeDatabase()
 const app = new Hono()
 
 app.use('*', honoLogger())
-app.use('*', cors())
+app.use('*', cors({
+  origin: '*',
+  allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowHeaders: ['Content-Type', 'Authorization', 'X-API-Key']
+}))
 app.onError(handleError)
 app.notFound(notFound)
 
