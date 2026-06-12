@@ -51,9 +51,7 @@ async function loadDetails() {
     return
   }
 
-  loading.value = true
-  error.value = ''
-  try {
+  await execute(async () => {
     const [detailData, creditsData] = await Promise.all([
       api.fetchDetails({ source, source_id: sourceId, type: mediaType || undefined }),
       api.fetchCredits({ source, source_id: sourceId, type: mediaType || undefined }).catch(() => null)
@@ -62,11 +60,7 @@ async function loadDetails() {
     if (creditsData && (creditsData.cast.length > 0 || creditsData.crew.length > 0)) {
       credits.value = creditsData
     }
-  } catch (caught) {
-    error.value = caught instanceof Error ? caught.message : '加载作品详情失败'
-  } finally {
-    loading.value = false
-  }
+  }, '加载作品详情失败')
 }
 
 async function importToLibrary() {

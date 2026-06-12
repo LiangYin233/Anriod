@@ -63,15 +63,10 @@ async function loadSources() {
 async function runSearch() {
   if (!query.value.trim()) return
   searched.value = true
-  loading.value = true
-  error.value = ''
-  try {
+
+  await execute(async () => {
     results.value = await api.search({ query: query.value, source: source.value || undefined })
-  } catch (caught) {
-    error.value = caught instanceof Error ? caught.message : '搜索失败'
-  } finally {
-    loading.value = false
-  }
+  }, '搜索失败')
 }
 
 async function importResult(result: SearchResult) {
