@@ -20,7 +20,6 @@ export function initializeDatabase() {
       notes TEXT,
       current_progress TEXT,
       cover_url TEXT,
-      cover_local_path TEXT,
       description TEXT,
       external_rating REAL,
       air_date TEXT,

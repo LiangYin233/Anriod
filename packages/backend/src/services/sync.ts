@@ -43,10 +43,10 @@ export async function runSync(): Promise<{ synced: number; errors: string[] }> {
   return { synced: rows.length - errors.length, errors }
 }
 
-/** Scan all items with remote cover_url but no local copy, trigger download. */
+/** Scan all items with remote cover_url (http), trigger download to local. */
 export function triggerCoverMigration(): { queued: number } {
   const rows = all<{ id: string; cover_url: string }>(
-    "SELECT id, cover_url FROM media WHERE cover_url LIKE 'http%' AND (cover_local_path IS NULL OR cover_local_path = '')"
+    "SELECT id, cover_url FROM media WHERE cover_url LIKE 'http%'"
   )
 
   for (const row of rows) {
