@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router'
 import type { Media, MediaProgress, MediaType, Status, WatchHistory } from '@anriod/shared'
 import { MEDIA_TYPES, MEDIA_TYPE_VALUES, STATUS_LABELS, STATUS_VALUES } from '@anriod/shared'
 import { api } from '@/utils/api'
+import { getStoredConfig, normalizeBackendUrl } from '@/utils/api'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import ErrorBanner from '@/components/ErrorBanner.vue'
 import AppSelect from '@/components/AppSelect.vue'
@@ -70,6 +71,16 @@ const showMore = ref(false)
 
 const editTypeOptions = MEDIA_TYPE_VALUES.map((mt) => ({ value: mt, label: MEDIA_TYPES[mt] }))
 const statusOptions = STATUS_VALUES.map((s) => ({ value: s, label: STATUS_LABELS[s] }))
+
+const coverSrc = computed(() => {
+  if (!media.value) return ''
+  if (media.value.cover_local_path) {
+    const filename = media.value.cover_local_path.split(/[\\/]/).pop()
+    const { backendUrl } = getStoredConfig()
+    if (filename && backendUrl) return `${normalizeBackendUrl(backendUrl)}/covers/${encodeURIComponent(filename)}`
+  }
+  return media.value.cover_url || ''
+})
 
 function fillForm(item: Media) {
   title.value = item.title
@@ -231,8 +242,8 @@ onMounted(loadDetail)
           <div class="flex flex-col items-start gap-stack-md sm:flex-row">
             <div class="cover-wrapper relative w-48 shrink-0 overflow-hidden rounded-lg border border-outline-variant/20 shadow-lg group">
               <img
-                v-if="media.cover_url"
-                :src="media.cover_url"
+                v-if="coverSrc"
+                :src="coverSrc"
                 :alt="media.title"
                 class="cover-img aspect-poster w-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
