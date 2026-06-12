@@ -243,11 +243,7 @@ onMounted(loadDetail)
               </div>
 
               <div class="mt-3 flex flex-wrap items-center gap-3">
-                <button class="btn-primary" type="button" :disabled="saving" @click="saveDetail">
-                  <span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">save</span>
-                  <span class="whitespace-nowrap">{{ saving ? '保存中...' : '保存修改' }}</span>
-                </button>
-                <button v-if="media.source_id" class="btn-secondary" type="button" :disabled="saving" @click="syncCurrent">
+                <button v-if="media.source_id" class="btn-primary" type="button" :disabled="saving" @click="syncCurrent">
                   <span class="material-symbols-outlined text-[20px]">sync</span>
                   <span class="whitespace-nowrap">同步</span>
                 </button>
