@@ -11,22 +11,7 @@ import AppSelect from '@/components/AppSelect.vue'
 import { useToast } from '@/composables/useToast'
 import { useTauri } from '@/composables/useTauri'
 import { formatDate } from '@/utils/format'
-
-function isChapterBased(type: string): boolean {
-  return type === 'novel' || type === 'manga'
-}
-
-function progressVal(p: MediaProgress | null | undefined): number {
-  return p?.chapter ?? p?.episode ?? 0
-}
-
-function progressUnit(type: string): string {
-  return isChapterBased(type) ? 'CH' : 'EP'
-}
-
-function progressLabel(type: string): string {
-  return isChapterBased(type) ? '章节' : '集数'
-}
+import { isChapterBased, progressVal, progressUnit, progressLabel } from '@/utils/progress'
 
 function episodeLabel(h: WatchHistory): string {
   const from = h.progress_from

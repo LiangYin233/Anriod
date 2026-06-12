@@ -7,6 +7,7 @@ import EmptyState from '@/components/EmptyState.vue'
 import ErrorBanner from '@/components/ErrorBanner.vue'
 import { api } from '@/utils/api'
 import { formatDate } from '@/utils/format'
+import { progressVal, progressUnit } from '@/utils/progress'
 import { useToast } from '@/composables/useToast'
 
 const history = ref<WatchHistory[]>([])
@@ -27,10 +28,11 @@ async function loadHistory() {
 }
 
 function episodeLabel(h: WatchHistory): string {
-  const from = h.progress_from?.episode
-  const to = h.progress_to?.episode
-  if (to && to > 0) {
-    return from && from > 0 && from !== to ? `EP${from} → EP${to}` : `EP${to}`
+  const from = progressVal(h.progress_from)
+  const to = progressVal(h.progress_to)
+  if (to > 0) {
+    const prefix = h.progress_from?.chapter !== undefined ? 'CH' : 'EP'
+    return from > 0 && from !== to ? `${prefix}${from} → ${prefix}${to}` : `${prefix}${to}`
   }
   return ''
 }

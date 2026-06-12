@@ -13,17 +13,3 @@ export function formatDate(iso: string | null | undefined): string {
     minute: '2-digit'
   })
 }
-
-/**
- * Short date (no time).
- */
-export function formatDateShort(iso: string | null | undefined): string {
-  if (!iso) return ''
-  const d = new Date(iso)
-  if (isNaN(d.getTime())) return iso
-  return d.toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit'
-  })
-}
