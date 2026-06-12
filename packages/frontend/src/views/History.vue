@@ -7,7 +7,7 @@ import EmptyState from '@/components/EmptyState.vue'
 import ErrorBanner from '@/components/ErrorBanner.vue'
 import { api } from '@/utils/api'
 import { formatDate } from '@/utils/format'
-import { progressVal, progressUnit } from '@/utils/progress'
+import { progressVal } from '@/utils/progress'
 import { useToast } from '@/composables/useToast'
 
 const history = ref<WatchHistory[]>([])

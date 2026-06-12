@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import type { Media, MediaProgress, MediaType, Status, WatchHistory } from '@anriod/shared'
+import type { Media, MediaType, Status, WatchHistory } from '@anriod/shared'
 import { MEDIA_TYPES, MEDIA_TYPE_VALUES, STATUS_LABELS, STATUS_VALUES } from '@anriod/shared'
 import { api } from '@/utils/api'
 import { getCoverSrc } from '@/utils/cover'
