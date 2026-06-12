@@ -338,27 +338,34 @@ export class BangumiDataSource implements DataSource {
     const subject = (await response.json()) as BangumiSubject
     const resolvedType = mediaTypeFromBangumi(subject.type)
 
-    // Get actual episode count by fetching episodes list and counting type=0 (正片)
+    // Get actual episode count and full episode list
     let actualEpisodeCount: number | undefined = subject.total_episodes ?? subject.eps ?? undefined
+    let episodeList: Array<{ ep: string | number; type: number; name?: string; name_cn?: string }> = []
 
-    // For anime/tv types, try to get accurate episode count excluding SP
+    // For anime/tv types, fetch full episode list
     if ((resolvedType === 'anime' || resolvedType === 'tv') && sourceId) {
       try {
-        const episodesUrl = `${this.baseUrl}/v0/episodes?subject_id=${sourceId}&type=0&limit=300`
+        const episodesUrl = `${this.baseUrl}/v0/episodes?subject_id=${sourceId}&limit=300`
         const epResponse = await fetch(episodesUrl, { headers, ...this.fetchOptions })
         if (epResponse.ok) {
           const epData = await epResponse.json() as { total?: number; data?: BangumiEpisode[] }
-          // Use total count if available, otherwise count type=0 episodes
-          if (epData.total !== undefined) {
-            actualEpisodeCount = epData.total
-            logger.info(`[Bangumi] 正片集数: ${actualEpisodeCount} (过滤后)`)
-          } else if (epData.data) {
-            actualEpisodeCount = epData.data.filter((ep: BangumiEpisode) => ep.type === 0).length
-            logger.info(`[Bangumi] 正片集数: ${actualEpisodeCount} (手动过滤)`)
+
+          if (epData.data) {
+            // Extract full episode list
+            episodeList = epData.data.map(ep => ({
+              ep: ep.ep ?? ep.id,
+              type: ep.type,
+              name: ep.name,
+              name_cn: ep.name_cn
+            }))
+
+            // Count only main episodes (type=0) for total_episodes
+            const mainEpisodes = epData.data.filter((ep: BangumiEpisode) => ep.type === 0)
+            actualEpisodeCount = mainEpisodes.length
+            logger.info(`[Bangumi] 正片: ${actualEpisodeCount}, SP等: ${epData.data.length - actualEpisodeCount}`)
           }
         }
       } catch (err) {
-        // Fallback to original value if episodes API fails
         logger.warn(`[Bangumi] 无法获取剧集列表: ${err}`)
       }
     }
@@ -372,6 +379,7 @@ export class BangumiDataSource implements DataSource {
       cover_url: coverOf(subject.images),
       air_date: subject.date ?? undefined,
       total_episodes: actualEpisodeCount,
+      episodes: episodeList.length > 0 ? episodeList : undefined,
       studio: studioOf(subject),
       external_rating: subject.rating?.score,
       source_url: `https://bgm.tv/subject/${subject.id}`,

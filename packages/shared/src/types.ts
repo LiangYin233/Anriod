@@ -33,6 +33,7 @@ export interface MediaProgress {
   hours_played?: number
   achievements_unlocked?: number
   has_platinum?: boolean
+  special_episode?: string  // For tracking SP episodes like "SP1", "OVA2"
   [key: string]: unknown
 }
 
@@ -153,6 +154,15 @@ export interface SearchResult {
   external_rating?: number
 }
 
+export interface Episode {
+  ep: string | number  // "1", "2", "SP1", "OVA1"
+  type: number  // 0=本篇, 1=SP, 2=OP, 3=ED, 4=PV, 5=MAD, 6=其他
+  name?: string
+  name_cn?: string
+  duration?: string
+  airdate?: string
+}
+
 export interface MediaDetails {
   source: string
   source_id: string
@@ -162,6 +172,7 @@ export interface MediaDetails {
   cover_url: string | null
   air_date?: string
   total_episodes?: number
+  episodes?: Episode[]  // Full episode list including SP/OVA
   studio?: string
   external_rating?: number
   source_url?: string
