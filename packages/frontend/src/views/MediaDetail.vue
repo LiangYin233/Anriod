@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import type { Media, MediaType, Status, WatchHistory } from '@anriod/shared'
+import type { CreditsResponse, Media, MediaType, Status, WatchHistory } from '@anriod/shared'
 import { MEDIA_TYPES, MEDIA_TYPE_VALUES, STATUS_LABELS, STATUS_VALUES } from '@anriod/shared'
 import { api } from '@/utils/api'
 import { getCoverSrc } from '@/utils/cover'
@@ -30,6 +30,7 @@ const route = useRoute()
 const mediaId = computed(() => String(route.params.id))
 const media = ref<Media | null>(null)
 const history = ref<WatchHistory[]>([])
+const credits = ref<CreditsResponse | null>(null)
 const loading = ref(false)
 const saving = ref(false)
 const error = ref('')
@@ -82,6 +83,24 @@ async function loadDetail() {
     media.value = await api.getMedia(mediaId.value)
     fillForm(media.value)
     history.value = (await api.listHistory({ media_id: mediaId.value })).data
+
+    // Load credits if media has source_id
+    if (media.value.source_id && media.value.source) {
+      try {
+        const creditsData = await api.fetchCredits({
+          source: media.value.source,
+          source_id: media.value.source_id,
+          type: media.value.type
+        })
+        if (creditsData && (creditsData.cast.length > 0 || creditsData.crew.length > 0)) {
+          credits.value = creditsData
+        }
+      } catch (err) {
+        // Credits loading is optional, don't fail the whole page
+        console.warn('Failed to load credits:', err)
+      }
+    }
+
     // Build progress→notes map from history data (supports both episode and chapter)
     const notes: Record<number, string> = {}
     for (const h of history.value) {
@@ -303,7 +322,7 @@ onMounted(loadDetail)
                 </button>
                 <span class="text-label-sm font-bold text-primary tabular-nums w-10 text-center">{{ episode }}</span>
                 <span class="text-caption-xs text-on-surface-variant">/ {{ media.total_episodes }}</span>
-                <button class="btn-icon" type="button" :disabled="episode >= media.total_episodes" @click="episode = Math.min(media.total_episodes, episode + 1); saveProgress()">
+                <button class="btn-icon" type="button" @click="episode = episode + 1; saveProgress()">
                   <span class="material-symbols-outlined">add</span>
                 </button>
               </div>
@@ -314,12 +333,16 @@ onMounted(loadDetail)
               <div
                 class="h-full rounded-full transition-all"
                 :class="episode >= media.total_episodes ? 'bg-emerald-400' : 'bg-primary'"
-                :style="{ width: `${Math.round((episode / media.total_episodes) * 100)}%` }"
+                :style="{ width: `${Math.min(100, Math.round((episode / media.total_episodes) * 100))}%` }"
               />
             </div>
 
             <!-- Episode/Chapter boxes grid -->
             <div class="glass-card rounded-lg p-4 shadow-sm">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-caption-xs text-on-surface-variant">点击集数快速跳转</span>
+                <span class="text-caption-xs text-on-surface-variant/70">提示: 正片外的 SP/OVA 可手动输入</span>
+              </div>
               <div class="grid gap-2" :style="{ gridTemplateColumns: `repeat(auto-fill, minmax(48px, 1fr))` }">
                 <button
                   v-for="ep in media.total_episodes"
@@ -375,6 +398,65 @@ onMounted(loadDetail)
             </h3>
             <div class="glass-card rounded-lg p-stack-md shadow-sm">
               <p class="leading-relaxed text-body-md text-on-surface-variant">{{ media.description }}</p>
+            </div>
+          </div>
+
+          <!-- Credits (cast & crew) -->
+          <div v-if="credits && credits.cast.length > 0" class="glass-card rounded-xl p-stack-md shadow-sm">
+            <h3 class="mb-unit flex items-center gap-2 text-title-sm text-on-surface">
+              <span class="h-4 w-1 rounded-full bg-primary" />
+              声优 / 演员
+            </h3>
+            <div class="flex gap-4 overflow-x-auto pb-2 -mx-2 px-2 snap-x snap-mandatory scrollbar-thin">
+              <div
+                v-for="person in credits.cast.slice(0, 15)"
+                :key="`${person.name}-${person.character || person.role}`"
+                class="snap-start shrink-0 w-24 text-center"
+              >
+                <div class="w-16 h-16 mx-auto rounded-full overflow-hidden bg-surface-container-high shadow-sm">
+                  <img
+                    v-if="person.image"
+                    :src="person.image"
+                    :alt="person.name"
+                    class="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                  <div v-else class="flex w-full h-full items-center justify-center bg-surface-variant">
+                    <span class="material-symbols-outlined text-xl text-on-surface-variant">person</span>
+                  </div>
+                </div>
+                <p class="mt-1.5 text-caption-xs font-medium text-on-surface leading-tight line-clamp-2">{{ person.name }}</p>
+                <p v-if="person.character" class="text-[10px] text-on-surface-variant/60 leading-tight line-clamp-1">{{ person.character }}</p>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="credits && credits.crew.length > 0" class="glass-card rounded-xl p-stack-md shadow-sm">
+            <h3 class="mb-unit flex items-center gap-2 text-title-sm text-on-surface">
+              <span class="h-4 w-1 rounded-full bg-primary" />
+              制作人员
+            </h3>
+            <div class="flex gap-4 overflow-x-auto pb-2 -mx-2 px-2 snap-x snap-mandatory scrollbar-thin">
+              <div
+                v-for="person in credits.crew.slice(0, 15)"
+                :key="`${person.name}-${person.role}`"
+                class="snap-start shrink-0 w-24 text-center"
+              >
+                <div class="w-16 h-16 mx-auto rounded-full overflow-hidden bg-surface-container-high shadow-sm">
+                  <img
+                    v-if="person.image"
+                    :src="person.image"
+                    :alt="person.name"
+                    class="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                  <div v-else class="flex w-full h-full items-center justify-center bg-surface-variant">
+                    <span class="material-symbols-outlined text-xl text-on-surface-variant">construction</span>
+                  </div>
+                </div>
+                <p class="mt-1.5 text-caption-xs font-medium text-on-surface leading-tight line-clamp-2">{{ person.name }}</p>
+                <p class="text-[10px] text-on-surface-variant/60 leading-tight line-clamp-1">{{ person.role }}</p>
+              </div>
             </div>
           </div>
 
