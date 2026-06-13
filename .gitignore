@@ -22,6 +22,10 @@ packages/frontend/dist/
 packages/frontend/src-tauri/target/
 # Tauri generated mobile project — tracked so others can build without re-init
 # packages/frontend/src-tauri/gen/android/
+# Generated optional store/mobile icon sets
+packages/frontend/src-tauri/icons/ios/
+packages/frontend/src-tauri/icons/Square*Logo.png
+packages/frontend/src-tauri/icons/StoreLogo.png
 
 # Keystore files (sensitive!)
 *.jks

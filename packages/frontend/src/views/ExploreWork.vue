@@ -8,6 +8,7 @@ import ErrorBanner from '@/components/ErrorBanner.vue'
 import { api } from '@/utils/api'
 import { useTauri } from '@/composables/useTauri'
 import { useAsyncState } from '@/composables/useAsyncState'
+import { getCoverSrc } from '@/utils/cover'
 
 const route = useRoute()
 const router = useRouter()
@@ -108,7 +109,7 @@ onMounted(loadDetails)
             <div class="cover-wrapper relative w-48 shrink-0 overflow-hidden rounded-lg border border-outline-variant/20 shadow-lg">
               <img
                 v-if="detail.cover_url"
-                :src="detail.cover_url"
+                :src="getCoverSrc(detail.cover_url)"
                 :alt="detail.title"
                 class="cover-img aspect-poster w-full object-cover"
               />

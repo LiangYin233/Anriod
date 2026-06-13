@@ -1,13 +1,14 @@
 import { ref } from 'vue'
 import type { ListMediaQuery, Media, MediaProgress, PaginatedResponse, Status } from '@anriod/shared'
 import { api } from '@/utils/api'
+import { isChapterBased } from '@/utils/progress'
 
 function nextProgress(media: Media): MediaProgress {
   const current: MediaProgress = { ...(media.current_progress ?? {}) }
 
   if (media.type === 'anime' || media.type === 'tv') {
     current.episode = (current.episode ?? 0) + 1
-  } else if (media.type === 'novel' || media.type === 'manga') {
+  } else if (isChapterBased(media.type)) {
     current.chapter = (current.chapter ?? 0) + 1
   } else if (media.type === 'movie') {
     current.watched = true
@@ -46,67 +47,68 @@ const lastQueryKey = ref<string>('')
 const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
 
 async function fetchMedia(filters: ListMediaQuery = {}, forceRefresh = false) {
-    const queryKey = createQueryKey(filters)
-    lastQueryKey.value = queryKey
+  const queryKey = createQueryKey(filters)
+  lastQueryKey.value = queryKey
 
-    // Check cache if not forcing refresh
-    if (!forceRefresh && cache.value.has(queryKey)) {
-      const cached = cache.value.get(queryKey)!
-      const age = Date.now() - cached.timestamp
+  if (forceRefresh) {
+    invalidateCache()
+  }
 
-      if (age < CACHE_TTL) {
-        // Use cached data
-        mediaList.value = cached.data.data
-        pagination.value = cached.data.pagination
-        statusCounts.value = cached.data.status_counts ?? {}
-        return cached.data
-      }
+  if (!forceRefresh && cache.value.has(queryKey)) {
+    const cached = cache.value.get(queryKey)!
+    const age = Date.now() - cached.timestamp
+
+    if (age < CACHE_TTL) {
+      mediaList.value = cached.data.data
+      pagination.value = cached.data.pagination
+      statusCounts.value = cached.data.status_counts ?? {}
+      return cached.data
     }
+  }
 
-    loading.value = true
-    error.value = ''
+  loading.value = true
+  error.value = ''
 
-    try {
-      const result = await api.listMedia({
-        ...filters,
-        limit: filters.limit ?? 20
-      })
+  try {
+    const result = await api.listMedia({
+      ...filters,
+      limit: filters.limit ?? 20
+    })
 
-      // Update cache
-      cache.value.set(queryKey, {
-        data: result,
-        timestamp: Date.now()
-      })
+    cache.value.set(queryKey, {
+      data: result,
+      timestamp: Date.now()
+    })
 
-      mediaList.value = result.data
-      pagination.value = result.pagination
-      statusCounts.value = result.status_counts ?? {}
-      return result
-    } catch (caught) {
-      error.value = caught instanceof Error ? caught.message : '加载媒体列表失败'
-      throw caught
-    } finally {
-      loading.value = false
-    }
+    mediaList.value = result.data
+    pagination.value = result.pagination
+    statusCounts.value = result.status_counts ?? {}
+    return result
+  } catch (caught) {
+    error.value = caught instanceof Error ? caught.message : '加载媒体列表失败'
+    return undefined
+  } finally {
+    loading.value = false
+  }
 }
 
 async function incrementProgress(media: Media) {
-    const updated = await api.updateProgress(media.id, { current_progress: nextProgress(media) })
-    mediaList.value = mediaList.value.map((item) => (item.id === updated.id ? updated : item))
+  const updated = await api.updateProgress(media.id, { current_progress: nextProgress(media) })
+  mediaList.value = mediaList.value.map((item) => (item.id === updated.id ? updated : item))
 
   return updated
 }
 
 async function setStatus(media: Media, status: Status) {
-    const updated = await api.updateStatus(media.id, { status })
-    mediaList.value = mediaList.value.map((item) => (item.id === updated.id ? updated : item))
+  const updated = await api.updateStatus(media.id, { status })
+  mediaList.value = mediaList.value.map((item) => (item.id === updated.id ? updated : item))
 
   return updated
 }
 
 async function removeMedia(id: string) {
-    await api.deleteMedia(id)
-    mediaList.value = mediaList.value.filter((item) => item.id !== id)
+  await api.deleteMedia(id)
+  mediaList.value = mediaList.value.filter((item) => item.id !== id)
 
   invalidateCache()
 }
@@ -116,15 +118,10 @@ function invalidateCache() {
 }
 
 function refreshCurrentQuery() {
-    // Force refresh the last query
-    if (lastQueryKey.value) {
-      const cachedEntry = cache.value.get(lastQueryKey.value)
-      if (cachedEntry) {
-        const filters = JSON.parse(lastQueryKey.value) as ListMediaQuery
-        return fetchMedia(filters, true)
-      }
-  }
-  return Promise.resolve()
+  if (!lastQueryKey.value) return Promise.resolve()
+
+  const filters = JSON.parse(lastQueryKey.value) as ListMediaQuery
+  return fetchMedia(filters, true)
 }
 
 // Export as singleton - all components share the same state

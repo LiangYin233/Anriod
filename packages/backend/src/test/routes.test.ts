@@ -1,5 +1,6 @@
 import { describe, test, expect, beforeAll, afterAll } from 'bun:test'
 import type { Hono } from 'hono'
+import { ERROR_MESSAGES } from '../constants'
 import { initTestEnv, clearAllTables } from './helpers'
 
 let app: Hono
@@ -10,7 +11,7 @@ beforeAll(async () => {
   await initTestEnv()
   await clearAllTables()
 
-  const { default: honoApp } = await import('../index') as { default: Hono }
+  const { app: honoApp } = await import('../index') as { app: Hono }
   app = honoApp
 
   authHeaders = { Authorization: 'Bearer test-api-key', 'Content-Type': 'application/json' }
@@ -40,7 +41,7 @@ describe('auth middleware', () => {
     const res = await app.request('http://localhost/api/media')
     expect(res.status).toBe(401)
     const body: any = await res.json()
-    expect(body.error).toBe('Unauthorized')
+    expect(body.error).toBe(ERROR_MESSAGES.UNAUTHORIZED)
   })
 
   test('rejects requests with wrong auth header', async () => {

@@ -1,4 +1,5 @@
 import { describe, test, expect, beforeAll } from 'bun:test'
+import { ERROR_MESSAGES } from '../constants'
 import { initTestEnv, clearAllTables } from './helpers'
 
 let listMedia: any, getMediaById: any, createMedia: any, updateMedia: any
@@ -66,20 +67,20 @@ describe('media service — create', () => {
   })
 
   test('rejects empty title', () => {
-    expect(() => createMedia({ title: '', type: 'anime' })).toThrow('Title is required')
+    expect(() => createMedia({ title: '', type: 'anime' })).toThrow(ERROR_MESSAGES.TITLE_REQUIRED)
   })
 
   test('rejects blank title', () => {
-    expect(() => createMedia({ title: '  ', type: 'anime' })).toThrow('Title is required')
+    expect(() => createMedia({ title: '  ', type: 'anime' })).toThrow(ERROR_MESSAGES.TITLE_REQUIRED)
   })
 
   test('rejects invalid type', () => {
-    expect(() => createMedia({ title: 'X', type: 'comic' as any })).toThrow('Invalid media type')
+    expect(() => createMedia({ title: 'X', type: 'comic' as any })).toThrow(ERROR_MESSAGES.INVALID_MEDIA_TYPE)
   })
 
   test('rejects invalid rating range', () => {
-    expect(() => createMedia({ title: 'X', type: 'anime', rating: 11 })).toThrow('Rating must be between 0 and 10')
-    expect(() => createMedia({ title: 'X', type: 'anime', rating: -1 })).toThrow('Rating must be between 0 and 10')
+    expect(() => createMedia({ title: 'X', type: 'anime', rating: 11 })).toThrow(ERROR_MESSAGES.INVALID_RATING)
+    expect(() => createMedia({ title: 'X', type: 'anime', rating: -1 })).toThrow(ERROR_MESSAGES.INVALID_RATING)
   })
 })
 
@@ -99,7 +100,7 @@ describe('media service — read / list', () => {
   })
 
   test('getMediaById throws 404 for non-existent', () => {
-    expect(() => getMediaById('non-existent-id')).toThrow('Media not found')
+    expect(() => getMediaById('non-existent-id')).toThrow(ERROR_MESSAGES.MEDIA_NOT_FOUND)
   })
 
   test('listMedia paginates correctly', () => {
@@ -186,7 +187,7 @@ describe('media service — delete', () => {
   test('deletes media', () => {
     const media = createMedia({ title: 'Delete Me', type: 'movie' })
     deleteMedia(media.id)
-    expect(() => getMediaById(media.id)).toThrow('Media not found')
+    expect(() => getMediaById(media.id)).toThrow(ERROR_MESSAGES.MEDIA_NOT_FOUND)
   })
 
   test('delete cascades to media_tags', () => {
@@ -197,7 +198,7 @@ describe('media service — delete', () => {
   })
 
   test('delete throws on non-existent media', () => {
-    expect(() => deleteMedia('non-existent-id')).toThrow('Media not found')
+    expect(() => deleteMedia('non-existent-id')).toThrow(ERROR_MESSAGES.MEDIA_NOT_FOUND)
   })
 })
 
@@ -269,15 +270,15 @@ describe('media service — import / sync (disabled source)', () => {
   test('importMedia throws for disabled datasource', async () => {
     await expect(
       importMedia({ source: 'bangumi', source_id: '123' })
-    ).rejects.toThrow('Unknown or disabled data source')
+    ).rejects.toThrow(ERROR_MESSAGES.UNKNOWN_DATA_SOURCE)
   })
 
   test('syncMedia throws for non-existent media', async () => {
-    await expect(syncMedia('bad-id')).rejects.toThrow('Media not found')
+    await expect(syncMedia('bad-id')).rejects.toThrow(ERROR_MESSAGES.MEDIA_NOT_FOUND)
   })
 
   test('syncMedia throws for media without source', async () => {
     const media = createMedia({ title: 'No Source', type: 'movie' })
-    await expect(syncMedia(media.id)).rejects.toThrow('Media has no data source')
+    await expect(syncMedia(media.id)).rejects.toThrow(ERROR_MESSAGES.MEDIA_NO_SOURCE)
   })
 })

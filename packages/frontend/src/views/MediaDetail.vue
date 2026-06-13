@@ -11,19 +11,10 @@ import AppSelect from '@/components/AppSelect.vue'
 import { useToast } from '@/composables/useToast'
 import { useTauri } from '@/composables/useTauri'
 import { formatDate } from '@/utils/format'
-import { isChapterBased, progressVal, progressUnit, progressLabel } from '@/utils/progress'
+import { historyProgressLabel, isChapterBased, progressVal, progressUnit, progressLabel } from '@/utils/progress'
 
 function episodeLabel(h: WatchHistory): string {
-  const from = h.progress_from
-  const to = h.progress_to
-  const fromVal = progressVal(from)
-  const toVal = progressVal(to)
-  if (toVal > 0) {
-    const prefix = from?.chapter !== undefined ? 'CH' : 'EP'
-    if (fromVal > 0 && fromVal !== toVal) return `${prefix}${fromVal} → ${prefix}${toVal}`
-    return `${prefix}${toVal}`
-  }
-  return ''
+  return historyProgressLabel(h.progress_from, h.progress_to)
 }
 
 const route = useRoute()
@@ -206,7 +197,7 @@ async function saveEpNote(ep: number) {
     )
     if (existing) {
       await api.updateHistory(existing.id, { notes: note })
-    } else {
+    } else if (note) {
       await api.createHistory({
         media_id: media.value.id,
         progress_from: { [field]: ep - 1 },
@@ -393,7 +384,7 @@ onMounted(loadDetail)
               <div v-if="editingEp" class="mt-4 border-t border-outline-variant/20 pt-4">
                 <div class="flex items-center justify-between mb-2">
                   <span class="text-label-sm font-semibold text-on-surface">{{ progressUnit(media.type) }}{{ editingEp }} 笔记</span>
-                  <button class="btn-icon" type="button" @click="editingEp = 0; epNotes[editingEp] = ''">
+                  <button class="btn-icon" type="button" @click="editingEp = 0">
                     <span class="material-symbols-outlined text-[18px]">close</span>
                   </button>
                 </div>

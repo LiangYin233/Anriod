@@ -279,9 +279,9 @@ export function updateMedia(id: string, input: UpdateMediaInput): Media {
     setTagsForMedia(id, input.tags)
   }
 
-  // If cover_url is a remote link, trigger local download
+  // If this update supplied a remote cover_url, trigger local download
   const updated = getMediaById(id)
-  const coverUrl = updated.cover_url
+  const coverUrl = input.cover_url
   if (typeof coverUrl === 'string' && coverUrl.startsWith('http')) {
     downloadQueue.add({
       mediaId: id,

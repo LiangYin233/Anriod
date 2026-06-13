@@ -1,4 +1,5 @@
 import { describe, test, expect, beforeAll } from 'bun:test'
+import { ERROR_MESSAGES } from '../constants'
 import { initTestEnv, clearAllTables } from './helpers'
 
 let createMedia: any, listMedia: any, deleteMedia: any
@@ -81,8 +82,8 @@ describe('backup — round-trip', () => {
 
 describe('backup — validation', () => {
   test('rejects invalid format', () => {
-    expect(() => importAll(null as any)).toThrow('Invalid export data format')
-    expect(() => importAll({ version: 2 } as any)).toThrow('Invalid export data format')
-    expect(() => importAll({ version: 1 } as any)).toThrow('missing required arrays')
+    expect(() => importAll(null as any)).toThrow(ERROR_MESSAGES.INVALID_EXPORT_FORMAT)
+    expect(() => importAll({ version: 2 } as any)).toThrow(ERROR_MESSAGES.INVALID_EXPORT_FORMAT)
+    expect(() => importAll({ version: 1 } as any)).toThrow(ERROR_MESSAGES.EXPORT_MISSING_ARRAYS)
   })
 })

@@ -15,6 +15,7 @@ import { useMedia } from '@/composables/useMedia'
 import { useToast } from '@/composables/useToast'
 import { api } from '@/utils/api'
 import { getCoverSrc } from '@/utils/cover'
+import { isChapterBased } from '@/utils/progress'
 
 const route = useRoute()
 const router = useRouter()
@@ -187,7 +188,7 @@ async function handleIncrement(media: Media) {
 }
 
 async function handleSetProgress(media: Media, value: number) {
-  const field = (media.type === 'novel' || media.type === 'manga') ? 'chapter' : 'episode'
+  const field = isChapterBased(media.type) ? 'chapter' : 'episode'
   const updated = await api.updateProgress(media.id, { current_progress: { [field]: value } })
   mediaList.value = mediaList.value.map((item) => (item.id === updated.id ? updated : item))
 }

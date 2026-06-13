@@ -37,7 +37,7 @@ export function useAsyncState() {
       return result
     } catch (caught) {
       error.value = errorMessage || (caught instanceof Error ? caught.message : String(caught))
-      throw caught
+      return undefined
     } finally {
       loading.value = false
     }

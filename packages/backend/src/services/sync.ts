@@ -4,7 +4,7 @@ import { downloadQueue } from '../utils/download-queue'
 import { config } from '../config'
 import { logger } from '../logger'
 
-let job: ReturnType<typeof Bun.cron> | null = null
+let job: Bun.CronJob | null = null
 
 export function startSyncScheduler() {
   if (job) return job

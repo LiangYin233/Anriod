@@ -1,8 +1,11 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Default capability for Anriod desktop windows.",
+  "description": "Default capability for Anriod main window and mobile webview.",
   "windows": [
+    "main"
+  ],
+  "webviews": [
     "main"
   ],
   "permissions": [

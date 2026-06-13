@@ -17,9 +17,7 @@ import { statisticsRoutes } from './routes/statistics'
 import { tagRoutes } from './routes/tag'
 import { startSyncScheduler } from './services/sync'
 
-initializeDatabase()
-
-const app = new Hono()
+export const app = new Hono()
 
 app.use('*', honoLogger())
 app.use('*', cors({
@@ -55,16 +53,30 @@ app.route('/api/sync', syncRoutes)
 app.route('/api/statistics', statisticsRoutes)
 app.route('/api/discover', discoverRoutes)
 
-const server = Bun.serve({
-  hostname: config.server.host,
-  port: config.server.port,
-  fetch: app.fetch,
-  reusePort: false
-})
+let server: ReturnType<typeof Bun.serve> | null = null
 
-startSyncScheduler()
+export function startServer() {
+  if (server) return server
 
-logger.success('Anriod Backend Server 已启动')
-logger.info(`地址: http://${server.hostname}:${server.port}`)
-logger.info(`数据库: ${config.databasePath}`)
-logger.info(`同步: ${config.sync.cron || '未启用'}`)
+  initializeDatabase()
+
+  server = Bun.serve({
+    hostname: config.server.host,
+    port: config.server.port,
+    fetch: app.fetch,
+    reusePort: false
+  })
+
+  startSyncScheduler()
+
+  logger.success('Anriod Backend Server 已启动')
+  logger.info(`地址: http://${server.hostname}:${server.port}`)
+  logger.info(`数据库: ${config.databasePath}`)
+  logger.info(`同步: ${config.sync.cron || '未启用'}`)
+
+  return server
+}
+
+if (import.meta.main) {
+  startServer()
+}

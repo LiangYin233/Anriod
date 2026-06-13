@@ -123,9 +123,8 @@ function infoboxField(infobox: InfoboxItem[] | undefined, keys: string[]): strin
 
 function studioOf(subject: BangumiSubject): string | undefined {
   return infoboxField(subject.infobox, [
-    '动画制作', '製作', '制作', '制作公司', '开发', '開發',
-    '原作', '原作者', '作者', '著者', '漫画', '小说', '轻小说',
-    '制作团队', '开发商', '发行', 'Studio', 'Author'
+    '动画制作', '動畫製作', '製作', '制作', '制作公司', '制作团队',
+    '开发', '開發', '开发商', '发行', 'Studio'
   ])
 }
 
@@ -345,38 +344,49 @@ export class BangumiDataSource implements DataSource {
     // For anime/tv types, fetch full episode list
     if ((resolvedType === 'anime' || resolvedType === 'tv') && sourceId) {
       try {
-        // Note: Bangumi API limit=300 may truncate long series (One Piece, Detective Conan)
-        // TODO: Add pagination if series has >300 episodes
-        const episodesUrl = `${this.baseUrl}/v0/episodes?subject_id=${sourceId}&limit=300`
-        const epResponse = await fetch(episodesUrl, { headers, ...this.fetchOptions })
-        if (epResponse.ok) {
+        const episodeLimit = 100
+        let episodeOffset = 0
+        let episodeTotal: number | undefined
+        const episodes: BangumiEpisode[] = []
+
+        do {
+          const episodesUrl = `${this.baseUrl}/v0/episodes?subject_id=${sourceId}&limit=${episodeLimit}&offset=${episodeOffset}`
+          const epResponse = await fetch(episodesUrl, { headers, ...this.fetchOptions })
+          if (!epResponse.ok) break
+
           const epData = await epResponse.json() as { total?: number; data?: BangumiEpisode[] }
+          const pageEpisodes = epData.data ?? []
+          episodeTotal = epData.total
+          episodes.push(...pageEpisodes)
+          episodeOffset += pageEpisodes.length
 
-          if (epData.data) {
-            // Extract full episode list with validation
-            episodeList = epData.data
-              .filter((ep: BangumiEpisode) => ep.type !== undefined && ep.type >= 0 && ep.type <= 6)
-              .map(ep => ({
-                ep: ep.ep !== undefined ? ep.ep : ep.id,
-                type: ep.type,
-                name: ep.name,
-                name_cn: ep.name_cn
-              }))
+          if (pageEpisodes.length < episodeLimit) break
+        } while (episodeTotal === undefined || episodeOffset < episodeTotal)
 
-            // Count only main episodes (type=0) for total_episodes
-            const mainEpisodes = epData.data.filter((ep: BangumiEpisode) => ep.type === 0)
-            const mainCount = mainEpisodes.length
+        if (episodes.length > 0) {
+          // Extract full episode list with validation
+          episodeList = episodes
+            .filter((ep: BangumiEpisode) => ep.type !== undefined && ep.type >= 0 && ep.type <= 6)
+            .map(ep => ({
+              ep: ep.ep !== undefined ? ep.ep : ep.id,
+              type: ep.type,
+              name: ep.name,
+              name_cn: ep.name_cn
+            }))
 
-            // Fallback to original count if no main episodes found (all-SP series)
-            if (mainCount === 0 && (subject.total_episodes || subject.eps)) {
-              actualEpisodeCount = subject.total_episodes ?? subject.eps
-              logger.warn(`[Bangumi] No main episodes found for ${sourceId}, using subject.total_episodes=${actualEpisodeCount}`)
-            } else {
-              actualEpisodeCount = mainCount
-            }
+          // Count only main episodes (type=0) for total_episodes
+          const mainEpisodes = episodes.filter((ep: BangumiEpisode) => ep.type === 0)
+          const mainCount = mainEpisodes.length
 
-            logger.info(`[Bangumi] 正片: ${actualEpisodeCount}, SP等: ${epData.data.length - (actualEpisodeCount ?? 0)}`)
+          // Fallback to original count if no main episodes found (all-SP series)
+          if (mainCount === 0 && (subject.total_episodes || subject.eps)) {
+            actualEpisodeCount = subject.total_episodes ?? subject.eps
+            logger.warn(`[Bangumi] No main episodes found for ${sourceId}, using subject.total_episodes=${actualEpisodeCount}`)
+          } else {
+            actualEpisodeCount = mainCount
           }
+
+          logger.info(`[Bangumi] 正片: ${actualEpisodeCount}, SP等: ${episodes.length - (actualEpisodeCount ?? 0)}`)
         }
       } catch (err) {
         logger.warn(`[Bangumi] 无法获取剧集列表: ${err}`)

@@ -1,4 +1,5 @@
 import { describe, test, expect, beforeAll } from 'bun:test'
+import { ERROR_MESSAGES } from '../constants'
 import { initTestEnv, clearAllTables } from './helpers'
 
 let createMedia: any, listHistory: any, createWatchHistory: any
@@ -52,7 +53,7 @@ describe('watch history service', () => {
   })
 
   test('getHistoryById throws for non-existent', () => {
-    expect(() => getHistoryById(999999)).toThrow('History record not found')
+    expect(() => getHistoryById(999999)).toThrow(ERROR_MESSAGES.HISTORY_NOT_FOUND)
   })
 
   test('listHistory paginates', () => {
@@ -77,7 +78,7 @@ describe('watch history service', () => {
   })
 
   test('listHistoryForMedia throws for non-existent media', () => {
-    expect(() => listHistoryForMedia('bad-id')).toThrow('Media not found')
+    expect(() => listHistoryForMedia('bad-id')).toThrow(ERROR_MESSAGES.MEDIA_NOT_FOUND)
   })
 
   test('updateWatchHistory updates fields', () => {
@@ -100,6 +101,6 @@ describe('watch history service', () => {
       progress_to: { episode: 99 },
     })
     deleteWatchHistory(entry.id)
-    expect(() => getHistoryById(entry.id)).toThrow('History record not found')
+    expect(() => getHistoryById(entry.id)).toThrow(ERROR_MESSAGES.HISTORY_NOT_FOUND)
   })
 })

@@ -12,9 +12,9 @@ export function useToast(): ToastAPI {
   const toast = inject(TOAST_KEY)
   if (!toast) {
     return {
-      success: () => {},
-      error: () => {},
-      info: () => {},
+      success: (message) => console.info(message),
+      error: (message) => console.error(message),
+      info: (message) => console.info(message),
     }
   }
   return toast
