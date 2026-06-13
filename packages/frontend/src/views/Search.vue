@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import type { MediaType, SearchResult, Status } from '@anriod/shared'
 import { MEDIA_TYPES, MEDIA_TYPE_VALUES, STATUS_LABELS, STATUS_VALUES } from '@anriod/shared'
 import SearchBar from '@/components/SearchBar.vue'
@@ -11,15 +12,17 @@ import AppSelect from '@/components/AppSelect.vue'
 import { api } from '@/utils/api'
 import { useToast } from '@/composables/useToast'
 import { useAsyncState } from '@/composables/useAsyncState'
+import { useFilterStore } from '@/composables/useFilterStore'
 
 const query = ref('')
 const searched = ref(false)
-const source = ref('bangumi')
+const { searchSource: source } = useFilterStore()
 const sources = ref<Array<{ name: string; supportedTypes: string[] }>>([])
 const sourceOptions = computed(() => sources.value.map((s) => ({ value: s.name, label: s.name })))
 const mediaTypeOptions = MEDIA_TYPE_VALUES.map((mt) => ({ value: mt, label: MEDIA_TYPES[mt] }))
 const manualStatusOptions = STATUS_VALUES.map((s) => ({ value: s, label: STATUS_LABELS[s] }))
 const results = ref<SearchResult[]>([])
+const router = useRouter()
 const { loading, error, execute } = useAsyncState()
 const importingId = ref('')
 const toast = useToast()
@@ -67,6 +70,10 @@ async function runSearch() {
   await execute(async () => {
     results.value = await api.search({ query: query.value, source: source.value || undefined })
   }, '搜索失败')
+}
+
+function goToPreview(result: SearchResult) {
+  router.push(`/explore?source=${result.source}&source_id=${result.source_id}&type=${result.media_type}&from=search`)
 }
 
 async function importResult(result: SearchResult) {
@@ -142,7 +149,15 @@ onMounted(loadSources)
               </span>
             </div>
 
-            <div class="mt-auto flex justify-end">
+            <div class="mt-auto flex justify-end gap-2">
+              <button
+                class="btn-secondary"
+                type="button"
+                @click="goToPreview(result)"
+              >
+                <span class="material-symbols-outlined text-[18px]">visibility</span>
+                预览
+              </button>
               <button
                 class="btn-primary"
                 type="button"

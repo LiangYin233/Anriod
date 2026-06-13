@@ -12,6 +12,7 @@ import ErrorBanner from '@/components/ErrorBanner.vue'
 import Modal from '@/components/Modal.vue'
 import AppSelect from '@/components/AppSelect.vue'
 import { useMedia } from '@/composables/useMedia'
+import { useFilterStore, SORT_OPTIONS } from '@/composables/useFilterStore'
 import { useToast } from '@/composables/useToast'
 import { api } from '@/utils/api'
 import { getCoverSrc } from '@/utils/cover'
@@ -20,49 +21,20 @@ import { isChapterBased } from '@/utils/progress'
 const route = useRoute()
 const router = useRouter()
 const { mediaList, pagination, statusCounts, loading, error, fetchMedia, incrementProgress, setStatus, removeMedia, refreshCurrentQuery } = useMedia()
+const {
+  keyword, type, status, tagFilter, source,
+  airDateFrom, airDateTo, epMin, epMax, sortBy,
+  isSyncingToUrl
+} = useFilterStore()
 const toast = useToast()
 const modalVisible = ref(false)
 const modalMediaId = ref('')
 const modalTitle = ref('')
-const keyword = ref('')
-const type = ref<MediaType | ''>('')
-const status = ref<Status | ''>('')
 const showFilters = ref(false)
 const goToPageInput = ref('')
-const tagFilter = ref('')
 const layoutDensity = ref<'default' | 'compact'>('default')
-const source = ref('')
 const showAllChips = ref(false)
-const airDateFrom = ref('')
-const airDateTo = ref('')
-const epMin = ref<number | undefined>(undefined)
-const epMax = ref<number | undefined>(undefined)
 const hasLoadedOnce = ref(false)
-
-const sortOptions = [
-  { value: 'updated_at:desc', label: '最近修改' },
-  { value: 'air_date:desc', label: '最新上线' },
-  { value: 'air_date:asc', label: '最早发布' },
-  { value: 'rating:desc', label: '评分最高' },
-  { value: 'title:asc', label: '标题 A-Z' },
-]
-
-const STORAGE_KEY_SORT = 'anriod_media_sort'
-
-// Restore sort preference from localStorage
-function getSavedSort(): string {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY_SORT)
-    if (saved && sortOptions.some(opt => opt.value === saved)) {
-      return saved
-    }
-  } catch (e) {
-    console.warn('Failed to read sort preference from localStorage:', e)
-  }
-  return sortOptions[0].value
-}
-
-const sortBy = ref(getSavedSort())
 
 const typeOptions = [
   { value: '', label: '全部类型' },
@@ -134,18 +106,18 @@ function syncFiltersToUrl() {
   if (epMin.value !== undefined) query.ep_min = String(epMin.value)
   if (epMax.value !== undefined) query.ep_max = String(epMax.value)
 
+  // Guard: prevent the route.query watcher from re-fetching
+  isSyncingToUrl.value = true
   router.replace({ query })
 }
 
-function saveSortPreference(value: string) {
-  try {
-    localStorage.setItem(STORAGE_KEY_SORT, value)
-  } catch (e) {
-    console.warn('Failed to save sort preference to localStorage:', e)
-  }
-}
+
 
 function onFilterChange() {
+  // Normalize: empty string / NaN → undefined for numeric filters
+  // (v-model.number produces '' when the user clears the input)
+  if (typeof epMin.value !== 'number') epMin.value = undefined
+  if (typeof epMax.value !== 'number') epMax.value = undefined
   syncFiltersToUrl()
   loadMedia(1)
   goToPageInput.value = ''
@@ -223,8 +195,15 @@ function clearFilters() {
   epMin.value = undefined
   epMax.value = undefined
   showAllChips.value = false
-  sortBy.value = sortOptions[0].value
+  sortBy.value = SORT_OPTIONS[0].value
   onFilterChange()
+}
+
+/** Check if URL has any filter/search query params */
+function urlHasFilters(): boolean {
+  const q = route.query
+  return !!(q.q || q.type || q.status || q.tag || q.source || q.sort ||
+    q.air_date_from || q.air_date_to || q.ep_min || q.ep_max)
 }
 
 function restoreFiltersFromUrl() {
@@ -236,10 +215,10 @@ function restoreFiltersFromUrl() {
   if (q.tag) tagFilter.value = String(q.tag)
   if (q.source) source.value = String(q.source)
 
-  // Restore sort from URL with priority over localStorage
+  // Restore sort from URL (takes priority over localStorage / store)
   if (q.sort) {
     const urlSort = String(q.sort)
-    if (sortOptions.some(opt => opt.value === urlSort)) {
+    if (SORT_OPTIONS.some(opt => opt.value === urlSort)) {
       sortBy.value = urlSort
     }
   }
@@ -251,24 +230,30 @@ function restoreFiltersFromUrl() {
 }
 
 onMounted(() => {
-  restoreFiltersFromUrl()
-  // After restoring from URL, sync current state back to URL
-  syncFiltersToUrl()
+  if (urlHasFilters()) {
+    // URL has explicit filters (e.g. navigated from Tags page) — use URL
+    restoreFiltersFromUrl()
+    syncFiltersToUrl()
+  } else {
+    // URL is clean — restore from in-memory store, then reflect in URL
+    syncFiltersToUrl()
+  }
   loadMedia()
   hasLoadedOnce.value = true
 })
 
 // Watch for external URL changes (e.g., from Tags page)
 watch(() => route.query, () => {
-  if (route.name === 'Home' && hasLoadedOnce.value) {
-    restoreFiltersFromUrl()
-    loadMedia()
-  }
-})
+  if (route.name !== 'Home' || !hasLoadedOnce.value) return
 
-// Watch sortBy changes and persist to localStorage
-watch(sortBy, (newSort) => {
-  saveSortPreference(newSort)
+  // Skip if this URL change was triggered by our own syncFiltersToUrl
+  if (isSyncingToUrl.value) {
+    isSyncingToUrl.value = false
+    return
+  }
+
+  restoreFiltersFromUrl()
+  loadMedia()
 })
 </script>
 
@@ -394,7 +379,7 @@ watch(sortBy, (newSort) => {
     <!-- Grid -->
     <template v-else>
       <div class="flex items-center justify-between">
-        <AppSelect v-model="sortBy" :options="sortOptions" variant="minimal" @change="onFilterChange" />
+        <AppSelect v-model="sortBy" :options="SORT_OPTIONS" variant="minimal" @change="onFilterChange" />
         <button class="btn-icon" type="button" @click="layoutDensity = layoutDensity === 'default' ? 'compact' : 'default'" :title="layoutDensity === 'default' ? '切换紧凑布局' : '切换默认布局'">
           <span class="material-symbols-outlined">{{ layoutDensity === 'default' ? 'grid_view' : 'grid_on' }}</span>
         </button>

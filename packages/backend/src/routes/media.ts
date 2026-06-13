@@ -13,7 +13,7 @@ import {
   updateStatus
 } from '../services/media'
 import { listHistoryForMedia } from '../services/history'
-import { readJson, toInt } from '../utils/http'
+import { parseOptionalInt, readJson, toInt } from '../utils/http'
 import { DEFAULT_LIMIT, MAX_LIMIT } from '../constants'
 
 export const mediaRoutes = new Hono()
@@ -28,7 +28,11 @@ mediaRoutes.get('/', (c) => {
       page: toInt(c.req.query('page'), 1),
       limit: toInt(c.req.query('limit'), DEFAULT_LIMIT, 1, MAX_LIMIT),
       sort: c.req.query('sort'),
-      q: c.req.query('q')
+      q: c.req.query('q'),
+      air_date_from: c.req.query('air_date_from'),
+      air_date_to: c.req.query('air_date_to'),
+      ep_min: parseOptionalInt(c.req.query('ep_min')),
+      ep_max: parseOptionalInt(c.req.query('ep_max'))
     })
   )
 })

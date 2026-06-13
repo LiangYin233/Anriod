@@ -95,14 +95,14 @@ async function fetchMedia(filters: ListMediaQuery = {}, forceRefresh = false) {
 async function incrementProgress(media: Media) {
   const updated = await api.updateProgress(media.id, { current_progress: nextProgress(media) })
   mediaList.value = mediaList.value.map((item) => (item.id === updated.id ? updated : item))
-
+  invalidateCache()
   return updated
 }
 
 async function setStatus(media: Media, status: Status) {
   const updated = await api.updateStatus(media.id, { status })
   mediaList.value = mediaList.value.map((item) => (item.id === updated.id ? updated : item))
-
+  invalidateCache()
   return updated
 }
 

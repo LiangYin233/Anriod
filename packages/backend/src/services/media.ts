@@ -15,7 +15,7 @@ import { getDataSource } from '../datasources/registry'
 import { HttpError } from '../middleware/error'
 import { isMediaType, isStatus, jsonString, parseJsonField, toInt } from '../utils/http'
 import { downloadQueue } from '../utils/download-queue'
-import { getTagsForMedia, setTagsForMedia } from './tag'
+import { getTagsForMedia, getTagsForMediaBatch, setTagsForMedia } from './tag'
 import { createWatchHistory } from './history'
 
 interface MediaRow {
@@ -91,12 +91,12 @@ const UPDATE_FIELDS = [
   'synced_at'
 ] as const
 
-function rowToMedia(row: MediaRow): Media {
+function rowToMedia(row: MediaRow, tagsMap?: Map<string, string[]>): Media {
   return {
     ...row,
     current_progress: parseJsonField<MediaProgress>(row.current_progress),
     source_metadata: parseJsonField<Record<string, unknown>>(row.source_metadata),
-    tags: getTagsForMedia(row.id)
+    tags: tagsMap?.get(row.id) ?? getTagsForMedia(row.id)
   }
 }
 
@@ -224,8 +224,11 @@ export function listMedia(query: ListMediaQuery): PaginatedResponse<Media> {
 
   const rows = all<MediaRow>(`SELECT * FROM media ${whereSql} ORDER BY ${buildSort(query.sort)} LIMIT ? OFFSET ?`, [...params, limit, offset])
 
+  // Batch-load tags in a single query (avoids N+1)
+  const tagsMap = getTagsForMediaBatch(rows.map((r) => r.id))
+
   return {
-    data: rows.map(rowToMedia),
+    data: rows.map((row) => rowToMedia(row, tagsMap)),
     pagination: { page, limit, total },
     status_counts: statusCounts
   }

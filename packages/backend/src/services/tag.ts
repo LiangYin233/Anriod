@@ -40,6 +40,36 @@ export function getTagsForMedia(mediaId: string): string[] {
   ).map((row) => row.name)
 }
 
+/** Batch-load tags for multiple media IDs in a single query */
+export function getTagsForMediaBatch(mediaIds: string[]): Map<string, string[]> {
+  if (mediaIds.length === 0) return new Map()
+
+  const placeholders = mediaIds.map(() => '?').join(', ')
+  const rows = all<{ media_id: string; name: string }>(
+    `SELECT mt.media_id, t.name
+     FROM media_tags mt
+     INNER JOIN tags t ON t.id = mt.tag_id
+     WHERE mt.media_id IN (${placeholders})
+     ORDER BY t.name ASC`,
+    mediaIds
+  )
+
+  const result = new Map<string, string[]>()
+  for (const row of rows) {
+    const tags = result.get(row.media_id)
+    if (tags) {
+      tags.push(row.name)
+    } else {
+      result.set(row.media_id, [row.name])
+    }
+  }
+  // Ensure every requested ID has an entry (even if empty)
+  for (const id of mediaIds) {
+    if (!result.has(id)) result.set(id, [])
+  }
+  return result
+}
+
 export function addTagToMedia(mediaId: string, tagId: number) {
   if (!getTagById(tagId)) throw new HttpError(404, ERROR_MESSAGES.TAG_NOT_FOUND)
   run('INSERT OR IGNORE INTO media_tags (media_id, tag_id) VALUES (?, ?)', [mediaId, tagId])

@@ -9,6 +9,12 @@ export function isStatus(value: unknown): value is Status {
   return typeof value === 'string' && (STATUS_VALUES as readonly string[]).includes(value)
 }
 
+export function parseOptionalInt(value: unknown): number | undefined {
+  if (value === undefined || value === null || value === '') return undefined
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? Math.trunc(parsed) : undefined
+}
+
 export function toInt(value: unknown, fallback: number, min = 1, max = 100): number {
   const parsed = Number(value)
   if (!Number.isFinite(parsed)) return fallback
