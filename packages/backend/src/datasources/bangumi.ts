@@ -316,7 +316,7 @@ export class BangumiDataSource implements DataSource {
       'User-Agent': 'anriod/0.1.0 (https://github.com/anriod)'
     }
     if (this.#token) {
-      headers['Authorization'] = `Bearer ${token}`
+      headers['Authorization'] = `Bearer ${this.#token}`
     }
 
     let response: Response
