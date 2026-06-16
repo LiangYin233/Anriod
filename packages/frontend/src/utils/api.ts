@@ -82,7 +82,11 @@ export async function apiRequest<T>(endpoint: string, options: RequestInit = {})
     if (err instanceof TypeError && err.message === 'Failed to fetch') {
       throw new ApiError(0, '无法连接后端，请确认后端已启动且地址正确')
     }
-    throw new ApiError(0, `网络错误: ${err instanceof Error ? err.message : String(err)}`)
+    const msg = err instanceof Error ? err.message : String(err)
+    if (msg.includes('abort') || msg.includes('timeout') || msg.includes('timed out')) {
+      throw new ApiError(0, '请求超时，请检查网络连接')
+    }
+    throw new ApiError(0, '网络错误，请检查网络连接')
   }
 
   return parseResponse<T>(response)

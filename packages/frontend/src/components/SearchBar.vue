@@ -21,7 +21,6 @@ watch(
 )
 
 function submit() {
-  emit('update:modelValue', localValue.value)
   emit('search', localValue.value)
 }
 </script>

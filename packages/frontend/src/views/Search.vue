@@ -18,6 +18,7 @@ const query = ref('')
 const searched = ref(false)
 const { searchSource: source } = useFilterStore()
 const sources = ref<Array<{ name: string; supportedTypes: string[] }>>([])
+const sourceError = ref('')
 const sourceOptions = computed(() => sources.value.map((s) => ({ value: s.name, label: s.name })))
 const mediaTypeOptions = MEDIA_TYPE_VALUES.map((mt) => ({ value: mt, label: MEDIA_TYPES[mt] }))
 const manualStatusOptions = STATUS_VALUES.map((s) => ({ value: s, label: STATUS_LABELS[s] }))
@@ -35,7 +36,10 @@ const manualStatus = ref<Status>('plan_to_watch')
 const manualSaving = ref(false)
 
 async function manualImport() {
-  if (!manualTitle.value.trim()) return
+  if (!manualTitle.value.trim()) {
+    toast.error('请输入标题')
+    return
+  }
   manualSaving.value = true
   try {
     await api.createMedia({
@@ -60,7 +64,9 @@ async function loadSources() {
     if (!sources.value.find((s) => s.name === source.value) && sources.value[0]) {
       source.value = sources.value[0].name
     }
-  } catch { /* keep defaults */ }
+  } catch {
+    sourceError.value = '无法加载数据源，请检查后端连接和 config.yaml 配置'
+  }
 }
 
 async function runSearch() {
@@ -106,6 +112,10 @@ onMounted(loadSources)
           <AppSelect v-model="source" :options="sourceOptions" variant="fluent" />
         </div>
       </div>
+    </div>
+
+    <div v-if="sourceError" class="rounded-lg border border-yellow-400/30 bg-yellow-50 px-4 py-2 text-caption-sm text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-200">
+      {{ sourceError }}
     </div>
 
     <ErrorBanner v-if="error" :message="error" />

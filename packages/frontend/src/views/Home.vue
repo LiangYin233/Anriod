@@ -177,11 +177,14 @@ function confirmDelete(id: string, title: string) {
 
 async function handleDelete() {
   const id = modalMediaId.value
-  modalVisible.value = false
-  await removeMedia(id)
-  toast.success('已删除')
-  // After deletion, refresh to get updated counts
-  await refreshCurrentQuery()
+  try {
+    await removeMedia(id)
+    modalVisible.value = false
+    toast.success('已删除')
+    await refreshCurrentQuery()
+  } catch (e) {
+    toast.error('删除失败: ' + (e instanceof Error ? e.message : '未知错误'))
+  }
 }
 
 function clearFilters() {

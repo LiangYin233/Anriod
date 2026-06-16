@@ -32,6 +32,23 @@ const selectedLabel = computed(() => {
 
 const hasValue = computed(() => props.options.some((o) => o.value === props.modelValue))
 
+const PANEL_MAX_H = 260
+const PANEL_GAP = 4
+
+const panelStyle = computed(() => {
+  if (!buttonRef.value) return { top: '0', left: '0', minWidth: 'auto' }
+  const rect = buttonRef.value.getBoundingClientRect()
+  const spaceBelow = window.innerHeight - rect.bottom
+  const top = spaceBelow >= PANEL_MAX_H || spaceBelow > rect.top
+    ? rect.bottom + PANEL_GAP
+    : rect.top - PANEL_MAX_H - PANEL_GAP
+  return {
+    top: `${top}px`,
+    left: `${rect.left}px`,
+    minWidth: `${rect.width}px`
+  }
+})
+
 function toggle() {
   open.value = !open.value
 }
@@ -87,11 +104,7 @@ onUnmounted(() => {
         v-if="open"
         ref="panelRef"
         class="app-select-panel"
-        :style="{
-          top: buttonRef ? buttonRef.getBoundingClientRect().bottom + 4 + 'px' : '0',
-          left: buttonRef ? buttonRef.getBoundingClientRect().left + 'px' : '0',
-          minWidth: buttonRef ? buttonRef.offsetWidth + 'px' : 'auto',
-        }"
+        :style="panelStyle"
       >
         <button
           v-for="opt in options"

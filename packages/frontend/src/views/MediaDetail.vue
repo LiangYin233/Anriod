@@ -193,21 +193,22 @@ async function saveEpNote(ep: number) {
   const prefix = progressUnit(media.value.type)
   try {
     // Check if a history entry for this episode/chapter already exists
-    const existing = history.value.find(
+    const existingIdx = history.value.findIndex(
       (h) => progressVal(h.progress_to) === ep
     )
-    if (existing) {
-      await api.updateHistory(existing.id, { notes: note })
+    if (existingIdx >= 0) {
+      const updated = await api.updateHistory(history.value[existingIdx].id, { notes: note })
+      history.value[existingIdx] = { ...history.value[existingIdx], notes: updated.notes }
     } else if (note) {
-      await api.createHistory({
+      const created = await api.createHistory({
         media_id: media.value.id,
         progress_from: { [field]: ep - 1 },
         progress_to: { [field]: ep },
         notes: note
       })
+      history.value.push(created)
     }
     toast.success(note ? `${prefix}${ep} 笔记已保存` : `${prefix}${ep} 笔记已清除`)
-    await loadDetail()
   } catch (caught) {
     error.value = caught instanceof Error ? caught.message : '保存笔记失败'
   }

@@ -9,6 +9,7 @@ import EmptyState from '@/components/EmptyState.vue'
 import { api } from '@/utils/api'
 import { useTauri } from '@/composables/useTauri'
 import { useAsyncState } from '@/composables/useAsyncState'
+import { useToast } from '@/composables/useToast'
 import { getCoverSrc } from '@/utils/cover'
 import CreditList from '@/components/CreditList.vue'
 import AppSelect from '@/components/AppSelect.vue'
@@ -25,6 +26,7 @@ const fromPage = String(route.query.from || '')
 const detail = ref<MediaDetails | null>(null)
 const credits = ref<CreditsResponse | null>(null)
 const { loading, error, execute } = useAsyncState()
+const toast = useToast()
 const importing = ref(false)
 const importStatus = ref<Status>('plan_to_watch')
 const statusOptions = STATUS_VALUES.map((s) => ({ value: s, label: STATUS_LABELS[s] }))
@@ -78,6 +80,7 @@ async function importToLibrary() {
       type: detail.value.media_type,
       status: importStatus.value
     })
+    toast.success(`「${detail.value.title}」已添加至媒体库`)
     router.push('/')
   } catch (caught) {
     error.value = caught instanceof Error ? caught.message : '导入失败'
@@ -102,7 +105,7 @@ onMounted(loadDetails)
 
     <ErrorBanner v-if="error" :message="error" />
     <LoadingSpinner v-if="loading" message="加载作品信息..." />
-    <EmptyState v-if="!detail && invalidParams" icon="travel_explore" message="请从搜索或发现页进入作品预览" />
+    <EmptyState v-if="!detail && invalidParams" icon="travel_explore" description="请从搜索或发现页进入作品预览" />
 
     <template v-if="detail">
       <div class="grid gap-stack-lg lg:grid-cols-[minmax(0,1fr)_320px]">

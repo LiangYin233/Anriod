@@ -36,7 +36,8 @@ export function useAsyncState() {
       const result = await fn()
       return result
     } catch (caught) {
-      error.value = errorMessage || (caught instanceof Error ? caught.message : String(caught))
+      const realMsg = caught instanceof Error ? caught.message : String(caught)
+      error.value = errorMessage ? `${errorMessage}: ${realMsg}` : realMsg
       return undefined
     } finally {
       loading.value = false
