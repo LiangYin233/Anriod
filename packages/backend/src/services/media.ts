@@ -8,7 +8,7 @@ import type {
   Status,
   UpdateMediaInput
 } from '@anriod/shared'
-import { and, asc, count, desc, eq, exists, gte, inArray, lte, type SQL } from 'drizzle-orm'
+import { and, asc, count, desc, eq, exists, gte, inArray, lte, sql, type SQL } from 'drizzle-orm'
 import { config } from '../config'
 import { DEFAULT_PAGE, DEFAULT_LIMIT, MAX_PAGE, MAX_LIMIT, MIN_RATING, MAX_RATING, ERROR_MESSAGES } from '../constants'
 import { db } from '../db/client'
@@ -120,31 +120,8 @@ function buildSort(sort = 'updated_at:desc'): SQL {
   return direction === 'asc' ? asc(column) : desc(column)
 }
 
-function normalizeSortValue(row: MediaRow, field: SortField): string | number | null {
-  const value = row[field]
-  if (field === 'created_at' || field === 'updated_at') {
-    return typeof value === 'string' ? value.replace(' ', 'T') : value
-  }
-  return value
-}
-
-function compareMediaRows(sort = 'updated_at:desc') {
-  const { field, direction } = parseSort(sort)
-
-  return (left: MediaRow, right: MediaRow) => {
-    const leftValue = normalizeSortValue(left, field)
-    const rightValue = normalizeSortValue(right, field)
-
-    if (leftValue === rightValue) return 0
-    if (leftValue === null) return direction === 'asc' ? -1 : 1
-    if (rightValue === null) return direction === 'asc' ? 1 : -1
-
-    const result = typeof leftValue === 'number' && typeof rightValue === 'number'
-      ? leftValue - rightValue
-      : String(leftValue).localeCompare(String(rightValue))
-
-    return direction === 'asc' ? result : -result
-  }
+function escapeLikePattern(value: string): string {
+  return value.replace(/[\\%_]/g, '\\$&')
 }
 
 function buildMediaWhere(query: ListMediaQuery): SQL | undefined {
@@ -162,6 +139,10 @@ function buildMediaWhere(query: ListMediaQuery): SQL | undefined {
 
   if (query.source) {
     conditions.push(eq(media.source, query.source))
+  }
+
+  if (query.q) {
+    conditions.push(sql`lower(${media.title}) LIKE ${`%${escapeLikePattern(query.q.toLowerCase())}%`} ESCAPE '\\'`)
   }
 
   if (query.tag) {
@@ -200,33 +181,6 @@ export function listMedia(query: ListMediaQuery): PaginatedResponse<Media> {
   const limit = toInt(query.limit, DEFAULT_LIMIT, DEFAULT_PAGE, MAX_LIMIT)
   const offset = (page - 1) * limit
   const whereClause = buildMediaWhere(query)
-
-  if (query.q) {
-    const normalizedQuery = query.q.toLowerCase()
-    const matchingRows = db
-      .select()
-      .from(media)
-      .where(whereClause)
-      .all()
-      .filter((row) => row.title.toLowerCase().includes(normalizedQuery))
-
-    const statusCounts = matchingRows.reduce((accumulator, row) => {
-      accumulator[row.status] = (accumulator[row.status] ?? 0) + 1
-      return accumulator
-    }, {} as Record<string, number>)
-
-    const rows = [...matchingRows]
-      .sort(compareMediaRows(query.sort))
-      .slice(offset, offset + limit)
-
-    const tagsMap = getTagsForMediaBatch(rows.map((row) => row.id))
-
-    return {
-      data: rows.map((row) => rowToMedia(row, tagsMap)),
-      pagination: { page, limit, total: matchingRows.length },
-      status_counts: statusCounts
-    }
-  }
 
   const total = db
     .select({ total: count() })

@@ -122,6 +122,13 @@ describe('media service — read / list', () => {
     expect(result.data.length).toBeGreaterThanOrEqual(1)
   })
 
+  test('listMedia treats LIKE wildcards as literal search text', () => {
+    const media = createMedia({ title: '100% Literal Search', type: 'movie' })
+    const result = listMedia({ q: '%' })
+    expect(result.data.map((m: any) => m.id)).toContain(media.id)
+    expect(result.data.every((m: any) => m.title.includes('%'))).toBe(true)
+  })
+
   test('listMedia filters by status — includes matching, excludes non-matching', () => {
     const result = listMedia({ status: 'plan_to_watch' })
     expect(result.data.length).toBeGreaterThanOrEqual(1)
