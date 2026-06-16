@@ -124,7 +124,6 @@ export const api = {
   exportBackup: () => apiRequest<{ version: number; media: Media[]; tags: Tag[]; watch_history: WatchHistory[] }>('/api/backup/export'),
   importBackup: (data: any) => apiRequest<{ ok: boolean }>('/api/backup/import', { method: 'POST', body: JSON.stringify(data) }),
   triggerSync: () => apiRequest<{ synced: number; errors: string[] }>('/api/sync/trigger', { method: 'POST' }),
-  migrateCovers: () => apiRequest<{ queued: number }>('/api/sync/covers', { method: 'POST' }),
   fetchDetails: (query: { source: string; source_id: string; type?: string }) =>
     apiRequest<MediaDetails>(`/api/search/details${queryString(query)}`),
   fetchCredits: (query: { source: string; source_id: string; type?: string }) =>

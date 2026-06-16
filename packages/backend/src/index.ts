@@ -18,6 +18,7 @@ import { syncRoutes } from './routes/sync'
 import { statisticsRoutes } from './routes/statistics'
 import { tagRoutes } from './routes/tag'
 import { startSyncScheduler } from './services/sync'
+import { downloadQueue } from './utils/download-queue'
 
 /** Look up the remote cover URL for a media item and return it for 302 redirect. */
 function findCoverUrl(mediaId: string): string | undefined {
@@ -55,9 +56,11 @@ app.get('/covers/:filename', async (c) => {
 
   // Local file missing — try to recover a remote URL from the database
   const mediaId = filename.replace(extname(filename), '')
-  const redirect = findCoverUrl(mediaId)
-  if (redirect) {
-    return c.redirect(redirect)
+  const remoteUrl = findCoverUrl(mediaId)
+  if (remoteUrl) {
+    // Queue a background download so the local file is ready next time
+    downloadQueue.add({ mediaId, coverUrl: remoteUrl, savePath: `${config.coversDir}/${mediaId}` })
+    return c.redirect(remoteUrl)
   }
 
   return new Response(Bun.file(join(config.backendRoot, 'assets/placeholder.svg')), {

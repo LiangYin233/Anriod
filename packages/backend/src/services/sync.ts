@@ -1,9 +1,8 @@
-import { and, isNotNull, like } from 'drizzle-orm'
+import { and, isNotNull } from 'drizzle-orm'
 import { config } from '../config'
 import { db } from '../db/client'
 import { media } from '../db/schema'
 import { logger } from '../logger'
-import { downloadQueue } from '../utils/download-queue'
 import { syncMedia } from './media'
 
 let job: Bun.CronJob | null = null
@@ -45,25 +44,4 @@ export async function runSync(): Promise<{ synced: number; errors: string[] }> {
   }
 
   return { synced: rows.length - errors.length, errors }
-}
-
-/** Scan all items with remote cover_url (http), trigger download to local. */
-export function triggerCoverDownload(): { queued: number } {
-  const rows = db
-    .select({ id: media.id, cover_url: media.cover_url })
-    .from(media)
-    .where(like(media.cover_url, 'http%'))
-    .all()
-
-  for (const row of rows) {
-    if (!row.cover_url) continue
-
-    downloadQueue.add({
-      mediaId: row.id,
-      coverUrl: row.cover_url,
-      savePath: `${config.coversDir}/${row.id}`
-    })
-  }
-
-  return { queued: rows.length }
 }

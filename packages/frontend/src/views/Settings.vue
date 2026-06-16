@@ -8,7 +8,6 @@ import { api } from '@/utils/api'
 const { backendUrl, apiKey, testing, testMessage, saveConfig, clearConfig, testConnection } = useConfig()
 const toast = useToast()
 const syncing = ref(false)
-const migratingCovers = ref(false)
 const exporting = ref(false)
 const importing = ref(false)
 const urlInput = ref(backendUrl.value || 'http://localhost:8000')
@@ -39,18 +38,6 @@ async function triggerSync() {
     toast.error('同步失败: ' + (err instanceof Error ? err.message : String(err)))
   } finally {
     syncing.value = false
-  }
-}
-
-async function triggerCoverMigration() {
-  migratingCovers.value = true
-  try {
-    const res = await api.migrateCovers()
-    toast.success(`已加入下载队列 ${res.queued} 张封面`)
-  } catch (err) {
-    toast.error('操作失败: ' + (err instanceof Error ? err.message : String(err)))
-  } finally {
-    migratingCovers.value = false
   }
 }
 
@@ -168,11 +155,6 @@ async function handleImportFile(e: Event) {
           <span v-if="syncing" class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
           <span v-else class="material-symbols-outlined text-[18px]">sync</span>
           {{ syncing ? '同步中...' : '同步数据源' }}
-        </button>
-        <button class="btn-secondary" type="button" :disabled="migratingCovers" @click="triggerCoverMigration">
-          <span v-if="migratingCovers" class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
-          <span v-else class="material-symbols-outlined text-[18px]">download</span>
-          {{ migratingCovers ? '下载中...' : '下载所有封面' }}
         </button>
       </div>
     </div>
