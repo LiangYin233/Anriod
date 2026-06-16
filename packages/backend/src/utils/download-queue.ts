@@ -1,8 +1,5 @@
 import { mkdir } from 'node:fs/promises'
 import { dirname, extname } from 'node:path'
-import { eq } from 'drizzle-orm'
-import { db } from '../db/client'
-import { media } from '../db/schema'
 import { proxyFetchOptions } from './proxy'
 import { logger } from '../logger'
 
@@ -39,8 +36,7 @@ class DownloadQueue {
 
     if (task) {
       try {
-        const savedPath = await this.downloadCover(task)
-        this.updateMediaCoverPath(task.mediaId, savedPath)
+        await this.downloadCover(task)
         logger.success(`封面下载完成: ${task.mediaId}`)
       } catch (error) {
         logger.error(`封面下载失败 ${task.mediaId}: ${error}`)
@@ -62,19 +58,6 @@ class DownloadQueue {
     await mkdir(dirname(savePath), { recursive: true })
     await Bun.write(savePath, await response.arrayBuffer())
     return savePath
-  }
-
-  private updateMediaCoverPath(mediaId: string, path: string) {
-    // Extract just the filename for the URL path
-    const filename = path.split(/[\\/]/).pop()
-    if (!filename) {
-      logger.error(`Invalid path for media ${mediaId}: ${path}`)
-      return
-    }
-
-    // Store local path in cover_url field (e.g., "/covers/123.jpg")
-    const localUrl = `/covers/${filename}`
-    db.update(media).set({ cover_url: localUrl, updated_at: new Date().toISOString() }).where(eq(media.id, mediaId)).run()
   }
 }
 

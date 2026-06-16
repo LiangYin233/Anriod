@@ -19,47 +19,17 @@ import { statisticsRoutes } from './routes/statistics'
 import { tagRoutes } from './routes/tag'
 import { startSyncScheduler } from './services/sync'
 
-/** Try to extract a remote cover URL from a media row's source metadata. */
-function extractCoverFromMeta(meta: unknown): string | undefined {
-  if (!meta || typeof meta !== 'object') return undefined
-  const m = meta as Record<string, unknown>
-
-  // Bangumi: images.large / images.common / images.medium ...
-  const images = m.images as Record<string, string> | undefined
-  if (images) {
-    return images.large || images.common || images.medium || images.grid
-  }
-
-  // TMDB: poster_path
-  const poster = m.poster_path as string | null | undefined
-  if (poster) return `https://image.tmdb.org/t/p/w500${poster}`
-
-  return undefined
-}
-
-/**
- * If the given media has a recoverable cover URL, return it for 302 redirect.
- * Checks cover_url first (may still be remote if download never ran),
- * then falls back to source_metadata.
- */
-function findCoverRedirect(mediaId: string): string | undefined {
+/** Look up the remote cover URL for a media item and return it for 302 redirect. */
+function findCoverUrl(mediaId: string): string | undefined {
   if (!mediaId) return undefined
-  const row = db.select({ cover_url: media.cover_url, source_metadata: media.source_metadata })
+  const row = db.select({ cover_url: media.cover_url })
     .from(media)
     .where(eq(media.id, mediaId))
     .get()
-  if (!row) return undefined
-
-  if (row.cover_url) {
-    // Still a remote URL (download never completed, or DB restored)
-    if (typeof row.cover_url === 'string' && row.cover_url.startsWith('http')) {
-      return row.cover_url
-    }
+  if (row?.cover_url && typeof row.cover_url === 'string' && row.cover_url.startsWith('http')) {
+    return row.cover_url
   }
-
-  // Extract from the original API metadata (covers cases where
-  // download-queue already overwrote cover_url with the local path)
-  return extractCoverFromMeta(row.source_metadata)
+  return undefined
 }
 
 export const app = new Hono()
@@ -85,7 +55,7 @@ app.get('/covers/:filename', async (c) => {
 
   // Local file missing — try to recover a remote URL from the database
   const mediaId = filename.replace(extname(filename), '')
-  const redirect = findCoverRedirect(mediaId)
+  const redirect = findCoverUrl(mediaId)
   if (redirect) {
     return c.redirect(redirect)
   }
