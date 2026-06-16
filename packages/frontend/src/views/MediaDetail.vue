@@ -5,6 +5,7 @@ import type { CreditsResponse, Episode, Media, MediaType, Status, WatchHistory }
 import { EPISODE_TYPE_LABELS, MEDIA_TYPES, MEDIA_TYPE_VALUES, STATUS_LABELS, STATUS_VALUES } from '@anriod/shared'
 import { api } from '@/utils/api'
 import { getCoverSrc } from '@/utils/cover'
+import CreditList from '@/components/CreditList.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import ErrorBanner from '@/components/ErrorBanner.vue'
 import AppSelect from '@/components/AppSelect.vue'
@@ -212,13 +213,28 @@ async function saveEpNote(ep: number) {
   }
 }
 
+function applySyncResult(item: Media) {
+  editExternalRating.value = item.external_rating
+  editAirDate.value = item.air_date ?? ''
+  editTotalEp.value = item.total_episodes
+  // Preserve the full media object (source_metadata et al.) without overwriting user-editable fields
+  if (media.value) {
+    media.value.external_rating = item.external_rating
+    media.value.air_date = item.air_date
+    media.value.total_episodes = item.total_episodes
+    media.value.source_metadata = item.source_metadata
+    media.value.source_url = item.source_url
+  }
+}
+
 async function syncCurrent() {
   if (!media.value) return
   saving.value = true
   error.value = ''
   try {
-    media.value = await api.syncMedia(media.value.id)
-    fillForm(media.value)
+    const updated = await api.syncMedia(media.value.id)
+    media.value = updated
+    applySyncResult(updated)
   } catch (caught) {
     error.value = caught instanceof Error ? caught.message : '同步失败'
   } finally {
@@ -465,62 +481,8 @@ onMounted(loadDetail)
           </div>
 
           <!-- Credits (cast & crew) -->
-          <div v-if="credits && credits.cast.length > 0" class="glass-card rounded-xl p-stack-md shadow-sm">
-            <h3 class="mb-unit flex items-center gap-2 text-title-sm text-on-surface">
-              <span class="h-4 w-1 rounded-full bg-primary" />
-              声优 / 演员
-            </h3>
-            <div class="flex gap-4 overflow-x-auto pb-2 -mx-2 px-2 snap-x snap-mandatory scrollbar-thin">
-              <div
-                v-for="person in credits.cast.slice(0, 15)"
-                :key="`${person.name}-${person.character || person.role}`"
-                class="snap-start shrink-0 w-24 text-center"
-              >
-                <div class="w-16 h-16 mx-auto rounded-full overflow-hidden bg-surface-container-high shadow-sm">
-                  <img
-                    v-if="person.image"
-                    :src="person.image"
-                    :alt="person.name"
-                    class="w-full h-full object-cover"
-                    loading="lazy"
-                  />
-                  <div v-else class="flex w-full h-full items-center justify-center bg-surface-variant">
-                    <span class="material-symbols-outlined text-xl text-on-surface-variant">person</span>
-                  </div>
-                </div>
-                <p class="mt-1.5 text-caption-xs font-medium text-on-surface leading-tight line-clamp-2">{{ person.name }}</p>
-                <p v-if="person.character" class="text-[10px] text-on-surface-variant/60 leading-tight line-clamp-1">{{ person.character }}</p>
-              </div>
-            </div>
-          </div>
-
-          <div v-if="credits && credits.crew.length > 0" class="glass-card rounded-xl p-stack-md shadow-sm">
-            <h3 class="mb-unit flex items-center gap-2 text-title-sm text-on-surface">
-              <span class="h-4 w-1 rounded-full bg-primary" />
-              制作人员
-            </h3>
-            <div class="flex gap-4 overflow-x-auto pb-2 -mx-2 px-2 snap-x snap-mandatory scrollbar-thin">
-              <div
-                v-for="person in credits.crew.slice(0, 15)"
-                :key="`${person.name}-${person.role}`"
-                class="snap-start shrink-0 w-24 text-center"
-              >
-                <div class="w-16 h-16 mx-auto rounded-full overflow-hidden bg-surface-container-high shadow-sm">
-                  <img
-                    v-if="person.image"
-                    :src="person.image"
-                    :alt="person.name"
-                    class="w-full h-full object-cover"
-                    loading="lazy"
-                  />
-                  <div v-else class="flex w-full h-full items-center justify-center bg-surface-variant">
-                    <span class="material-symbols-outlined text-xl text-on-surface-variant">construction</span>
-                  </div>
-                </div>
-                <p class="mt-1.5 text-caption-xs font-medium text-on-surface leading-tight line-clamp-2">{{ person.name }}</p>
-                <p class="text-[10px] text-on-surface-variant/60 leading-tight line-clamp-1">{{ person.role }}</p>
-              </div>
-            </div>
+          <div v-if="credits && (credits.cast.length > 0 || credits.crew.length > 0)" class="glass-card rounded-xl p-stack-md shadow-sm">
+            <CreditList :cast="credits.cast" :crew="credits.crew" />
           </div>
 
           <!-- History Timeline -->

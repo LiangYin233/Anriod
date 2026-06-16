@@ -1,14 +1,17 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import type { CreditsResponse, MediaDetails } from '@anriod/shared'
-import { MEDIA_TYPES } from '@anriod/shared'
+import type { CreditsResponse, MediaDetails, Status } from '@anriod/shared'
+import { MEDIA_TYPES, STATUS_LABELS, STATUS_VALUES } from '@anriod/shared'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import ErrorBanner from '@/components/ErrorBanner.vue'
+import EmptyState from '@/components/EmptyState.vue'
 import { api } from '@/utils/api'
 import { useTauri } from '@/composables/useTauri'
 import { useAsyncState } from '@/composables/useAsyncState'
 import { getCoverSrc } from '@/utils/cover'
+import CreditList from '@/components/CreditList.vue'
+import AppSelect from '@/components/AppSelect.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -23,6 +26,8 @@ const detail = ref<MediaDetails | null>(null)
 const credits = ref<CreditsResponse | null>(null)
 const { loading, error, execute } = useAsyncState()
 const importing = ref(false)
+const importStatus = ref<Status>('plan_to_watch')
+const statusOptions = STATUS_VALUES.map((s) => ({ value: s, label: STATUS_LABELS[s] }))
 
 const breadcrumb = computed(() => {
   if (fromPage === 'discover') {
@@ -46,11 +51,10 @@ const infoRows = computed(() => {
   return rows
 })
 
+const invalidParams = !source || !sourceId
+
 async function loadDetails() {
-  if (!source || !sourceId) {
-    error.value = '缺少参数: source 和 source_id 是必需的'
-    return
-  }
+  if (invalidParams) return
 
   await execute(async () => {
     const [detailData, creditsData] = await Promise.all([
@@ -72,7 +76,7 @@ async function importToLibrary() {
       source: detail.value.source,
       source_id: detail.value.source_id,
       type: detail.value.media_type,
-      status: 'plan_to_watch'
+      status: importStatus.value
     })
     router.push('/')
   } catch (caught) {
@@ -98,6 +102,7 @@ onMounted(loadDetails)
 
     <ErrorBanner v-if="error" :message="error" />
     <LoadingSpinner v-if="loading" message="加载作品信息..." />
+    <EmptyState v-if="!detail && invalidParams" icon="travel_explore" message="请从搜索或发现页进入作品预览" />
 
     <template v-if="detail">
       <div class="grid gap-stack-lg lg:grid-cols-[minmax(0,1fr)_320px]">
@@ -153,6 +158,7 @@ onMounted(loadDetails)
                   <span class="material-symbols-outlined text-[20px]">library_add</span>
                   {{ importing ? '导入中...' : '加入媒体库' }}
                 </button>
+                <AppSelect v-model="importStatus" :options="statusOptions" variant="fluent" />
                 <button
                   v-if="detail.source_url"
                   class="btn-secondary"
@@ -167,63 +173,7 @@ onMounted(loadDetails)
           </div>
 
           <!-- Credits (cast & crew) -->
-          <div v-if="credits && credits.cast.length > 0">
-            <h3 class="mb-unit flex items-center gap-2 text-title-sm text-on-surface">
-              <span class="h-4 w-1 rounded-full bg-primary" />
-              声优 / 演员
-            </h3>
-            <div class="flex gap-4 overflow-x-auto pb-2 -mx-2 px-2 snap-x snap-mandatory scrollbar-thin">
-              <div
-                v-for="person in credits.cast.slice(0, 15)"
-                :key="`${person.name}-${person.character || person.role}`"
-                class="snap-start shrink-0 w-24 text-center"
-              >
-                <div class="w-16 h-16 mx-auto rounded-full overflow-hidden bg-surface-container-high shadow-sm">
-                  <img
-                    v-if="person.image"
-                    :src="person.image"
-                    :alt="person.name"
-                    class="w-full h-full object-cover"
-                    loading="lazy"
-                  />
-                  <div v-else class="flex w-full h-full items-center justify-center bg-surface-variant">
-                    <span class="material-symbols-outlined text-xl text-on-surface-variant">person</span>
-                  </div>
-                </div>
-                <p class="mt-1.5 text-caption-xs font-medium text-on-surface leading-tight line-clamp-2">{{ person.name }}</p>
-                <p v-if="person.character" class="text-[10px] text-on-surface-variant/60 leading-tight line-clamp-1">{{ person.character }}</p>
-              </div>
-            </div>
-          </div>
-
-          <div v-if="credits && credits.crew.length > 0">
-            <h3 class="mb-unit flex items-center gap-2 text-title-sm text-on-surface">
-              <span class="h-4 w-1 rounded-full bg-primary" />
-              制作人员
-            </h3>
-            <div class="flex gap-4 overflow-x-auto pb-2 -mx-2 px-2 snap-x snap-mandatory scrollbar-thin">
-              <div
-                v-for="person in credits.crew.slice(0, 15)"
-                :key="`${person.name}-${person.role}`"
-                class="snap-start shrink-0 w-24 text-center"
-              >
-                <div class="w-16 h-16 mx-auto rounded-full overflow-hidden bg-surface-container-high shadow-sm">
-                  <img
-                    v-if="person.image"
-                    :src="person.image"
-                    :alt="person.name"
-                    class="w-full h-full object-cover"
-                    loading="lazy"
-                  />
-                  <div v-else class="flex w-full h-full items-center justify-center bg-surface-variant">
-                    <span class="material-symbols-outlined text-xl text-on-surface-variant">construction</span>
-                  </div>
-                </div>
-                <p class="mt-1.5 text-caption-xs font-medium text-on-surface leading-tight line-clamp-2">{{ person.name }}</p>
-                <p class="text-[10px] text-on-surface-variant/60 leading-tight line-clamp-1">{{ person.role }}</p>
-              </div>
-            </div>
-          </div>
+          <CreditList v-if="credits" :cast="credits.cast" :crew="credits.crew" />
 
           <!-- Synopsis -->
           <div v-if="detail.description">
