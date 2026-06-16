@@ -1,7 +1,7 @@
 import type { CreditPerson, CreditsResponse, DiscoverItem, DiscoverSection, MediaDetails, MediaType, SearchResult } from '@anriod/shared'
 import { config } from '../config'
 import { logger } from '../logger'
-import { proxyFetchOptions } from '../utils/proxy'
+import { dataSourceFetch } from '../utils/http'
 import type { DataSource } from './types'
 
 // ============================================================
@@ -141,10 +141,6 @@ export class BangumiDataSource implements DataSource {
 
   supportedTypes: MediaType[] = ['anime', 'game', 'novel', 'manga', 'tv', 'movie']
 
-  private get fetchOptions(): RequestInit {
-    return proxyFetchOptions()
-  }
-
   private get baseUrl(): string {
     return config.datasources.bangumi.baseUrl
   }
@@ -181,11 +177,10 @@ export class BangumiDataSource implements DataSource {
 
     let response: Response
     try {
-      response = await fetch(url, {
+      response = await dataSourceFetch(url, {
         method: 'POST',
         headers: this.headers,
-        body: JSON.stringify(body),
-        ...this.fetchOptions
+        body: JSON.stringify(body)
       })
     } catch (err) {
       throw new Error(`无法连接 Bangumi (${this.baseUrl}): ${err instanceof Error ? err.message : String(err)}`)
@@ -216,7 +211,7 @@ export class BangumiDataSource implements DataSource {
 
     let response: Response
     try {
-      response = await fetch(url, { headers: this.headers, ...this.fetchOptions })
+      response = await dataSourceFetch(url, { headers: this.headers })
     } catch (err) {
       throw new Error(`无法连接 Bangumi (${this.baseUrl}): ${err instanceof Error ? err.message : String(err)}`)
     }
@@ -259,14 +254,14 @@ export class BangumiDataSource implements DataSource {
   // ── Credits ────────────────────────────────────────────
 
   async getCredits(sourceId: string, _mediaType?: MediaType): Promise<CreditsResponse> {
-    const opts = { headers: this.headers, ...this.fetchOptions }
+    const opts = { headers: this.headers }
     const cast: CreditPerson[] = []
     const crew: CreditPerson[] = []
 
     // Fetch characters (含声优) and persons (制作人员)
     const [charResp, personResp] = await Promise.all([
-      fetch(`${this.baseUrl}/v0/subjects/${sourceId}/characters`, opts),
-      fetch(`${this.baseUrl}/v0/subjects/${sourceId}/persons`, opts)
+      dataSourceFetch(`${this.baseUrl}/v0/subjects/${sourceId}/characters`, opts),
+      dataSourceFetch(`${this.baseUrl}/v0/subjects/${sourceId}/persons`, opts)
     ])
 
     if (charResp.ok) {
@@ -324,7 +319,7 @@ export class BangumiDataSource implements DataSource {
 
     let response: Response
     try {
-      response = await fetch(url, { headers, ...this.fetchOptions })
+      response = await dataSourceFetch(url, { headers })
     } catch (err) {
       throw new Error(`无法连接 Bangumi (${this.baseUrl}): ${err instanceof Error ? err.message : String(err)}`)
     }
@@ -351,7 +346,7 @@ export class BangumiDataSource implements DataSource {
 
         do {
           const episodesUrl = `${this.baseUrl}/v0/episodes?subject_id=${sourceId}&limit=${episodeLimit}&offset=${episodeOffset}`
-          const epResponse = await fetch(episodesUrl, { headers, ...this.fetchOptions })
+          const epResponse = await dataSourceFetch(episodesUrl, { headers })
           if (!epResponse.ok) break
 
           const epData = await epResponse.json() as { total?: number; data?: BangumiEpisode[] }

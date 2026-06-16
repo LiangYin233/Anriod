@@ -2,7 +2,7 @@ import type { CreditPerson, CreditsResponse, DiscoverItem, DiscoverSection, Medi
 import { config } from '../config'
 import { logger } from '../logger'
 import { MAX_CAST_DISPLAY, MAX_CREW_DISPLAY } from '../constants'
-import { proxyFetchOptions } from '../utils/proxy'
+import { dataSourceFetch } from '../utils/http'
 import type { DataSource } from './types'
 
 // ============================================================
@@ -133,9 +133,8 @@ export class TmdbDataSource implements DataSource {
 
     let response: Response
     try {
-      response = await fetch(`${url}?${params}`, {
+      response = await dataSourceFetch(`${url}?${params}`, {
         headers: this.headers,
-        ...proxyFetchOptions(),
       })
     } catch (err) {
       throw new Error(`无法连接 TMDB (${this.baseUrl}): ${err instanceof Error ? err.message : String(err)}`)
@@ -176,7 +175,7 @@ export class TmdbDataSource implements DataSource {
     const fetchTrending = async (mediaType: 'movie' | 'tv'): Promise<DiscoverItem[]> => {
       const url = `${baseUrl}/trending/${mediaType}/week?language=${lang}`
       try {
-        const resp = await fetch(url, { headers, ...proxyFetchOptions() })
+        const resp = await dataSourceFetch(url, { headers })
         if (!resp.ok) return []
         const body = await resp.json() as { results: TmdbSearchResult[] }
         return (body.results || []).slice(0, 10).map((r) => ({
@@ -218,7 +217,7 @@ export class TmdbDataSource implements DataSource {
     const url = `${baseUrl}/${endpoint}/${sourceId}/credits?language=${lang}`
 
     try {
-      const resp = await fetch(url, { headers, ...proxyFetchOptions() })
+      const resp = await dataSourceFetch(url, { headers })
       if (!resp.ok) return { source: this.name, source_id: sourceId, cast: [], crew: [] }
 
       const body = await resp.json() as {
@@ -254,9 +253,8 @@ export class TmdbDataSource implements DataSource {
 
     let response: Response
     try {
-      response = await fetch(url, {
+      response = await dataSourceFetch(url, {
         headers: this.headers,
-        ...proxyFetchOptions(),
       })
     } catch (err) {
       throw new Error(`无法连接 TMDB (${this.baseUrl}): ${err instanceof Error ? err.message : String(err)}`)
