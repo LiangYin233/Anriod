@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test'
-import { isMediaType, isStatus, toInt, parseJsonField, jsonString } from '../utils/http'
+import { isMediaType, isStatus, toInt } from '../utils/http'
 import { HttpError } from '../middleware/error'
 
 // Pure functions — no DB needed
@@ -59,40 +59,6 @@ describe('toInt', () => {
 
   test('truncates floats', () => {
     expect(toInt('3.9', 1)).toBe(3)
-  })
-})
-
-describe('parseJsonField', () => {
-  test('parses valid JSON strings', () => {
-    expect(parseJsonField<{ a: number }>('{"a":1}')).toEqual({ a: 1 })
-    expect(parseJsonField<string[]>('["a","b"]')).toEqual(['a', 'b'])
-    expect(parseJsonField<number>('42')).toBe(42)
-  })
-
-  test('returns null for null/undefined/empty', () => {
-    expect(parseJsonField(null)).toBeNull()
-    expect(parseJsonField(undefined)).toBeNull()
-    expect(parseJsonField('')).toBeNull()
-  })
-
-  test('passes through non-string values', () => {
-    const obj = { a: 1 }
-    expect(parseJsonField<{ a: number }>(obj as unknown)).toEqual(obj)
-  })
-
-  test('returns null for invalid JSON', () => {
-    expect(parseJsonField('{broken')).toBeNull()
-  })
-})
-
-describe('jsonString', () => {
-  test('serialises objects', () => {
-    expect(jsonString({ a: 1 })).toBe('{"a":1}')
-  })
-
-  test('returns null for undefined/null', () => {
-    expect(jsonString(undefined)).toBeNull()
-    expect(jsonString(null)).toBeNull()
   })
 })
 

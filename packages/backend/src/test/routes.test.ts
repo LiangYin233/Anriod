@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test'
+import { describe, test, expect, beforeAll } from 'bun:test'
 import type { Hono } from 'hono'
 import { ERROR_MESSAGES } from '../constants'
 import { initTestEnv, clearAllTables } from './helpers'
@@ -23,8 +23,7 @@ beforeAll(async () => {
     })
 })
 
-// Note: not closing sqlite here because ESM modules are cached across test files,
-// and closing the shared DB would break other test suites.
+// Note: ESM modules are cached across test files, so the shared DB stays open for other suites.
 
 describe('health endpoint', () => {
   test('GET /health returns ok', async () => {

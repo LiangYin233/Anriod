@@ -61,7 +61,7 @@ bun dev:frontend         # http://localhost:5173
 
 | 层 | 技术 |
 |---|------|
-| 后端 | Bun + Hono + SQLite (bun:sqlite) |
+| 后端 | Bun + Hono + Drizzle ORM + SQLite (bun:sqlite) |
 | 前端 | Vue 3 + Vue Router + Tailwind CSS + Chart.js |
 | 桌面 | Tauri 2.x |
 | 数据源 | Bangumi v0 API + TMDB v3 API |
@@ -90,7 +90,7 @@ packages/
 │       ├── datasources/      # 数据源适配（Bangumi / TMDB）
 │       ├── middleware/       # 认证、错误处理
 │       ├── utils/            # 工具函数、代理检测、下载队列
-│       ├── db/               # SQLite 初始化、查询辅助
+│       ├── db/               # Drizzle ORM schema、SQLite client
 │       └── test/             # 后端测试（115 个用例）
 └── frontend/            # Vue 前端
     └── src/

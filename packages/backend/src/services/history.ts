@@ -1,142 +1,109 @@
 import type {
   CreateWatchHistoryInput,
-  MediaProgress,
   PaginatedResponse,
   UpdateWatchHistoryInput,
   WatchHistory
 } from '@anriod/shared'
-import { all, get, run, type SqlValue } from '../db/helpers'
-import { HttpError } from '../middleware/error'
-import { jsonString, parseJsonField, toInt } from '../utils/http'
+import { count, desc, eq, getTableColumns } from 'drizzle-orm'
 import { DEFAULT_PAGE, DEFAULT_LIMIT, MAX_PAGE, MAX_LIMIT, ERROR_MESSAGES } from '../constants'
+import { db } from '../db/client'
+import { media, watchHistory, type NewWatchHistoryRow } from '../db/schema'
+import { HttpError } from '../middleware/error'
+import { toInt } from '../utils/http'
 
-interface HistoryRow {
-  id: number
-  media_id: string
-  media_title?: string
-  started_at: string
-  completed_at: string | null
-  progress_from: string | null
-  progress_to: string | null
-  rating: number | null
-  notes: string | null
-  created_at: string
-}
-
-function rowToHistory(row: HistoryRow): WatchHistory {
-  return {
-    ...row,
-    progress_from: parseJsonField<MediaProgress>(row.progress_from),
-    progress_to: parseJsonField<MediaProgress>(row.progress_to)
-  }
-}
+interface HistoryRow extends WatchHistory {}
 
 function assertMediaExists(mediaId: string) {
-  const media = get<{ id: string }>('SELECT id FROM media WHERE id = ?', [mediaId])
-  if (!media) throw new HttpError(404, ERROR_MESSAGES.MEDIA_NOT_FOUND)
+  const mediaRow = db.select({ id: media.id }).from(media).where(eq(media.id, mediaId)).get()
+  if (!mediaRow) throw new HttpError(404, ERROR_MESSAGES.MEDIA_NOT_FOUND)
+}
+
+function historyWithMediaTitle() {
+  return db
+    .select({
+      ...getTableColumns(watchHistory),
+      media_title: media.title
+    })
+    .from(watchHistory)
+    .innerJoin(media, eq(media.id, watchHistory.media_id))
 }
 
 export function listHistory(query: { page?: number; limit?: number; media_id?: string }): PaginatedResponse<WatchHistory> {
   const page = toInt(query.page, DEFAULT_PAGE, DEFAULT_PAGE, MAX_PAGE)
   const limit = toInt(query.limit, DEFAULT_LIMIT, DEFAULT_PAGE, MAX_LIMIT)
   const offset = (page - 1) * limit
-  const where: string[] = []
-  const params: SqlValue[] = []
+  const whereClause = query.media_id ? eq(watchHistory.media_id, query.media_id) : undefined
 
-  if (query.media_id) {
-    where.push('wh.media_id = ?')
-    params.push(query.media_id)
-  }
+  const total = db
+    .select({ total: count() })
+    .from(watchHistory)
+    .where(whereClause)
+    .get()?.total ?? 0
 
-  const whereSql = where.length > 0 ? `WHERE ${where.join(' AND ')}` : ''
-  const total = get<{ total: number }>(`SELECT COUNT(*) AS total FROM watch_history wh ${whereSql}`, params)?.total ?? 0
-  const rows = all<HistoryRow>(
-    `SELECT wh.*, m.title AS media_title
-     FROM watch_history wh
-     INNER JOIN media m ON m.id = wh.media_id
-     ${whereSql}
-     ORDER BY wh.started_at DESC
-     LIMIT ? OFFSET ?`,
-    [...params, limit, offset]
-  )
+  const rows = historyWithMediaTitle()
+    .where(whereClause)
+    .orderBy(desc(watchHistory.started_at))
+    .limit(limit)
+    .offset(offset)
+    .all() as HistoryRow[]
 
   return {
-    data: rows.map(rowToHistory),
+    data: rows,
     pagination: { page, limit, total }
   }
 }
 
 export function getHistoryById(id: number): WatchHistory {
-  const row = get<HistoryRow>(
-    `SELECT wh.*, m.title AS media_title
-     FROM watch_history wh
-     INNER JOIN media m ON m.id = wh.media_id
-     WHERE wh.id = ?`,
-    [id]
-  )
+  const row = historyWithMediaTitle()
+    .where(eq(watchHistory.id, id))
+    .get() as HistoryRow | undefined
+
   if (!row) throw new HttpError(404, ERROR_MESSAGES.HISTORY_NOT_FOUND)
-  return rowToHistory(row)
+  return row
 }
 
 export function listHistoryForMedia(mediaId: string): WatchHistory[] {
   assertMediaExists(mediaId)
-  return all<HistoryRow>(
-    `SELECT wh.*, m.title AS media_title
-     FROM watch_history wh
-     INNER JOIN media m ON m.id = wh.media_id
-     WHERE wh.media_id = ?
-     ORDER BY wh.started_at DESC`,
-    [mediaId]
-  ).map(rowToHistory)
+  return historyWithMediaTitle()
+    .where(eq(watchHistory.media_id, mediaId))
+    .orderBy(desc(watchHistory.started_at))
+    .all() as HistoryRow[]
 }
 
 export function createWatchHistory(input: CreateWatchHistoryInput): WatchHistory {
   assertMediaExists(input.media_id)
 
-  const startedAt = input.started_at ?? new Date().toISOString()
-  run(
-    `INSERT INTO watch_history (
-      media_id, started_at, completed_at, progress_from, progress_to, rating, notes
-    ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [
-      input.media_id,
-      startedAt,
-      input.completed_at ?? null,
-      jsonString(input.progress_from),
-      jsonString(input.progress_to),
-      input.rating ?? null,
-      input.notes ?? null
-    ]
-  )
+  const now = new Date().toISOString()
+  const startedAt = input.started_at ?? now
+  const values: NewWatchHistoryRow = {
+    media_id: input.media_id,
+    started_at: startedAt,
+    completed_at: input.completed_at ?? null,
+    progress_from: input.progress_from ?? null,
+    progress_to: input.progress_to ?? null,
+    rating: input.rating ?? null,
+    notes: input.notes ?? null,
+    created_at: now
+  }
 
-  const id = get<{ id: number }>('SELECT last_insert_rowid() AS id')?.id
-  if (!id) throw new HttpError(500, ERROR_MESSAGES.HISTORY_CREATE_FAILED)
-  return getHistoryById(id)
+  const inserted = db.insert(watchHistory).values(values).returning({ id: watchHistory.id }).get()
+  if (!inserted) throw new HttpError(500, ERROR_MESSAGES.HISTORY_CREATE_FAILED)
+  return getHistoryById(inserted.id)
 }
 
 export function updateWatchHistory(id: number, input: UpdateWatchHistoryInput): WatchHistory {
   getHistoryById(id)
 
-  const fields: string[] = []
-  const values: SqlValue[] = []
-  const mapping: Record<string, SqlValue | undefined> = {
-    started_at: input.started_at,
-    completed_at: input.completed_at,
-    progress_from: input.progress_from === undefined ? undefined : jsonString(input.progress_from),
-    progress_to: input.progress_to === undefined ? undefined : jsonString(input.progress_to),
-    rating: input.rating,
-    notes: input.notes
-  }
+  const values: Partial<NewWatchHistoryRow> = {}
+  if (input.started_at !== undefined) values.started_at = input.started_at
+  if (input.completed_at !== undefined) values.completed_at = input.completed_at
+  if (input.progress_from !== undefined) values.progress_from = input.progress_from
+  if (input.progress_to !== undefined) values.progress_to = input.progress_to
+  if (input.rating !== undefined) values.rating = input.rating
+  if (input.notes !== undefined) values.notes = input.notes
 
-  for (const [field, value] of Object.entries(mapping)) {
-    if (value !== undefined) {
-      fields.push(`${field} = ?`)
-      values.push(value)
-    }
-  }
-
-  if (fields.length > 0) {
-    run(`UPDATE watch_history SET ${fields.join(', ')} WHERE id = ?`, [...values, id])
+  if (Object.keys(values).length > 0) {
+    db.update(watchHistory).set(values).where(eq(watchHistory.id, id)).run()
   }
 
   return getHistoryById(id)
@@ -144,5 +111,5 @@ export function updateWatchHistory(id: number, input: UpdateWatchHistoryInput): 
 
 export function deleteWatchHistory(id: number) {
   getHistoryById(id)
-  run('DELETE FROM watch_history WHERE id = ?', [id])
+  db.delete(watchHistory).where(eq(watchHistory.id, id)).run()
 }

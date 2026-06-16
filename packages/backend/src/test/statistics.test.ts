@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeAll } from 'bun:test'
 import { initTestEnv, clearAllTables } from './helpers'
 
-let createMedia: any, updateStatus: any, updateProgress: any
+let createMedia: any, updateProgress: any
 let getOverview: any, getTimeline: any, getTagStatistics: any, getRatingDistribution: any
 
 beforeAll(async () => {
@@ -10,7 +10,6 @@ beforeAll(async () => {
 
   const m = await import('../services/media')
   createMedia = m.createMedia
-  updateStatus = m.updateStatus
   updateProgress = m.updateProgress
 
   const s = await import('../services/statistics')

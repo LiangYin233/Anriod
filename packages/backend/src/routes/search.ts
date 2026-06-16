@@ -4,7 +4,6 @@ import { getDataSource, listDataSources } from '../datasources/registry'
 import { searchExternal } from '../services/search'
 import { HttpError } from '../middleware/error'
 import { ERROR_MESSAGES } from '../constants'
-import type { CreditsResponse } from '@anriod/shared'
 
 export const searchRoutes = new Hono()
 

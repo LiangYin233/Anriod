@@ -1,6 +1,8 @@
 import { mkdir } from 'node:fs/promises'
 import { dirname, extname } from 'node:path'
-import { run } from '../db/helpers'
+import { eq } from 'drizzle-orm'
+import { db } from '../db/client'
+import { media } from '../db/schema'
 import { proxyFetchOptions } from './proxy'
 import { logger } from '../logger'
 
@@ -72,7 +74,7 @@ class DownloadQueue {
 
     // Store local path in cover_url field (e.g., "/covers/123.jpg")
     const localUrl = `/covers/${filename}`
-    run('UPDATE media SET cover_url = ?, updated_at = ? WHERE id = ?', [localUrl, new Date().toISOString(), mediaId])
+    db.update(media).set({ cover_url: localUrl, updated_at: new Date().toISOString() }).where(eq(media.id, mediaId)).run()
   }
 }
 

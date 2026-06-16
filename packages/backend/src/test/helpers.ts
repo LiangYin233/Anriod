@@ -44,9 +44,10 @@ export async function initTestEnv() {
 
 /** Clear all data from every table. */
 export async function clearAllTables() {
-  const { sqlite } = await import('../db/client')
-  sqlite.exec('DELETE FROM watch_history')
-  sqlite.exec('DELETE FROM media_tags')
-  sqlite.exec('DELETE FROM tags')
-  sqlite.exec('DELETE FROM media')
+  const { db } = await import('../db/client')
+  const { media, mediaTags, tags, watchHistory } = await import('../db/schema')
+  db.delete(watchHistory).run()
+  db.delete(mediaTags).run()
+  db.delete(tags).run()
+  db.delete(media).run()
 }

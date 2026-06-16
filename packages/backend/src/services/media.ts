@@ -8,120 +8,91 @@ import type {
   Status,
   UpdateMediaInput
 } from '@anriod/shared'
+import { and, asc, count, desc, eq, exists, gte, inArray, lte, type SQL } from 'drizzle-orm'
 import { config } from '../config'
 import { DEFAULT_PAGE, DEFAULT_LIMIT, MAX_PAGE, MAX_LIMIT, MIN_RATING, MAX_RATING, ERROR_MESSAGES } from '../constants'
-import { all, get, run, transaction, type SqlValue } from '../db/helpers'
+import { db } from '../db/client'
+import { media, mediaTags, tags, watchHistory, type MediaRow, type NewMediaRow } from '../db/schema'
 import { getDataSource } from '../datasources/registry'
 import { HttpError } from '../middleware/error'
-import { isMediaType, isStatus, jsonString, parseJsonField, toInt } from '../utils/http'
+import { isMediaType, isStatus, toInt } from '../utils/http'
 import { downloadQueue } from '../utils/download-queue'
 import { getTagsForMedia, getTagsForMediaBatch, setTagsForMedia } from './tag'
 import { createWatchHistory } from './history'
 
-interface MediaRow {
-  id: string
-  title: string
-  type: Media['type']
-  status: Media['status']
-  rating: number | null
-  notes: string | null
-  current_progress: string | null
-  cover_url: string | null
-  description: string | null
-  external_rating: number | null
-  air_date: string | null
-  total_episodes: number | null
-  studio: string | null
-  source_metadata: string | null
-  source: string | null
-  source_id: string | null
-  source_url: string | null
-  synced_at: string | null
-  created_at: string
-  updated_at: string
+const SORT_FIELDS = {
+  title: media.title,
+  rating: media.rating,
+  created_at: media.created_at,
+  updated_at: media.updated_at,
+  air_date: media.air_date
+} as const
+
+type SortField = keyof typeof SORT_FIELDS
+
+function parseSort(sort = 'updated_at:desc'): { field: SortField; direction: 'asc' | 'desc' } {
+  const [requestedField = 'updated_at', requestedDirection = 'desc'] = sort.split(':')
+  const field = requestedField in SORT_FIELDS ? requestedField as SortField : 'updated_at'
+  const direction = requestedDirection.toLowerCase() === 'asc' ? 'asc' : 'desc'
+  return { field, direction }
 }
-
-const SORT_FIELDS: Record<string, string> = {
-  title: 'title',
-  rating: 'rating',
-  created_at: 'created_at',
-  updated_at: 'updated_at',
-  air_date: 'air_date'
-}
-
-const INSERT_FIELDS = [
-  'id',
-  'title',
-  'type',
-  'status',
-  'rating',
-  'notes',
-  'current_progress',
-  'cover_url',
-  'description',
-  'external_rating',
-  'air_date',
-  'total_episodes',
-  'studio',
-  'source_metadata',
-  'source',
-  'source_id',
-  'source_url',
-  'synced_at',
-  'updated_at'
-] as const
-
-const UPDATE_FIELDS = [
-  'title',
-  'type',
-  'status',
-  'rating',
-  'notes',
-  'current_progress',
-  'cover_url',
-  'description',
-  'external_rating',
-  'air_date',
-  'total_episodes',
-  'studio',
-  'source_metadata',
-  'source',
-  'source_id',
-  'source_url',
-  'synced_at'
-] as const
 
 function rowToMedia(row: MediaRow, tagsMap?: Map<string, string[]>): Media {
   return {
     ...row,
-    current_progress: parseJsonField<MediaProgress>(row.current_progress),
-    source_metadata: parseJsonField<Record<string, unknown>>(row.source_metadata),
     tags: tagsMap?.get(row.id) ?? getTagsForMedia(row.id)
   }
 }
 
-function normalizeMediaInput(input: CreateMediaInput | UpdateMediaInput): Record<string, SqlValue | undefined> {
+function normalizeMediaInput(input: CreateMediaInput | UpdateMediaInput): Partial<NewMediaRow> {
   const internalInput = input as UpdateMediaInput & { synced_at?: string | null }
+  const values: Partial<NewMediaRow> = {}
+
+  if (input.title !== undefined) values.title = input.title
+  if (input.type !== undefined) values.type = input.type
+  if (input.status !== undefined) values.status = input.status
+  if (input.rating !== undefined) values.rating = input.rating
+  if (input.notes !== undefined) values.notes = input.notes
+  if (input.current_progress !== undefined) values.current_progress = input.current_progress
+  if (input.cover_url !== undefined) values.cover_url = input.cover_url
+  if (input.description !== undefined) values.description = input.description
+  if (input.external_rating !== undefined) values.external_rating = input.external_rating
+  if (input.air_date !== undefined) values.air_date = input.air_date
+  if (input.total_episodes !== undefined) values.total_episodes = input.total_episodes
+  if (input.studio !== undefined) values.studio = input.studio
+  if (input.source_metadata !== undefined) values.source_metadata = input.source_metadata
+  if (input.source !== undefined) values.source = input.source
+  if (input.source_id !== undefined) values.source_id = input.source_id
+  if (input.source_url !== undefined) values.source_url = input.source_url
+  if (internalInput.synced_at !== undefined) values.synced_at = internalInput.synced_at
+
+  return values
+}
+
+function createMediaValues(id: string, input: CreateMediaInput): NewMediaRow {
+  const now = new Date().toISOString()
 
   return {
+    id,
     title: input.title,
     type: input.type,
-    status: input.status,
-    rating: input.rating,
-    notes: input.notes,
-    current_progress: input.current_progress === undefined ? undefined : jsonString(input.current_progress),
-    cover_url: input.cover_url,
-    description: input.description,
-    external_rating: input.external_rating,
-    air_date: input.air_date,
-    total_episodes: input.total_episodes,
-    studio: input.studio,
-    source_metadata: input.source_metadata === undefined ? undefined : jsonString(input.source_metadata),
-    source: input.source,
-    source_id: input.source_id,
-    source_url: input.source_url,
-    synced_at: internalInput.synced_at ?? undefined,
-    updated_at: new Date().toISOString()
+    status: input.status ?? 'plan_to_watch',
+    rating: input.rating ?? null,
+    notes: input.notes ?? null,
+    current_progress: input.current_progress ?? null,
+    cover_url: input.cover_url ?? null,
+    description: input.description ?? null,
+    external_rating: input.external_rating ?? null,
+    air_date: input.air_date ?? null,
+    total_episodes: input.total_episodes ?? null,
+    studio: input.studio ?? null,
+    source_metadata: input.source_metadata ?? null,
+    source: input.source ?? null,
+    source_id: input.source_id ?? null,
+    source_url: input.source_url ?? null,
+    synced_at: null,
+    created_at: now,
+    updated_at: now
   }
 }
 
@@ -143,89 +114,149 @@ function validateMediaInput(input: CreateMediaInput | UpdateMediaInput, partial 
   }
 }
 
-function buildSort(sort = 'updated_at:desc'): string {
-  const [field = 'updated_at', direction = 'desc'] = sort.split(':')
-  const column = SORT_FIELDS[field] ?? 'updated_at'
-  const order = direction.toLowerCase() === 'asc' ? 'ASC' : 'DESC'
-  // Normalize timestamp format (space→T) so ISO and SQLite formats sort together
-  const col = field === 'updated_at' || field === 'created_at'
-    ? `REPLACE(${column}, ' ', 'T')`
-    : column
-  return `${col} ${order}`
+function buildSort(sort = 'updated_at:desc'): SQL {
+  const { field, direction } = parseSort(sort)
+  const column = SORT_FIELDS[field]
+  return direction === 'asc' ? asc(column) : desc(column)
+}
+
+function normalizeSortValue(row: MediaRow, field: SortField): string | number | null {
+  const value = row[field]
+  if (field === 'created_at' || field === 'updated_at') {
+    return typeof value === 'string' ? value.replace(' ', 'T') : value
+  }
+  return value
+}
+
+function compareMediaRows(sort = 'updated_at:desc') {
+  const { field, direction } = parseSort(sort)
+
+  return (left: MediaRow, right: MediaRow) => {
+    const leftValue = normalizeSortValue(left, field)
+    const rightValue = normalizeSortValue(right, field)
+
+    if (leftValue === rightValue) return 0
+    if (leftValue === null) return direction === 'asc' ? -1 : 1
+    if (rightValue === null) return direction === 'asc' ? 1 : -1
+
+    const result = typeof leftValue === 'number' && typeof rightValue === 'number'
+      ? leftValue - rightValue
+      : String(leftValue).localeCompare(String(rightValue))
+
+    return direction === 'asc' ? result : -result
+  }
+}
+
+function buildMediaWhere(query: ListMediaQuery): SQL | undefined {
+  const conditions: SQL[] = []
+
+  if (query.type) {
+    if (!isMediaType(query.type)) throw new HttpError(400, ERROR_MESSAGES.INVALID_MEDIA_TYPE)
+    conditions.push(eq(media.type, query.type))
+  }
+
+  if (query.status) {
+    if (!isStatus(query.status)) throw new HttpError(400, ERROR_MESSAGES.INVALID_STATUS)
+    conditions.push(eq(media.status, query.status))
+  }
+
+  if (query.source) {
+    conditions.push(eq(media.source, query.source))
+  }
+
+  if (query.tag) {
+    conditions.push(
+      exists(
+        db
+          .select({ media_id: mediaTags.media_id })
+          .from(mediaTags)
+          .innerJoin(tags, eq(tags.id, mediaTags.tag_id))
+          .where(and(eq(mediaTags.media_id, media.id), eq(tags.name, query.tag)))
+      )
+    )
+  }
+
+  if (query.air_date_from) {
+    conditions.push(gte(media.air_date, query.air_date_from))
+  }
+
+  if (query.air_date_to) {
+    conditions.push(lte(media.air_date, query.air_date_to))
+  }
+
+  if (query.ep_min !== undefined) {
+    conditions.push(gte(media.total_episodes, query.ep_min))
+  }
+
+  if (query.ep_max !== undefined) {
+    conditions.push(lte(media.total_episodes, query.ep_max))
+  }
+
+  return conditions.length > 0 ? and(...conditions) : undefined
 }
 
 export function listMedia(query: ListMediaQuery): PaginatedResponse<Media> {
   const page = toInt(query.page, DEFAULT_PAGE, DEFAULT_PAGE, MAX_PAGE)
   const limit = toInt(query.limit, DEFAULT_LIMIT, DEFAULT_PAGE, MAX_LIMIT)
   const offset = (page - 1) * limit
-  const where: string[] = []
-  const params: SqlValue[] = []
-
-  if (query.type) {
-    if (!isMediaType(query.type)) throw new HttpError(400, ERROR_MESSAGES.INVALID_MEDIA_TYPE)
-    where.push('type = ?')
-    params.push(query.type)
-  }
-
-  if (query.status) {
-    if (!isStatus(query.status)) throw new HttpError(400, ERROR_MESSAGES.INVALID_STATUS)
-    where.push('status = ?')
-    params.push(query.status)
-  }
-
-  if (query.source) {
-    where.push('source = ?')
-    params.push(query.source)
-  }
+  const whereClause = buildMediaWhere(query)
 
   if (query.q) {
-    const escaped = query.q.replace(/[%_]/g, '\\$&')
-    where.push('title LIKE ? ESCAPE ?')
-    params.push(`%${escaped}%`, '\\')
+    const normalizedQuery = query.q.toLowerCase()
+    const matchingRows = db
+      .select()
+      .from(media)
+      .where(whereClause)
+      .all()
+      .filter((row) => row.title.toLowerCase().includes(normalizedQuery))
+
+    const statusCounts = matchingRows.reduce((accumulator, row) => {
+      accumulator[row.status] = (accumulator[row.status] ?? 0) + 1
+      return accumulator
+    }, {} as Record<string, number>)
+
+    const rows = [...matchingRows]
+      .sort(compareMediaRows(query.sort))
+      .slice(offset, offset + limit)
+
+    const tagsMap = getTagsForMediaBatch(rows.map((row) => row.id))
+
+    return {
+      data: rows.map((row) => rowToMedia(row, tagsMap)),
+      pagination: { page, limit, total: matchingRows.length },
+      status_counts: statusCounts
+    }
   }
 
-  if (query.tag) {
-    where.push(`EXISTS (
-      SELECT 1 FROM media_tags mt
-      INNER JOIN tags t ON t.id = mt.tag_id
-      WHERE mt.media_id = media.id AND t.name = ?
-    )`)
-    params.push(query.tag)
-  }
-
-  if (query.air_date_from) {
-    where.push('air_date >= ?')
-    params.push(query.air_date_from)
-  }
-
-  if (query.air_date_to) {
-    where.push('air_date <= ?')
-    params.push(query.air_date_to)
-  }
-
-  if (query.ep_min !== undefined) {
-    where.push('total_episodes >= ?')
-    params.push(query.ep_min)
-  }
-
-  if (query.ep_max !== undefined) {
-    where.push('total_episodes <= ?')
-    params.push(query.ep_max)
-  }
-
-  const whereSql = where.length > 0 ? `WHERE ${where.join(' AND ')}` : ''
-  const total = get<{ total: number }>(`SELECT COUNT(*) AS total FROM media ${whereSql}`, params)?.total ?? 0
+  const total = db
+    .select({ total: count() })
+    .from(media)
+    .where(whereClause)
+    .get()?.total ?? 0
 
   // Status counts for ALL matching records (not just current page)
-  const statusCounts = all<{ status: string; count: number }>(
-    `SELECT status, COUNT(*) as count FROM media ${whereSql} GROUP BY status`,
-    params
-  ).reduce((acc, r) => { acc[r.status] = r.count; return acc }, {} as Record<string, number>)
+  const statusCounts = db
+    .select({ status: media.status, count: count() })
+    .from(media)
+    .where(whereClause)
+    .groupBy(media.status)
+    .all()
+    .reduce((accumulator, row) => {
+      accumulator[row.status] = row.count
+      return accumulator
+    }, {} as Record<string, number>)
 
-  const rows = all<MediaRow>(`SELECT * FROM media ${whereSql} ORDER BY ${buildSort(query.sort)} LIMIT ? OFFSET ?`, [...params, limit, offset])
+  const rows = db
+    .select()
+    .from(media)
+    .where(whereClause)
+    .orderBy(buildSort(query.sort))
+    .limit(limit)
+    .offset(offset)
+    .all()
 
   // Batch-load tags in a single query (avoids N+1)
-  const tagsMap = getTagsForMediaBatch(rows.map((r) => r.id))
+  const tagsMap = getTagsForMediaBatch(rows.map((row) => row.id))
 
   return {
     data: rows.map((row) => rowToMedia(row, tagsMap)),
@@ -235,7 +266,7 @@ export function listMedia(query: ListMediaQuery): PaginatedResponse<Media> {
 }
 
 export function getMediaById(id: string): Media {
-  const row = get<MediaRow>('SELECT * FROM media WHERE id = ?', [id])
+  const row = db.select().from(media).where(eq(media.id, id)).get()
   if (!row) throw new HttpError(404, ERROR_MESSAGES.MEDIA_NOT_FOUND)
   return rowToMedia(row)
 }
@@ -243,20 +274,19 @@ export function getMediaById(id: string): Media {
 export function createMedia(input: CreateMediaInput): Media {
   validateMediaInput(input)
 
-  const existing = get<{ id: string }>(
-    'SELECT id FROM media WHERE title = ? AND type = ?',
-    [input.title.trim(), input.type]
-  )
+  const existing = db
+    .select({ id: media.id })
+    .from(media)
+    .where(and(eq(media.title, input.title.trim()), eq(media.type, input.type)))
+    .get()
   if (existing) throw new HttpError(409, 'Duplicate entry')
 
   const id = crypto.randomUUID()
-  const normalized = normalizeMediaInput({ ...input, status: input.status ?? 'plan_to_watch' })
-  const values = INSERT_FIELDS.map((field) => (field === 'id' ? id : (normalized[field] ?? null)))
+  const values = createMediaValues(id, input)
 
-  transaction(() => {
-    const sql = 'INSERT INTO media (' + INSERT_FIELDS.join(', ') + ') VALUES (' + INSERT_FIELDS.map(() => '?').join(', ') + ')'
-    run(sql, values)
-    setTagsForMedia(id, input.tags)
+  db.transaction((transaction) => {
+    transaction.insert(media).values(values).run()
+    setTagsForMedia(id, input.tags, transaction)
   })
 
   return getMediaById(id)
@@ -266,20 +296,20 @@ export function updateMedia(id: string, input: UpdateMediaInput): Media {
   getMediaById(id)
   validateMediaInput(input, true)
 
-  const normalized = normalizeMediaInput(input)
-  const fields = UPDATE_FIELDS.filter((field) => normalized[field] !== undefined)
+  const values = normalizeMediaInput(input)
+  const hasMediaChanges = Object.keys(values).length > 0
+  if (hasMediaChanges) values.updated_at = new Date().toISOString()
 
-  if (fields.length > 0) {
-    const values = fields.map((field) => normalized[field] as SqlValue)
-    const setClause = fields.map((f) => f + ' = ?').join(', ')
-    run(
-      'UPDATE media SET ' + setClause + ', updated_at = ? WHERE id = ?',
-      [...values, new Date().toISOString(), id]
-    )
-  }
+  if (hasMediaChanges || input.tags !== undefined) {
+    db.transaction((transaction) => {
+      if (hasMediaChanges) {
+        transaction.update(media).set(values).where(eq(media.id, id)).run()
+      }
 
-  if (input.tags !== undefined) {
-    setTagsForMedia(id, input.tags)
+      if (input.tags !== undefined) {
+        setTagsForMedia(id, input.tags, transaction)
+      }
+    })
   }
 
   // If this update supplied a remote cover_url, trigger local download
@@ -298,7 +328,7 @@ export function updateMedia(id: string, input: UpdateMediaInput): Media {
 
 export function deleteMedia(id: string) {
   getMediaById(id)
-  run('DELETE FROM media WHERE id = ?', [id])
+  db.delete(media).where(eq(media.id, id)).run()
 }
 
 function isChapterBased(type: string): boolean {
@@ -309,33 +339,39 @@ export function updateProgress(id: string, progress: MediaProgress, notes?: stri
   const current = getMediaById(id)
   const now = startedAt || new Date().toISOString()
   const useChapter = isChapterBased(current.type)
-  const field = useChapter ? 'chapter' : 'episode'
+  const progressKey = useChapter ? 'chapter' : 'episode'
 
-  run('UPDATE media SET current_progress = ?, updated_at = ? WHERE id = ?', [jsonString(progress), now, id])
+  db.update(media).set({ current_progress: progress, updated_at: now }).where(eq(media.id, id)).run()
 
-  const newVal = progress[field]
-  const oldVal = (current.current_progress?.[field] as number | undefined) ?? 0
-  if (newVal !== undefined && newVal > oldVal) {
+  const newValue = progress[progressKey] as number | undefined
+  const oldValue = (current.current_progress?.[progressKey] as number | undefined) ?? 0
+  if (newValue !== undefined && newValue > oldValue) {
     // Create a discrete entry for each episode/chapter watched
-    for (let v = oldVal + 1; v <= newVal; v++) {
-      const valProgress = { [field]: v }
+    for (let progressValue = oldValue + 1; progressValue <= newValue; progressValue++) {
+      const valueProgress = { [progressKey]: progressValue }
       createWatchHistory({
         media_id: id,
         started_at: now,
         completed_at: now,
-        progress_from: { [field]: v - 1 },
-        progress_to: valProgress,
+        progress_from: { [progressKey]: progressValue - 1 },
+        progress_to: valueProgress,
         rating: null,
-        notes: v === newVal ? (notes ?? null) : null
+        notes: progressValue === newValue ? (notes ?? null) : null
       })
     }
-  } else if (newVal !== undefined && newVal < oldVal) {
+  } else if (newValue !== undefined && newValue < oldValue) {
     // User decreased count — delete entries beyond new value
-    const key = useChapter ? 'chapter' : 'episode'
-    run(
-      `DELETE FROM watch_history WHERE media_id = ? AND CAST(json_extract(progress_to, '$.${key}') AS INTEGER) > ?`,
-      [id, newVal]
-    )
+    const historyIdsToDelete = db
+      .select({ id: watchHistory.id, progress_to: watchHistory.progress_to })
+      .from(watchHistory)
+      .where(eq(watchHistory.media_id, id))
+      .all()
+      .filter((entry) => ((entry.progress_to?.[progressKey] as number | undefined) ?? 0) > newValue)
+      .map((entry) => entry.id)
+
+    if (historyIdsToDelete.length > 0) {
+      db.delete(watchHistory).where(inArray(watchHistory.id, historyIdsToDelete)).run()
+    }
   }
 
   return getMediaById(id)
@@ -346,14 +382,17 @@ export function updateStatus(id: string, status: Status): Media {
   if (!isStatus(status)) throw new HttpError(400, ERROR_MESSAGES.INVALID_STATUS)
 
   const now = new Date().toISOString()
-  run('UPDATE media SET status = ?, updated_at = ? WHERE id = ?', [status, now, id])
+  db.update(media).set({ status, updated_at: now }).where(eq(media.id, id)).run()
 
   if (status === 'completed' && current.status !== 'completed') {
     // Find the most recent watch-history entry for this media to use as session start
-    const lastHistory = get<{ started_at: string }>(
-      'SELECT started_at FROM watch_history WHERE media_id = ? ORDER BY started_at DESC LIMIT 1',
-      [id]
-    )
+    const lastHistory = db
+      .select({ started_at: watchHistory.started_at })
+      .from(watchHistory)
+      .where(eq(watchHistory.media_id, id))
+      .orderBy(desc(watchHistory.started_at))
+      .limit(1)
+      .get()
 
     createWatchHistory({
       media_id: id,
@@ -387,7 +426,7 @@ export async function importMedia(input: ImportMediaInput): Promise<Media> {
   if (!dataSource) throw new HttpError(400, ERROR_MESSAGES.UNKNOWN_DATA_SOURCE)
 
   const details = await dataSource.getDetails(input.source_id, input.type)
-  const media = createMedia({
+  const mediaItem = createMedia({
     title: details.title,
     type: details.media_type,
     status: input.status ?? 'plan_to_watch',
@@ -405,23 +444,23 @@ export async function importMedia(input: ImportMediaInput): Promise<Media> {
 
   if (details.cover_url) {
     downloadQueue.add({
-      mediaId: media.id,
+      mediaId: mediaItem.id,
       coverUrl: details.cover_url,
-      savePath: `${config.coversDir}/${media.id}`
+      savePath: `${config.coversDir}/${mediaItem.id}`
     })
   }
 
-  return media
+  return mediaItem
 }
 
 export async function syncMedia(id: string): Promise<Media> {
-  const media = getMediaById(id)
-  if (!media.source || !media.source_id) throw new HttpError(400, ERROR_MESSAGES.MEDIA_NO_SOURCE)
+  const mediaItem = getMediaById(id)
+  if (!mediaItem.source || !mediaItem.source_id) throw new HttpError(400, ERROR_MESSAGES.MEDIA_NO_SOURCE)
 
-  const dataSource = getDataSource(media.source)
+  const dataSource = getDataSource(mediaItem.source)
   if (!dataSource) throw new HttpError(400, ERROR_MESSAGES.UNKNOWN_DATA_SOURCE)
 
-  const details = await dataSource.getDetails(media.source_id, media.type)
+  const details = await dataSource.getDetails(mediaItem.source_id, mediaItem.type)
   return updateMedia(id, {
     external_rating: details.external_rating ?? null,
     air_date: details.air_date ?? null,

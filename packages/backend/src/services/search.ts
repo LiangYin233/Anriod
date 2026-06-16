@@ -1,4 +1,4 @@
-import type { MediaType, SearchResult } from '@anriod/shared'
+import type { SearchResult } from '@anriod/shared'
 import { dataSources, getDataSource } from '../datasources/registry'
 import { HttpError } from '../middleware/error'
 import { isMediaType } from '../utils/http'

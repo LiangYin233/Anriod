@@ -1,8 +1,10 @@
-import { syncMedia } from './media'
-import { all } from '../db/helpers'
-import { downloadQueue } from '../utils/download-queue'
+import { and, isNotNull, like } from 'drizzle-orm'
 import { config } from '../config'
+import { db } from '../db/client'
+import { media } from '../db/schema'
 import { logger } from '../logger'
+import { downloadQueue } from '../utils/download-queue'
+import { syncMedia } from './media'
 
 let job: Bun.CronJob | null = null
 
@@ -27,9 +29,11 @@ export function startSyncScheduler() {
 
 export async function runSync(): Promise<{ synced: number; errors: string[] }> {
   const errors: string[] = []
-  const rows = all<{ id: string }>(
-    "SELECT id FROM media WHERE source IS NOT NULL AND source_id IS NOT NULL"
-  )
+  const rows = db
+    .select({ id: media.id })
+    .from(media)
+    .where(and(isNotNull(media.source), isNotNull(media.source_id)))
+    .all()
 
   for (const row of rows) {
     try {
@@ -44,12 +48,16 @@ export async function runSync(): Promise<{ synced: number; errors: string[] }> {
 }
 
 /** Scan all items with remote cover_url (http), trigger download to local. */
-export function triggerCoverMigration(): { queued: number } {
-  const rows = all<{ id: string; cover_url: string }>(
-    "SELECT id, cover_url FROM media WHERE cover_url LIKE 'http%'"
-  )
+export function triggerCoverDownload(): { queued: number } {
+  const rows = db
+    .select({ id: media.id, cover_url: media.cover_url })
+    .from(media)
+    .where(like(media.cover_url, 'http%'))
+    .all()
 
   for (const row of rows) {
+    if (!row.cover_url) continue
+
     downloadQueue.add({
       mediaId: row.id,
       coverUrl: row.cover_url,

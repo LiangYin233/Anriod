@@ -1,4 +1,3 @@
-import { $ } from 'bun'
 import { config } from '../config'
 
 /**
