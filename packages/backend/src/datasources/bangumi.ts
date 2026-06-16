@@ -1,5 +1,4 @@
 import type { CreditPerson, CreditsResponse, DiscoverItem, DiscoverSection, MediaDetails, MediaType, SearchResult } from '@anriod/shared'
-import { config } from '../config'
 import { logger } from '../logger'
 import { dataSourceFetch } from '../utils/http'
 import type { DataSource } from './types'
@@ -137,12 +136,17 @@ function mediaTypeFromBangumi(bangumiType: number): MediaType {
 // ============================================================
 
 export class BangumiDataSource implements DataSource {
+  static sourceName = 'bangumi'
   name = 'bangumi'
 
   supportedTypes: MediaType[] = ['anime', 'game', 'novel', 'manga', 'tv', 'movie']
 
-  private get baseUrl(): string {
-    return config.datasources.bangumi.baseUrl
+  readonly #baseUrl: string
+  readonly #token: string
+
+  constructor(extra: Record<string, unknown>) {
+    this.#baseUrl = String(extra.base_url ?? 'https://api.bgm.tv')
+    this.#token = String(extra.bgm_token ?? '') || ''
   }
 
   private get headers(): Record<string, string> {
@@ -150,9 +154,8 @@ export class BangumiDataSource implements DataSource {
       'User-Agent': 'anriod/0.1.0 (https://github.com/anriod)',
       'Content-Type': 'application/json'
     }
-    const token = config.datasources.bangumi.bgmToken
-    if (token) {
-      h['Authorization'] = `Bearer ${token}`
+    if (this.#token) {
+      h['Authorization'] = `Bearer ${this.#token}`
     }
     return h
   }
@@ -166,7 +169,7 @@ export class BangumiDataSource implements DataSource {
       ? (MEDIA_TO_BANGUMI_TYPE[mediaType] ?? [2])
       : [1, 2, 3, 4, 6]  // all types: Book, Anime, Music, Game, Real
 
-    const url = `${this.baseUrl}/v0/search/subjects?limit=10`
+    const url = `${this.#baseUrl}/v0/search/subjects?limit=10`
     const body = {
       keyword: query,
       sort: 'rank',
@@ -183,7 +186,7 @@ export class BangumiDataSource implements DataSource {
         body: JSON.stringify(body)
       })
     } catch (err) {
-      throw new Error(`无法连接 Bangumi (${this.baseUrl}): ${err instanceof Error ? err.message : String(err)}`)
+      throw new Error(`无法连接 Bangumi (${this.#baseUrl}): ${err instanceof Error ? err.message : String(err)}`)
     }
 
     if (!response.ok) {
@@ -207,13 +210,13 @@ export class BangumiDataSource implements DataSource {
   // ── Discover (today's airing) ──────────────────────────
 
   async getDiscover(): Promise<DiscoverSection[]> {
-    const url = `${this.baseUrl}/calendar`
+    const url = `${this.#baseUrl}/calendar`
 
     let response: Response
     try {
       response = await dataSourceFetch(url, { headers: this.headers })
     } catch (err) {
-      throw new Error(`无法连接 Bangumi (${this.baseUrl}): ${err instanceof Error ? err.message : String(err)}`)
+      throw new Error(`无法连接 Bangumi (${this.#baseUrl}): ${err instanceof Error ? err.message : String(err)}`)
     }
 
     if (!response.ok) {
@@ -260,8 +263,8 @@ export class BangumiDataSource implements DataSource {
 
     // Fetch characters (含声优) and persons (制作人员)
     const [charResp, personResp] = await Promise.all([
-      dataSourceFetch(`${this.baseUrl}/v0/subjects/${sourceId}/characters`, opts),
-      dataSourceFetch(`${this.baseUrl}/v0/subjects/${sourceId}/persons`, opts)
+      dataSourceFetch(`${this.#baseUrl}/v0/subjects/${sourceId}/characters`, opts),
+      dataSourceFetch(`${this.#baseUrl}/v0/subjects/${sourceId}/persons`, opts)
     ])
 
     if (charResp.ok) {
@@ -307,13 +310,12 @@ export class BangumiDataSource implements DataSource {
 
   async getDetails(sourceId: string, mediaType: MediaType = 'anime'): Promise<MediaDetails> {
     logger.info(`[Bangumi] 获取详情: ${sourceId} (类型: ${mediaType})`)
-    const url = `${this.baseUrl}/v0/subjects/${sourceId}`
+    const url = `${this.#baseUrl}/v0/subjects/${sourceId}`
 
     const headers: Record<string, string> = {
       'User-Agent': 'anriod/0.1.0 (https://github.com/anriod)'
     }
-    const token = config.datasources.bangumi.bgmToken
-    if (token) {
+    if (this.#token) {
       headers['Authorization'] = `Bearer ${token}`
     }
 
@@ -321,7 +323,7 @@ export class BangumiDataSource implements DataSource {
     try {
       response = await dataSourceFetch(url, { headers })
     } catch (err) {
-      throw new Error(`无法连接 Bangumi (${this.baseUrl}): ${err instanceof Error ? err.message : String(err)}`)
+      throw new Error(`无法连接 Bangumi (${this.#baseUrl}): ${err instanceof Error ? err.message : String(err)}`)
     }
 
     if (!response.ok) {
@@ -345,7 +347,7 @@ export class BangumiDataSource implements DataSource {
         const episodes: BangumiEpisode[] = []
 
         do {
-          const episodesUrl = `${this.baseUrl}/v0/episodes?subject_id=${sourceId}&limit=${episodeLimit}&offset=${episodeOffset}`
+          const episodesUrl = `${this.#baseUrl}/v0/episodes?subject_id=${sourceId}&limit=${episodeLimit}&offset=${episodeOffset}`
           const epResponse = await dataSourceFetch(episodesUrl, { headers })
           if (!epResponse.ok) break
 

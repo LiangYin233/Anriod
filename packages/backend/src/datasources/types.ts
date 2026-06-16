@@ -10,3 +10,9 @@ export interface DataSource {
   getCredits?(sourceId: string, mediaType?: MediaType): Promise<CreditsResponse>
   downloadCover?(coverUrl: string, savePath: string): Promise<void>
 }
+
+/** Constructor for a DataSource — must expose a static `sourceName` used as the YAML key. */
+export interface DataSourceClass {
+  sourceName: string
+  new (extra: Record<string, unknown>): DataSource
+}

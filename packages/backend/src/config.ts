@@ -3,10 +3,8 @@ import { isAbsolute, resolve } from 'node:path'
 
 export interface DataSourceConfig {
   enabled: boolean
-  baseUrl: string
-  bgmToken?: string
-  accessToken?: string
-  language?: string
+  /** All other YAML fields under this data source entry, passed as-is to the DataSource constructor. */
+  extra: Record<string, unknown>
 }
 
 export interface AppConfig {
@@ -104,6 +102,21 @@ function readYamlConfig(): Record<string, any> {
   return deepMerge(existing, defaultParsed)
 }
 
+function datasourcesFromYaml(raw: Record<string, any> | undefined): Record<string, DataSourceConfig> {
+  const result: Record<string, DataSourceConfig> = {}
+  if (!raw || typeof raw !== 'object') return result
+
+  for (const [name, entry] of Object.entries(raw)) {
+    if (!entry || typeof entry !== 'object') continue
+    const { enabled, ...rest } = entry as Record<string, unknown>
+    result[name] = {
+      enabled: enabled !== false,  // default true
+      extra: rest                 // all other YAML fields, key names preserved (snake_case etc.)
+    }
+  }
+  return result
+}
+
 const rawConfig = readYamlConfig()
 
 export const config: AppConfig = {
@@ -118,19 +131,7 @@ export const config: AppConfig = {
     cron: String(rawConfig.sync?.cron ?? '0 3 * * *')
   },
   proxy: String(rawConfig.proxy ?? '') || undefined,
-  datasources: {
-    bangumi: {
-      enabled: Boolean(rawConfig.datasources?.bangumi?.enabled ?? true),
-      baseUrl: String(rawConfig.datasources?.bangumi?.base_url ?? 'https://api.bgm.tv'),
-      bgmToken: String(rawConfig.datasources?.bangumi?.bgm_token ?? '') || undefined
-    },
-    tmdb: {
-      enabled: Boolean(rawConfig.datasources?.tmdb?.enabled ?? true),
-      baseUrl: String(rawConfig.datasources?.tmdb?.base_url ?? 'https://api.themoviedb.org/3'),
-      accessToken: String(rawConfig.datasources?.tmdb?.access_token ?? '') || undefined,
-      language: String(rawConfig.datasources?.tmdb?.language ?? 'zh-CN')
-    }
-  },
+  datasources: datasourcesFromYaml(rawConfig.datasources),
   backendRoot,
   databasePath: resolveBackendPath('./data/media.db'),
   coversDir: resolveBackendPath('./data/covers')

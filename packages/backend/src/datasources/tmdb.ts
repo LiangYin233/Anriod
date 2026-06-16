@@ -1,5 +1,4 @@
 import type { CreditPerson, CreditsResponse, DiscoverItem, DiscoverSection, MediaDetails, MediaType, SearchResult } from '@anriod/shared'
-import { config } from '../config'
 import { logger } from '../logger'
 import { MAX_CAST_DISPLAY, MAX_CREW_DISPLAY } from '../constants'
 import { dataSourceFetch } from '../utils/http'
@@ -97,24 +96,26 @@ function yearOf(date: string | null | undefined): number | undefined {
 // ============================================================
 
 export class TmdbDataSource implements DataSource {
+  static sourceName = 'tmdb'
   name = 'tmdb'
 
   supportedTypes: MediaType[] = ['movie', 'tv']
 
+  readonly #baseUrl: string
+  readonly #token: string
+  readonly #language: string
+
+  constructor(extra: Record<string, unknown>) {
+    this.#baseUrl = String(extra.base_url ?? TMDB_BASE)
+    this.#token = String(extra.access_token ?? '') || ''
+    this.#language = String(extra.language ?? 'zh-CN')
+  }
+
   private get headers(): Record<string, string> {
-    const token = config.datasources.tmdb?.accessToken
     return {
-      'Authorization': `Bearer ${token}`,
+      'Authorization': `Bearer ${this.#token}`,
       'Content-Type': 'application/json',
     }
-  }
-
-  private get baseUrl(): string {
-    return config.datasources.tmdb?.baseUrl || TMDB_BASE
-  }
-
-  private get language(): string {
-    return config.datasources.tmdb?.language || 'zh-CN'
   }
 
   // ── Search ──────────────────────────────────────────────
@@ -122,12 +123,12 @@ export class TmdbDataSource implements DataSource {
   async search(query: string, mediaType?: MediaType): Promise<SearchResult[]> {
     logger.info(`[TMDB] 搜索: "${query}" (类型: ${mediaType || '全部'})`)
     const url = mediaType === 'movie'
-      ? `${this.baseUrl}/search/movie`
+      ? `${this.#baseUrl}/search/movie`
       : mediaType === 'tv'
-        ? `${this.baseUrl}/search/tv`
-        : `${this.baseUrl}/search/multi`
+        ? `${this.#baseUrl}/search/tv`
+        : `${this.#baseUrl}/search/multi`
 
-    const params = new URLSearchParams({ query, language: this.language, page: '1' })
+    const params = new URLSearchParams({ query, language: this.#language, page: '1' })
     if (mediaType === 'movie') params.set('include_adult', 'false')
     if (mediaType === 'tv') params.set('include_adult', 'false')
 
@@ -137,7 +138,7 @@ export class TmdbDataSource implements DataSource {
         headers: this.headers,
       })
     } catch (err) {
-      throw new Error(`无法连接 TMDB (${this.baseUrl}): ${err instanceof Error ? err.message : String(err)}`)
+      throw new Error(`无法连接 TMDB (${this.#baseUrl}): ${err instanceof Error ? err.message : String(err)}`)
     }
 
     if (!response.ok) {
@@ -165,15 +166,12 @@ export class TmdbDataSource implements DataSource {
 
   async getDiscover(): Promise<DiscoverSection[]> {
     const sections: DiscoverSection[] = []
-    const token = config.datasources.tmdb?.accessToken
-    if (!token) return sections  // TMDB requires access token
+    if (!this.#token) return sections  // TMDB requires access token
 
-    const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
-    const baseUrl = config.datasources.tmdb?.baseUrl || 'https://api.themoviedb.org/3'
-    const lang = config.datasources.tmdb?.language || 'zh-CN'
+    const headers = { 'Authorization': `Bearer ${this.#token}`, 'Content-Type': 'application/json' }
 
     const fetchTrending = async (mediaType: 'movie' | 'tv'): Promise<DiscoverItem[]> => {
-      const url = `${baseUrl}/trending/${mediaType}/week?language=${lang}`
+      const url = `${this.#baseUrl}/trending/${mediaType}/week?language=${this.#language}`
       try {
         const resp = await dataSourceFetch(url, { headers })
         if (!resp.ok) return []
@@ -207,14 +205,11 @@ export class TmdbDataSource implements DataSource {
   // ── Credits ────────────────────────────────────────────
 
   async getCredits(sourceId: string, mediaType: MediaType = 'movie'): Promise<CreditsResponse> {
-    const token = config.datasources.tmdb?.accessToken
-    if (!token) return { source: this.name, source_id: sourceId, cast: [], crew: [] }
+    if (!this.#token) return { source: this.name, source_id: sourceId, cast: [], crew: [] }
 
-    const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
-    const baseUrl = config.datasources.tmdb?.baseUrl || 'https://api.themoviedb.org/3'
-    const lang = config.datasources.tmdb?.language || 'zh-CN'
+    const headers = { 'Authorization': `Bearer ${this.#token}`, 'Content-Type': 'application/json' }
     const endpoint = mediaType === 'tv' ? 'tv' : 'movie'
-    const url = `${baseUrl}/${endpoint}/${sourceId}/credits?language=${lang}`
+    const url = `${this.#baseUrl}/${endpoint}/${sourceId}/credits?language=${this.#language}`
 
     try {
       const resp = await dataSourceFetch(url, { headers })
@@ -249,7 +244,7 @@ export class TmdbDataSource implements DataSource {
   async getDetails(sourceId: string, mediaType: MediaType = 'movie'): Promise<MediaDetails> {
     logger.info(`[TMDB] 获取详情: ${sourceId} (类型: ${mediaType})`)
     const endpoint = mediaType === 'tv' ? 'tv' : 'movie'
-    const url = `${this.baseUrl}/${endpoint}/${sourceId}?language=${this.language}`
+    const url = `${this.#baseUrl}/${endpoint}/${sourceId}?language=${this.#language}`
 
     let response: Response
     try {
@@ -257,7 +252,7 @@ export class TmdbDataSource implements DataSource {
         headers: this.headers,
       })
     } catch (err) {
-      throw new Error(`无法连接 TMDB (${this.baseUrl}): ${err instanceof Error ? err.message : String(err)}`)
+      throw new Error(`无法连接 TMDB (${this.#baseUrl}): ${err instanceof Error ? err.message : String(err)}`)
     }
 
     if (!response.ok) {
