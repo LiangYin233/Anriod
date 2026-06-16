@@ -38,10 +38,11 @@ const PANEL_GAP = 4
 const panelStyle = computed(() => {
   if (!buttonRef.value) return { top: '0', left: '0', minWidth: 'auto' }
   const rect = buttonRef.value.getBoundingClientRect()
+  const panelH = Math.min(props.options.length * 44 + 8, PANEL_MAX_H)
   const spaceBelow = window.innerHeight - rect.bottom
-  const top = spaceBelow >= PANEL_MAX_H || spaceBelow > rect.top
+  const top = spaceBelow >= panelH || spaceBelow > rect.top
     ? rect.bottom + PANEL_GAP
-    : rect.top - PANEL_MAX_H - PANEL_GAP
+    : rect.top - panelH - PANEL_GAP
   return {
     top: `${top}px`,
     left: `${rect.left}px`,
