@@ -1,15 +1,16 @@
 import { ref, watch } from 'vue'
 import type { MediaType, Status } from '@anriod/shared'
+import type { SelectOption } from '@/components/AppSelect.vue'
 
 // ── Sort options ──
 
-export const SORT_OPTIONS = [
+export const SORT_OPTIONS: SelectOption[] = [
   { value: 'updated_at:desc', label: '最近修改' },
   { value: 'air_date:desc', label: '最新上线' },
   { value: 'air_date:asc', label: '最早发布' },
   { value: 'rating:desc', label: '评分最高' },
   { value: 'title:asc', label: '标题 A-Z' },
-] as const
+]
 
 const STORAGE_KEY_SORT = 'anriod_media_sort'
 
