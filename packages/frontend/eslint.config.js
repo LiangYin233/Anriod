@@ -13,10 +13,15 @@ export default tseslint.config(
     }
   },
   {
+    languageOptions: {
+      parserOptions: {
+        projectService: true,
+        extraFileExtensions: ['.vue']
+      }
+    },
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-      // Disable opinionated template-formatting rules — defer to vue-tsc + prettier
       'vue/max-attributes-per-line': 'off',
       'vue/singleline-html-element-content-newline': 'off',
       'vue/multiline-html-element-content-newline': 'off',
