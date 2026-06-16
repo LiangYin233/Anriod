@@ -1,4 +1,4 @@
-import type { ImportMediaInput, Media, UpdateMediaInput } from '@anriod/shared'
+import type { ImportMediaInput, Media } from '@anriod/shared'
 import { config } from '../../config'
 import { ERROR_MESSAGES } from '../../constants'
 import { getDataSource } from '../../datasources/registry'

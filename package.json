@@ -10,7 +10,8 @@
     "dev:frontend": "bun --filter @anriod/frontend dev",
     "build:backend": "bun --filter @anriod/backend build",
     "build:frontend": "bun --filter @anriod/frontend build",
-    "typecheck": "npm --workspace @anriod/backend run typecheck && npm --workspace @anriod/frontend run typecheck"
+    "typecheck": "npm --workspace @anriod/backend run typecheck && npm --workspace @anriod/frontend run typecheck",
+    "lint": "bun --filter @anriod/shared run lint && bun --filter @anriod/backend run lint && bun --filter @anriod/frontend run lint"
   },
   "devDependencies": {
     "typescript": "^5.4.0"

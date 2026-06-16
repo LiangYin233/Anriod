@@ -11,7 +11,7 @@ import { media, watchHistory, type NewWatchHistoryRow } from '../db/schema'
 import { HttpError } from '../middleware/error'
 import { toInt } from '../utils/http'
 
-interface HistoryRow extends WatchHistory {}
+type HistoryRow = WatchHistory
 
 function assertMediaExists(mediaId: string) {
   const mediaRow = db.select({ id: media.id }).from(media).where(eq(media.id, mediaId)).get()
