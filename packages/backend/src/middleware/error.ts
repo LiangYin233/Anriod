@@ -24,9 +24,10 @@ export function handleError(error: unknown, c: Context) {
   if (error instanceof Error) {
     console.error(error)
     const status = error.message === 'Invalid JSON body' ? 400 : 500
-    return c.json({ error: status === 400 ? ERROR_MESSAGES.INVALID_JSON : ERROR_MESSAGES.INTERNAL_SERVER_ERROR }, status)
+    const msg = status === 400 ? ERROR_MESSAGES.INVALID_JSON : ERROR_MESSAGES.INTERNAL_SERVER_ERROR
+    return c.json({ error: msg, details: error.message }, status)
   }
 
   console.error(error)
-  return c.json({ error: ERROR_MESSAGES.INTERNAL_SERVER_ERROR }, 500)
+  return c.json({ error: ERROR_MESSAGES.INTERNAL_SERVER_ERROR, details: String(error) }, 500)
 }
