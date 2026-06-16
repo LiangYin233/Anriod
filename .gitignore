@@ -38,6 +38,8 @@ packages/frontend/src-tauri/gen/schemas/
 .vscode/
 .idea/
 .claude/
+.codegraph/
+AGENTS.md
 
 # OS
 .DS_Store
