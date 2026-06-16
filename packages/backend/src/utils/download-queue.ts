@@ -1,6 +1,6 @@
 import { mkdir } from 'node:fs/promises'
 import { dirname, extname } from 'node:path'
-import { proxyFetchOptions } from './proxy'
+import { dataSourceFetch } from './http'
 import { logger } from '../logger'
 
 interface DownloadTask {
@@ -48,7 +48,7 @@ class DownloadQueue {
   }
 
   private async downloadCover(task: DownloadTask): Promise<string> {
-    const response = await fetch(task.coverUrl, proxyFetchOptions())
+    const response = await dataSourceFetch(task.coverUrl)
     if (!response.ok) {
       throw new Error(`Cover download failed: ${response.status}`)
     }
