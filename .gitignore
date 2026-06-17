@@ -1,13 +1,15 @@
 # Dependencies
 node_modules/
 
-# Bun (primary) — npm lock is unintended noise
+# Package manager noise
+# Bun is the primary package manager; npm lockfiles are unintended noise.
 package-lock.json
 
 # Build output
 dist/
 packages/backend/anriod
 packages/backend/anriod.exe
+packages/frontend/dist/
 
 # Runtime data (contains secrets and user data)
 packages/backend/config.yaml
@@ -15,26 +17,46 @@ packages/backend/data/
 *.db
 *.db-journal
 
-# Frontend build
-packages/frontend/dist/
-
-# Tauri build
+# Tauri / Rust build output
 packages/frontend/src-tauri/target/
-# Tauri generated mobile project — tracked so others can build without re-init
-# packages/frontend/src-tauri/gen/android/
+packages/frontend/src-tauri/gen/schemas/
+
+# Tauri generated mobile project
+# Keep packages/frontend/src-tauri/gen/android/ tracked so others can build without re-init.
+# Its nested .gitignore files exclude local Gradle/Tauri build output.
+
 # Generated optional store/mobile icon sets
 packages/frontend/src-tauri/icons/ios/
 packages/frontend/src-tauri/icons/Square*Logo.png
 packages/frontend/src-tauri/icons/StoreLogo.png
 
-# Keystore files (sensitive!)
+# Android signing material (sensitive)
 *.jks
 *.keystore
+*.p12
+*.pfx
+key.properties
+keystore.properties
 
-# Other Tauri gen schemas are build artifacts
-packages/frontend/src-tauri/gen/schemas/
+# Android build artifacts
+*.apk
+*.aab
+*.ap_
+*.idsig
 
-# IDE
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# IDE / agent-local state
 .vscode/
 .reasonix/
 .claude/
@@ -45,12 +67,5 @@ AGENTS.md
 .DS_Store
 Thumbs.db
 
-# Env
-.env
-.env.local
-
-# Logs
-*.log
-
-# Temp / scripts
+# Temp / local scripts
 scripts/

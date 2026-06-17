@@ -1,20 +1,41 @@
+# Android Studio / Gradle local state
 *.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-build
-/captures
-.externalNativeBuild
-.cxx
+.gradle/
+.idea/caches/
+.idea/libraries/
+.idea/modules.xml
+.idea/workspace.xml
+.idea/navEditor.xml
+.idea/assetWizardSettings.xml
+
+# Local machine configuration
 local.properties
+/local.properties
 key.properties
 keystore.properties
 
-/.tauri
+# Signing material (sensitive)
+*.jks
+*.keystore
+*.p12
+*.pfx
+
+# Build output
+build/
+/captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+*.ap_
+*.idsig
+
+# Tauri generated build glue
+.tauri/
+/.tauri/
+tauri.settings.gradle
 /tauri.settings.gradle
+
+# OS
+.DS_Store
+Thumbs.db
