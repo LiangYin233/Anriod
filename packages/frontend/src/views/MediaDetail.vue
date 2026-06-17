@@ -249,7 +249,7 @@ onMounted(loadDetail)
 <template>
   <div class="section-gap">
     <!-- Breadcrumbs -->
-    <div class="flex items-center gap-2 text-body-md text-on-surface-variant">
+    <div class="flex min-w-0 flex-wrap items-center gap-2 text-body-md text-on-surface-variant">
       <RouterLink to="/" class="transition-colors hover:text-on-surface">媒体库</RouterLink>
       <span class="material-symbols-outlined text-sm">chevron_right</span>
       <span class="text-on-surface">详情</span>
@@ -259,12 +259,12 @@ onMounted(loadDetail)
     <LoadingSpinner v-if="loading" />
 
     <template v-if="media">
-      <div class="grid gap-stack-lg lg:grid-cols-[minmax(0,1fr)_380px]">
+      <div class="grid min-w-0 gap-stack-lg lg:grid-cols-[minmax(0,1fr)_380px]">
         <!-- LEFT COLUMN -->
-        <div class="flex flex-col gap-stack-lg">
+        <div class="flex min-w-0 flex-col gap-stack-lg">
           <!-- Hero -->
-          <div class="flex flex-col items-start gap-stack-md sm:flex-row">
-            <div class="cover-wrapper relative w-48 shrink-0 overflow-hidden rounded-lg border border-outline-variant/20 shadow-lg group">
+          <div class="flex min-w-0 flex-col items-start gap-stack-md sm:flex-row">
+            <div class="cover-wrapper relative w-32 shrink-0 overflow-hidden rounded-lg border border-outline-variant/20 shadow-lg group sm:w-48">
               <img
                 v-if="coverSrc"
                 :src="coverSrc"
@@ -279,14 +279,14 @@ onMounted(loadDetail)
               </div>
             </div>
 
-            <div class="flex flex-col gap-2 pt-2">
-              <h1 class="text-[36px] leading-[44px] tracking-tight font-bold text-on-surface">{{ media.title }}</h1>
-              <p class="text-headline-md text-on-surface-variant">
+            <div class="flex min-w-0 flex-1 flex-col gap-2 pt-2">
+              <h1 class="break-words text-[28px] font-bold leading-9 tracking-tight text-on-surface sm:text-[36px] sm:leading-[44px]">{{ media.title }}</h1>
+              <p class="break-words text-headline-md text-on-surface-variant">
                 {{ MEDIA_TYPES[media.type] }}<template v-if="media.air_date"> · {{ media.air_date }}</template>
               </p>
 
               <div v-if="media.tags?.length" class="mt-1 flex flex-wrap gap-2">
-                <span v-for="tag in media.tags" :key="tag" class="rounded-full bg-surface-container-highest px-3 py-1 text-label-sm text-on-surface">{{ tag }}</span>
+                <span v-for="tag in media.tags" :key="tag" class="max-w-full break-words rounded-full bg-surface-container-highest px-3 py-1 text-label-sm text-on-surface">{{ tag }}</span>
               </div>
 
               <div class="mt-3 flex flex-wrap items-center gap-3">
@@ -309,7 +309,7 @@ onMounted(loadDetail)
           </div>
 
           <!-- Bento metadata -->
-          <div class="grid grid-cols-2 gap-unit md:grid-cols-4">
+          <div class="grid min-w-0 grid-cols-1 gap-unit sm:grid-cols-2 md:grid-cols-4">
             <div class="glass-card reveal-hover flex flex-col items-center justify-center rounded-lg p-4 shadow-sm">
               <span class="material-symbols-outlined mb-1 text-tertiary">star</span>
               <span class="text-headline-md font-bold text-on-surface">{{ media.external_rating ?? '-' }}</span>
@@ -317,7 +317,7 @@ onMounted(loadDetail)
             </div>
             <div class="glass-card reveal-hover flex flex-col items-center justify-center rounded-lg p-4 shadow-sm">
               <span class="material-symbols-outlined mb-1 text-tertiary">video_file</span>
-              <span class="text-headline-md font-bold text-on-surface">{{ progressVal(media.current_progress) }}/{{ media.total_episodes ?? '-' }}</span>
+              <span class="break-words text-center text-headline-md font-bold text-on-surface">{{ progressVal(media.current_progress) }}/{{ media.total_episodes ?? '-' }}</span>
               <span class="text-caption-xs text-on-surface-variant">{{ progressLabel(media.type) }}进度</span>
             </div>
             <div class="glass-card reveal-hover flex flex-col items-center justify-center rounded-lg p-4 shadow-sm">
@@ -333,13 +333,13 @@ onMounted(loadDetail)
           </div>
 
           <!-- Episode/Chapter Grid (above Synopsis) -->
-          <div v-if="['anime','tv','novel','manga'].includes(media.type) && media.total_episodes" class="flex flex-col gap-unit">
-            <div class="flex items-center justify-between">
+          <div v-if="['anime','tv','novel','manga'].includes(media.type) && media.total_episodes" class="flex min-w-0 flex-col gap-unit">
+            <div class="flex flex-wrap items-center justify-between gap-3">
               <h3 class="flex items-center gap-2 text-title-sm text-on-surface">
                 <span class="h-4 w-1 rounded-full bg-primary" />
                 {{ progressLabel(media.type) }}进度
               </h3>
-              <div class="flex items-center gap-1">
+              <div class="flex flex-wrap items-center justify-end gap-1">
                 <input
                   v-model="watchDate"
                   type="date"
@@ -371,12 +371,12 @@ onMounted(loadDetail)
             </div>
 
             <!-- Episode/Chapter boxes grid -->
-            <div class="glass-card rounded-lg p-4 shadow-sm">
-              <div class="flex items-center justify-between mb-2">
+            <div class="glass-card min-w-0 rounded-lg p-4 shadow-sm">
+              <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
                 <span class="text-caption-xs text-on-surface-variant">点击集数快速跳转</span>
                 <span class="text-caption-xs text-on-surface-variant/70">提示: 正片外的 SP/OVA 可手动输入</span>
               </div>
-              <div class="grid gap-2" :style="{ gridTemplateColumns: `repeat(auto-fill, minmax(48px, 1fr))` }">
+              <div class="grid min-w-0 gap-2" :style="{ gridTemplateColumns: `repeat(auto-fill, minmax(48px, 1fr))` }">
                 <button
                   v-for="ep in media.total_episodes"
                   :key="ep"
@@ -399,8 +399,8 @@ onMounted(loadDetail)
 
               <!-- Note editor -->
               <div v-if="editingEp" class="mt-4 border-t border-outline-variant/20 pt-4">
-                <div class="flex items-center justify-between mb-2">
-                  <span class="text-label-sm font-semibold text-on-surface">{{ progressUnit(media.type) }}{{ editingEp }} 笔记</span>
+                <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+                  <span class="break-words text-label-sm font-semibold text-on-surface">{{ progressUnit(media.type) }}{{ editingEp }} 笔记</span>
                   <button class="btn-icon" type="button" @click="editingEp = 0">
                     <span class="material-symbols-outlined text-[18px]">close</span>
                   </button>
@@ -424,7 +424,7 @@ onMounted(loadDetail)
           </div>
 
           <!-- Special Episodes (SP/OVA) -->
-          <div v-if="specialEpisodes.length > 0" class="glass-card rounded-xl p-stack-md shadow-sm">
+          <div v-if="specialEpisodes.length > 0" class="glass-card min-w-0 rounded-xl p-stack-md shadow-sm">
             <h3 class="mb-unit flex items-center gap-2 text-title-sm text-on-surface">
               <span class="h-4 w-1 rounded-full bg-primary" />
               特别篇 / OVA
@@ -439,7 +439,7 @@ onMounted(loadDetail)
                   <span class="text-label-sm font-bold text-on-tertiary-container">SP</span>
                 </div>
                 <div class="flex-1 min-w-0">
-                  <p class="text-body-sm font-medium text-on-surface">{{ spEp.name_cn || spEp.name || `SP ${spEp.ep}` }}</p>
+                  <p class="break-words text-body-sm font-medium text-on-surface">{{ spEp.name_cn || spEp.name || `SP ${spEp.ep}` }}</p>
                   <p v-if="spEp.name_cn && spEp.name" class="text-caption-xs text-on-surface-variant truncate">{{ spEp.name }}</p>
                 </div>
                 <span class="shrink-0 rounded-full bg-surface-container px-2.5 py-0.5 text-[10px] font-medium text-on-surface-variant">
@@ -450,7 +450,7 @@ onMounted(loadDetail)
           </div>
 
           <!-- Other Episodes (OP/ED/PV) -->
-          <div v-if="otherEpisodes.length > 0" class="glass-card rounded-xl p-stack-md shadow-sm">
+          <div v-if="otherEpisodes.length > 0" class="glass-card min-w-0 rounded-xl p-stack-md shadow-sm">
             <details>
               <summary class="cursor-pointer flex items-center gap-2 text-title-sm text-on-surface hover:text-primary">
                 <span class="h-4 w-1 rounded-full bg-primary" />
@@ -461,9 +461,9 @@ onMounted(loadDetail)
                 <div
                   v-for="otherEp in otherEpisodes"
                   :key="otherEp.ep"
-                  class="flex items-center justify-between rounded px-2 py-1.5 text-caption-sm hover:bg-surface-container"
+                  class="flex min-w-0 flex-wrap items-center justify-between gap-2 rounded px-2 py-1.5 text-caption-sm hover:bg-surface-container"
                 >
-                  <span class="text-on-surface">{{ otherEp.name_cn || otherEp.name || `${EPISODE_TYPE_LABELS[otherEp.type]} ${otherEp.ep}` }}</span>
+                  <span class="min-w-0 break-words text-on-surface">{{ otherEp.name_cn || otherEp.name || `${EPISODE_TYPE_LABELS[otherEp.type]} ${otherEp.ep}` }}</span>
                   <span class="rounded bg-surface-variant px-1.5 py-0.5 text-[9px] text-on-surface-variant">{{ EPISODE_TYPE_LABELS[otherEp.type] }}</span>
                 </div>
               </div>
@@ -476,36 +476,36 @@ onMounted(loadDetail)
               <span class="h-4 w-1 rounded-full bg-primary" />
               简介
             </h3>
-            <div class="glass-card rounded-lg p-stack-md shadow-sm">
-              <p class="leading-relaxed text-body-md text-on-surface-variant">{{ media.description }}</p>
+            <div class="glass-card min-w-0 rounded-lg p-stack-md shadow-sm">
+              <p class="break-words leading-relaxed text-body-md text-on-surface-variant">{{ media.description }}</p>
             </div>
           </div>
 
           <!-- Credits (cast & crew) -->
-          <div v-if="credits && (credits.cast.length > 0 || credits.crew.length > 0)" class="glass-card rounded-xl p-stack-md shadow-sm">
+          <div v-if="credits && (credits.cast.length > 0 || credits.crew.length > 0)" class="glass-card min-w-0 rounded-xl p-stack-md shadow-sm">
             <CreditList :cast="credits.cast" :crew="credits.crew" />
           </div>
 
           <!-- History Timeline -->
-          <div v-if="history.length > 0">
+          <div v-if="history.length > 0" class="min-w-0">
             <h3 class="mb-unit flex items-center gap-2 text-title-sm text-on-surface">
               <span class="h-4 w-1 rounded-full bg-primary" />
               观看历史
             </h3>
-            <div class="glass-card relative flex flex-col gap-4 rounded-lg p-stack-md shadow-sm">
+            <div class="glass-card relative flex min-w-0 flex-col gap-4 rounded-lg p-stack-md shadow-sm">
               <div class="absolute bottom-6 left-[31px] top-6 w-px bg-outline-variant/40" />
-              <div v-for="item in history" :key="item.id" class="group relative z-10 flex items-start gap-4">
+              <div v-for="item in history" :key="item.id" class="group relative z-10 flex min-w-0 items-start gap-4">
                 <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-surface-container-lowest bg-primary-container transition-transform group-hover:scale-110">
                   <span class="material-symbols-outlined text-[16px] text-on-primary-container" style="font-variation-settings: 'FILL' 1;">play_circle</span>
                 </div>
-                <div class="flex flex-1 items-center justify-between rounded-lg bg-surface-container p-3 transition-colors hover:bg-surface-container-high">
-                  <div class="flex flex-col">
-                    <span class="text-[14px] font-medium text-on-surface">
+                <div class="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-2 rounded-lg bg-surface-container p-3 transition-colors hover:bg-surface-container-high">
+                  <div class="flex min-w-0 flex-col">
+                    <span class="break-words text-[14px] font-medium text-on-surface">
                       <template v-if="episodeLabel(item)">{{ episodeLabel(item) }} · </template>
                       {{ formatDate(item.started_at) }}
                       <template v-if="item.completed_at"> → {{ formatDate(item.completed_at) }}</template>
                     </span>
-                    <span v-if="item.notes" class="mt-1 text-caption-xs text-on-surface-variant">{{ item.notes }}</span>
+                    <span v-if="item.notes" class="mt-1 break-words text-caption-xs text-on-surface-variant">{{ item.notes }}</span>
                   </div>
                   <span v-if="item.rating !== null" class="text-label-sm font-medium text-primary">{{ item.rating }}/10</span>
                 </div>
@@ -515,11 +515,11 @@ onMounted(loadDetail)
         </div>
 
         <!-- RIGHT COLUMN -->
-        <aside class="lg:sticky lg:top-24 flex flex-col gap-stack-md">
+        <aside class="flex min-w-0 flex-col gap-stack-md lg:sticky lg:top-24">
 
           <!-- ====== 作品信息卡片 ====== -->
           <div class="acrylic overflow-hidden rounded-xl border border-white/60 shadow-lg">
-            <div class="flex items-center justify-between border-b border-outline-variant/20 bg-surface-container-lowest/50 px-5 py-4">
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-outline-variant/20 bg-surface-container-lowest/50 px-5 py-4">
               <h3 class="text-title-sm font-semibold text-on-surface">作品信息</h3>
               <span class="rounded px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider bg-secondary-container/30 text-on-secondary-container">
                 {{ STATUS_LABELS[media.status] }}
@@ -532,12 +532,12 @@ onMounted(loadDetail)
                 <input v-model="title" class="field-fluent" />
               </label>
 
-              <div class="grid grid-cols-2 gap-3">
-                <label class="flex flex-col gap-1">
+              <div class="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
+                <label class="flex min-w-0 flex-col gap-1">
                   <span class="pl-1 text-label-sm text-on-surface-variant">类型</span>
                   <AppSelect v-model="editType" :options="editTypeOptions" variant="fluent" />
                 </label>
-                <label class="flex flex-col gap-1">
+                <label class="flex min-w-0 flex-col gap-1">
                   <span class="pl-1 text-label-sm text-on-surface-variant">状态</span>
                   <AppSelect v-model="status" :options="statusOptions" variant="fluent" />
                 </label>
@@ -567,12 +567,12 @@ onMounted(loadDetail)
               </button>
 
               <template v-if="showMore">
-                <div class="grid grid-cols-2 gap-3">
-                  <label class="flex flex-col gap-1">
+                <div class="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
+                  <label class="flex min-w-0 flex-col gap-1">
                     <span class="pl-1 text-label-sm text-on-surface-variant">上线日期</span>
                     <input v-model="editAirDate" class="field-fluent" type="date" />
                   </label>
-                  <label class="flex flex-col gap-1">
+                  <label class="flex min-w-0 flex-col gap-1">
                     <span class="pl-1 text-label-sm text-on-surface-variant">总集数</span>
                     <input v-model.number="editTotalEp" class="field-fluent" type="number" min="0" />
                   </label>
@@ -601,7 +601,7 @@ onMounted(loadDetail)
               </label>
             </div>
 
-            <div class="flex gap-3 p-5 pt-0 mt-2">
+            <div class="mt-2 flex flex-wrap gap-3 p-5 pt-0">
               <button class="btn-secondary flex-1" type="button" @click="loadDetail">重置</button>
               <button class="btn-primary flex-[2]" type="button" :disabled="saving" @click="saveDetail">
                 {{ saving ? '保存中...' : '保存修改' }}

@@ -8,12 +8,12 @@ defineProps<{
 </script>
 
 <template>
-  <div v-if="cast.length > 0">
+  <div v-if="cast.length > 0" class="min-w-0">
     <h3 class="mb-unit flex items-center gap-2 text-title-sm text-on-surface">
       <span class="h-4 w-1 rounded-full bg-primary" />
       声优 / 演员
     </h3>
-    <div class="flex gap-4 overflow-x-auto pb-2 -mx-2 px-2 snap-x snap-mandatory scrollbar-thin">
+    <div class="flex max-w-full gap-4 overflow-x-auto px-0 pb-2 snap-x snap-mandatory scrollbar-thin sm:-mx-2 sm:px-2">
       <div
         v-for="person in cast.slice(0, 15)"
         :key="`${person.name}-${person.character || person.role}`"
@@ -37,12 +37,12 @@ defineProps<{
     </div>
   </div>
 
-  <div v-if="crew.length > 0">
+  <div v-if="crew.length > 0" class="min-w-0">
     <h3 class="mb-unit flex items-center gap-2 text-title-sm text-on-surface">
       <span class="h-4 w-1 rounded-full bg-primary" />
       制作人员
     </h3>
-    <div class="flex gap-4 overflow-x-auto pb-2 -mx-2 px-2 snap-x snap-mandatory scrollbar-thin">
+    <div class="flex max-w-full gap-4 overflow-x-auto px-0 pb-2 snap-x snap-mandatory scrollbar-thin sm:-mx-2 sm:px-2">
       <div
         v-for="person in crew.slice(0, 15)"
         :key="`${person.name}-${person.role}`"

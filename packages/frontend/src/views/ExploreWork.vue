@@ -95,7 +95,7 @@ onMounted(loadDetails)
 <template>
   <div class="section-gap">
     <!-- Breadcrumbs -->
-    <div class="flex items-center gap-2 text-body-md text-on-surface-variant">
+    <div class="flex min-w-0 flex-wrap items-center gap-2 text-body-md text-on-surface-variant">
       <RouterLink to="/" class="transition-colors hover:text-on-surface">媒体库</RouterLink>
       <span class="material-symbols-outlined text-sm">chevron_right</span>
       <RouterLink :to="breadcrumb.path" class="transition-colors hover:text-on-surface">{{ breadcrumb.label }}</RouterLink>
@@ -108,13 +108,13 @@ onMounted(loadDetails)
     <EmptyState v-if="!detail && invalidParams" icon="travel_explore" description="请从搜索或发现页进入作品预览" />
 
     <template v-if="detail">
-      <div class="grid gap-stack-lg lg:grid-cols-[minmax(0,1fr)_320px]">
+      <div class="grid min-w-0 gap-stack-lg lg:grid-cols-[minmax(0,1fr)_320px]">
         <!-- LEFT COLUMN -->
-        <div class="flex flex-col gap-stack-lg">
+        <div class="flex min-w-0 flex-col gap-stack-lg">
 
           <!-- Hero -->
-          <div class="flex flex-col items-start gap-stack-md sm:flex-row">
-            <div class="cover-wrapper relative w-48 shrink-0 overflow-hidden rounded-lg border border-outline-variant/20 shadow-lg">
+          <div class="flex min-w-0 flex-col items-start gap-stack-md sm:flex-row">
+            <div class="cover-wrapper relative w-32 shrink-0 overflow-hidden rounded-lg border border-outline-variant/20 shadow-lg sm:w-48">
               <img
                 v-if="detail.cover_url"
                 :src="getCoverSrc(detail.cover_url)"
@@ -129,9 +129,9 @@ onMounted(loadDetails)
               </div>
             </div>
 
-            <div class="flex flex-col gap-3 pt-2">
-              <h1 class="text-[36px] leading-[44px] tracking-tight font-bold text-on-surface">{{ detail.title }}</h1>
-              <p class="text-headline-md text-on-surface-variant">
+            <div class="flex min-w-0 flex-col gap-3 pt-2">
+              <h1 class="break-words text-[28px] font-bold leading-9 tracking-tight text-on-surface sm:text-[36px] sm:leading-[44px]">{{ detail.title }}</h1>
+              <p class="break-words text-headline-md text-on-surface-variant">
                 {{ MEDIA_TYPES[detail.media_type] || detail.media_type }}
                 <template v-if="detail.air_date"> · {{ detail.air_date }}</template>
                 <template v-if="detail.studio"> · {{ detail.studio }}</template>
@@ -151,7 +151,7 @@ onMounted(loadDetails)
                 </span>
               </div>
 
-              <div class="mt-2 flex items-center gap-3">
+              <div class="mt-2 flex flex-wrap items-center gap-3">
                 <button
                   class="btn-primary"
                   type="button"
@@ -205,7 +205,7 @@ onMounted(loadDetails)
         </div>
 
         <!-- RIGHT COLUMN -->
-        <aside class="lg:sticky lg:top-24 flex flex-col gap-stack-md">
+        <aside class="flex min-w-0 flex-col gap-stack-md lg:sticky lg:top-24">
           <!-- 作品信息卡片 -->
           <div class="acrylic overflow-hidden rounded-xl border border-white/60 shadow-lg">
             <div class="border-b border-outline-variant/20 bg-surface-container-lowest/50 px-5 py-4">
@@ -216,10 +216,10 @@ onMounted(loadDetails)
               <div
                 v-for="row in infoRows"
                 :key="row.label"
-                class="flex items-baseline justify-between gap-4"
+                class="flex min-w-0 items-baseline justify-between gap-4"
               >
                 <span class="text-label-sm text-on-surface-variant shrink-0">{{ row.label }}</span>
-                <span class="text-label-sm text-on-surface text-right truncate">{{ row.value || '—' }}</span>
+                <span class="min-w-0 break-words text-right text-label-sm text-on-surface">{{ row.value || '—' }}</span>
               </div>
 
               <div class="pt-3 border-t border-outline-variant/20">
