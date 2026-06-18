@@ -1,6 +1,6 @@
 import { and, isNotNull } from 'drizzle-orm'
 import { config } from '../config'
-import { db } from '../db/client'
+import { db, type AppDbExecutor } from '../db/client'
 import { media } from '../db/schema'
 import { logger } from '../logger'
 import { syncMedia } from './media'
@@ -26,9 +26,9 @@ export function startSyncScheduler() {
   return job
 }
 
-export async function runSync(): Promise<{ synced: number; errors: string[] }> {
+export async function runSync(database: AppDbExecutor = db): Promise<{ synced: number; errors: string[] }> {
   const errors: string[] = []
-  const rows = db
+  const rows = database
     .select({ id: media.id })
     .from(media)
     .where(and(isNotNull(media.source), isNotNull(media.source_id)))

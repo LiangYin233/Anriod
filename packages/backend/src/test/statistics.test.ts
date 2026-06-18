@@ -76,11 +76,11 @@ describe('statistics — timeline', () => {
     await clearAllTables()
   })
 
-  test('timeline is empty with no watch history', () => {
+  test('timeline is empty with no watch records', () => {
     expect(getTimeline()).toEqual([])
   })
 
-  test('timeline reflects watch history after progress updates', () => {
+  test('timeline reflects watch records after progress updates', () => {
     const media = createMedia({ title: 'Timeline Test', type: 'anime' })
     markEpisodesWatched(media.id, [1, 2])
 

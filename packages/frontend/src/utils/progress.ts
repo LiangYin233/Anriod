@@ -1,15 +1,7 @@
 import type { MediaProgress, MediaType } from '@anriod/shared'
+import { isChapterBased } from '@anriod/shared'
+export { isChapterBased }
 
-/**
- * Check if a media type uses chapter-based progress (novels, manga) vs episode-based
- */
-export function isChapterBased(type: MediaType): boolean {
-  return type === 'novel' || type === 'manga'
-}
-
-/**
- * Extract the numeric progress value from a MediaProgress object
- */
 export function progressVal(p: MediaProgress | null | undefined): number {
   return p?.chapter ?? p?.episode ?? 0
 }

@@ -79,7 +79,7 @@ packages/
 │       ├── config.ts         # 配置加载
 │       ├── routes/           # API 路由
 │       │   ├── media.ts      #   媒体 CRUD、进度、状态、导入、同步
-│       │   ├── history.ts    #   观看历史
+│       │   ├── watch-record.ts #   观看记录
 │       │   ├── search.ts     #   外部搜索、详情、演职员表
 │       │   ├── discover.ts   #   发现页（缓存至 24:00）
 │       │   ├── tag.ts        #   标签管理
@@ -125,9 +125,9 @@ packages/
 | PATCH | `/api/media/:id/progress` | 更新进度 |
 | PATCH | `/api/media/:id/status` | 更新状态 |
 | POST | `/api/media/:id/sync` | 同步数据源 |
-| GET | `/api/media/:id/history` | 媒体观看历史 |
+| GET | `/api/media/:id/records` | 媒体观看记录 |
 | GET/POST/DELETE | `/api/tags` | 标签 CRUD |
-| GET/POST/PUT/DELETE | `/api/history` | 观看历史 CRUD |
+| GET/POST/PUT/DELETE | `/api/records` | 观看记录 CRUD |
 | GET | `/api/search` | 外部搜索 |
 | GET | `/api/search/sources` | 数据源列表 |
 | GET | `/api/search/details` | 作品详情（不导入） |

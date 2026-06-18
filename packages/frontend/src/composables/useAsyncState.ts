@@ -44,17 +44,9 @@ export function useAsyncState() {
     }
   }
 
-  /**
-   * Clear the error state
-   */
-  function clearError() {
-    error.value = ''
-  }
-
   return {
     loading,
     error,
-    execute,
-    clearError
+    execute
   }
 }

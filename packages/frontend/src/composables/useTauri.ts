@@ -64,32 +64,6 @@ export function useTauri() {
     }
   }
 
-  /** Get the current Tauri app version. */
-  async function getVersion(): Promise<string> {
-    if (!isTauri.value) return 'web'
-    try {
-      const { getVersion: tauriGetVersion } = await import('@tauri-apps/api/app')
-      return await tauriGetVersion()
-    } catch {
-      return '0.1.0'
-    }
-  }
-
-  /** Check for Tauri app updates. */
-  async function checkUpdate(): Promise<{ hasUpdate: boolean; version?: string }> {
-    if (!isTauri.value) return { hasUpdate: false }
-    try {
-      const { check } = await import('@tauri-apps/plugin-updater')
-      const update = await check()
-      if (update) {
-        return { hasUpdate: true, version: update.version }
-      }
-      return { hasUpdate: false }
-    } catch {
-      return { hasUpdate: false }
-    }
-  }
-
   /** Get the current Tauri window handle. */
   function getWin(): any {
     try {
@@ -130,8 +104,6 @@ export function useTauri() {
     isTauri: readonly(isTauri),
     isDesktop,
     openUrl,
-    getVersion,
-    checkUpdate,
     minimizeWindow,
     toggleMaximize,
     closeWindow

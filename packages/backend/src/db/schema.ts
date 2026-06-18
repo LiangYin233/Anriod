@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm'
 import { index, integer, primaryKey, real, sqliteTable, text } from 'drizzle-orm/sqlite-core'
-import type { MediaProgress, MediaSource, MediaType, Status } from '@anriod/shared'
+import type { MediaSource, MediaType, Status } from '@anriod/shared'
 
 export const media = sqliteTable(
   'media',

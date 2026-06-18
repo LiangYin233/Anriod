@@ -1,8 +1,9 @@
-import type { CreateMediaInput, Media, MediaProgress, UpdateMediaInput } from '@anriod/shared'
+import type { CreateMediaInput, Media, MediaProgress, MediaType, UpdateMediaInput } from '@anriod/shared'
+import { isChapterBased } from '@anriod/shared'
 import { and, eq, sql } from 'drizzle-orm'
 import { config } from '../../config'
 import { ERROR_MESSAGES } from '../../constants'
-import { db } from '../../db/client'
+import { db, type AppDbExecutor } from '../../db/client'
 import { media, watchRecord } from '../../db/schema'
 import { HttpError } from '../../middleware/error'
 import { downloadQueue } from '../../utils/download-queue'
@@ -10,8 +11,8 @@ import { setTagsForMedia } from '../tag'
 import { createMediaValues, normalizeMediaInput, rowToMedia } from './mapper'
 import { validateMediaInput } from './validation'
 
-function computeProgress(mediaId: string, mediaType: string): MediaProgress | null {
-  const agg = db
+function computeProgress(mediaId: string, mediaType: string, database: AppDbExecutor): MediaProgress | null {
+  const agg = database
     .select({
       max_episode: sql<number>`MAX(${watchRecord.episode})`,
       max_chapter: sql<number>`MAX(${watchRecord.chapter})`
@@ -21,25 +22,25 @@ function computeProgress(mediaId: string, mediaType: string): MediaProgress | nu
     .get()
 
   if (!agg) return null
-  const isChapter = mediaType === 'novel' || mediaType === 'manga'
+  const isChapter = isChapterBased(mediaType as MediaType)
   if (isChapter && agg.max_chapter != null && agg.max_chapter > 0) return { chapter: agg.max_chapter }
   if (!isChapter && agg.max_episode != null && agg.max_episode > 0) return { episode: agg.max_episode }
   return null
 }
 
-export function getMediaById(id: string): Media {
-  const row = db.select().from(media).where(eq(media.id, id)).get()
+export function getMediaById(id: string, database: AppDbExecutor = db): Media {
+  const row = database.select().from(media).where(eq(media.id, id)).get()
   if (!row) throw new HttpError(404, ERROR_MESSAGES.MEDIA_NOT_FOUND)
-  const progress = computeProgress(row.id, row.type)
+  const progress = computeProgress(row.id, row.type, database)
   const progressMap = new Map<string, MediaProgress>()
   if (progress) progressMap.set(id, progress)
   return rowToMedia(row, undefined, progressMap)
 }
 
-export function createMedia(input: CreateMediaInput): Media {
+export function createMedia(input: CreateMediaInput, database: AppDbExecutor = db): Media {
   validateMediaInput(input)
 
-  const existing = db
+  const existing = database
     .select({ id: media.id })
     .from(media)
     .where(and(eq(media.title, input.title.trim()), eq(media.type, input.type)))
@@ -54,15 +55,16 @@ export function createMedia(input: CreateMediaInput): Media {
     setTagsForMedia(id, input.tags, transaction)
   })
 
-  return getMediaById(id)
+  return getMediaById(id, database)
 }
 
 export function updateMedia(
   id: string,
   input: UpdateMediaInput,
-  extra?: { synced_at?: string | null }
+  extra?: { synced_at?: string | null },
+  database: AppDbExecutor = db
 ): Media {
-  getMediaById(id)
+  getMediaById(id, database)
   validateMediaInput(input, true)
 
   const values = normalizeMediaInput(input, extra)
@@ -81,7 +83,7 @@ export function updateMedia(
     })
   }
 
-  const updated = getMediaById(id)
+  const updated = getMediaById(id, database)
   const coverUrl = input.cover_url
   if (typeof coverUrl === 'string' && coverUrl.startsWith('http')) {
     downloadQueue.add({
@@ -94,7 +96,7 @@ export function updateMedia(
   return updated
 }
 
-export function deleteMedia(id: string) {
-  getMediaById(id)
-  db.delete(media).where(eq(media.id, id)).run()
+export function deleteMedia(id: string, database: AppDbExecutor = db) {
+  getMediaById(id, database)
+  database.delete(media).where(eq(media.id, id)).run()
 }

@@ -51,34 +51,6 @@ watch(sortBy, (newSort) => {
   } catch { /* localStorage unavailable */ }
 })
 
-// ── Helpers ──
-
-export function hasActiveFilters(): boolean {
-  return !!(
-    keyword.value ||
-    type.value ||
-    status.value ||
-    tagFilter.value ||
-    source.value ||
-    airDateFrom.value ||
-    airDateTo.value ||
-    epMin.value !== undefined ||
-    epMax.value !== undefined
-  )
-}
-
-export function clearAllFilters() {
-  keyword.value = ''
-  type.value = ''
-  status.value = ''
-  tagFilter.value = ''
-  source.value = ''
-  airDateFrom.value = ''
-  airDateTo.value = ''
-  epMin.value = undefined
-  epMax.value = undefined
-}
-
 // ── Composable export (all components share the same singleton) ──
 
 export function useFilterStore() {
@@ -94,8 +66,6 @@ export function useFilterStore() {
     epMax,
     sortBy,
     searchSource,
-    isSyncingToUrl,
-    hasActiveFilters,
-    clearAllFilters
+    isSyncingToUrl
   }
 }

@@ -1,7 +1,7 @@
 import type { Media, Tag, WatchRecord } from '@anriod/shared'
 import { asc, eq } from 'drizzle-orm'
 import { ERROR_MESSAGES } from '../constants'
-import { db } from '../db/client'
+import { db, type AppDbExecutor } from '../db/client'
 import { media, mediaTags, tags, watchRecord, type NewMediaRow, type NewTagRow, type NewWatchRecordRow } from '../db/schema'
 import { HttpError } from '../middleware/error'
 
@@ -13,10 +13,10 @@ export interface ExportData {
   watch_records: WatchRecord[]
 }
 
-export function exportAll(): ExportData {
-  const mediaRows = db.select().from(media).orderBy(asc(media.created_at)).all()
+export function exportAll(database: AppDbExecutor = db): ExportData {
+  const mediaRows = database.select().from(media).orderBy(asc(media.created_at)).all()
 
-  const allMediaTags = db
+  const allMediaTags = database
     .select({ media_id: mediaTags.media_id, name: tags.name })
     .from(mediaTags)
     .innerJoin(tags, eq(tags.id, mediaTags.tag_id))
@@ -37,8 +37,8 @@ export function exportAll(): ExportData {
     tags: tagsByMediaId.get(row.id) || []
   }))
 
-  const tagRows = db.select().from(tags).orderBy(asc(tags.id)).all()
-  const recordRows = db.select().from(watchRecord).orderBy(asc(watchRecord.id)).all()
+  const tagRows = database.select().from(tags).orderBy(asc(tags.id)).all()
+  const recordRows = database.select().from(watchRecord).orderBy(asc(watchRecord.id)).all()
 
   return {
     version: 2,

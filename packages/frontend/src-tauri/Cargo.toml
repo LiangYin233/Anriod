@@ -1,7 +1,7 @@
 [package]
 name = "anriod"
 version = "0.1.0"
-description = "Cross-platform media watch history tracker"
+description = "Cross-platform media watch record tracker"
 authors = ["anriod"]
 edition = "2021"
 

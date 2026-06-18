@@ -28,12 +28,8 @@ export type MediaSource = 'bangumi' | 'moegirl' | 'manual' | (string & {})
 export interface MediaProgress {
   episode?: number
   chapter?: number
-  volume?: number
-  watched?: boolean
   hours_played?: number
-  achievements_unlocked?: number
-  has_platinum?: boolean
-  [key: string]: unknown
+  watched?: boolean
 }
 
 export interface Media {
@@ -258,4 +254,12 @@ export interface DiscoverSection {
 
 export interface DiscoverResponse {
   sections: DiscoverSection[]
+}
+
+export function isChapterBased(type: MediaType): boolean {
+  return type === 'novel' || type === 'manga'
+}
+
+export function progressKey(type: MediaType): 'chapter' | 'episode' {
+  return isChapterBased(type) ? 'chapter' : 'episode'
 }

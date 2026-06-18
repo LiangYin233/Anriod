@@ -1,7 +1,8 @@
-import type { ListMediaQuery, Media, MediaProgress, PaginatedResponse } from '@anriod/shared'
+import type { ListMediaQuery, Media, MediaProgress, MediaType, PaginatedResponse } from '@anriod/shared'
+import { isChapterBased } from '@anriod/shared'
 import { and, asc, count, desc, eq, exists, gte, inArray, lte, sql, type SQL } from 'drizzle-orm'
 import { DEFAULT_LIMIT, DEFAULT_PAGE, ERROR_MESSAGES, MAX_LIMIT, MAX_PAGE } from '../../constants'
-import { db } from '../../db/client'
+import { db, type AppDbExecutor } from '../../db/client'
 import { media, mediaTags, tags, watchRecord } from '../../db/schema'
 import { HttpError } from '../../middleware/error'
 import { isMediaType, isStatus, toInt } from '../../utils/http'
@@ -35,7 +36,7 @@ function escapeLikePattern(value: string): string {
   return value.replace(/[\\%_]/g, '\\$&')
 }
 
-function buildMediaWhere(query: ListMediaQuery): SQL | undefined {
+function buildMediaWhere(query: ListMediaQuery, database: AppDbExecutor): SQL | undefined {
   const conditions: SQL[] = []
 
   if (query.type) {
@@ -59,7 +60,7 @@ function buildMediaWhere(query: ListMediaQuery): SQL | undefined {
   if (query.tag) {
     conditions.push(
       exists(
-        db
+        database
           .select({ media_id: mediaTags.media_id })
           .from(mediaTags)
           .innerJoin(tags, eq(tags.id, mediaTags.tag_id))
@@ -87,19 +88,19 @@ function buildMediaWhere(query: ListMediaQuery): SQL | undefined {
   return conditions.length > 0 ? and(...conditions) : undefined
 }
 
-export function listMedia(query: ListMediaQuery): PaginatedResponse<Media> {
+export function listMedia(query: ListMediaQuery, database: AppDbExecutor = db): PaginatedResponse<Media> {
   const page = toInt(query.page, DEFAULT_PAGE, DEFAULT_PAGE, MAX_PAGE)
   const limit = toInt(query.limit, DEFAULT_LIMIT, DEFAULT_PAGE, MAX_LIMIT)
   const offset = (page - 1) * limit
-  const whereClause = buildMediaWhere(query)
+  const whereClause = buildMediaWhere(query, database)
 
-  const total = db
+  const total = database
     .select({ total: count() })
     .from(media)
     .where(whereClause)
     .get()?.total ?? 0
 
-  const statusCounts = db
+  const statusCounts = database
     .select({ status: media.status, count: count() })
     .from(media)
     .where(whereClause)
@@ -110,7 +111,7 @@ export function listMedia(query: ListMediaQuery): PaginatedResponse<Media> {
       return accumulator
     }, {} as Record<string, number>)
 
-  const rows = db
+  const rows = database
     .select()
     .from(media)
     .where(whereClause)
@@ -124,7 +125,7 @@ export function listMedia(query: ListMediaQuery): PaginatedResponse<Media> {
   const progressMap = new Map<string, MediaProgress>()
   if (rows.length > 0) {
     const mediaIds = rows.map((r) => r.id)
-    const aggs = db
+    const aggs = database
       .select({
         media_id: watchRecord.media_id,
         max_episode: sql<number>`MAX(${watchRecord.episode})`,
@@ -136,10 +137,9 @@ export function listMedia(query: ListMediaQuery): PaginatedResponse<Media> {
       .all()
 
     const typeMap = new Map(rows.map((r) => [r.id, r.type]))
-    const CHAPTER_TYPES = new Set(['novel', 'manga'])
     for (const agg of aggs) {
       const type = typeMap.get(agg.media_id) ?? ''
-      const isChapter = CHAPTER_TYPES.has(type)
+      const isChapter = isChapterBased(type as MediaType)
       if (isChapter && agg.max_chapter != null && agg.max_chapter > 0) {
         progressMap.set(agg.media_id, { chapter: agg.max_chapter })
       } else if (!isChapter && agg.max_episode != null && agg.max_episode > 0) {
