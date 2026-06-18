@@ -1,19 +1,39 @@
-import type { CreateMediaInput, Media, UpdateMediaInput } from '@anriod/shared'
-import { and, eq } from 'drizzle-orm'
+import type { CreateMediaInput, Media, MediaProgress, UpdateMediaInput } from '@anriod/shared'
+import { and, eq, sql } from 'drizzle-orm'
 import { config } from '../../config'
 import { ERROR_MESSAGES } from '../../constants'
 import { db } from '../../db/client'
-import { media } from '../../db/schema'
+import { media, watchRecord } from '../../db/schema'
 import { HttpError } from '../../middleware/error'
 import { downloadQueue } from '../../utils/download-queue'
 import { setTagsForMedia } from '../tag'
 import { createMediaValues, normalizeMediaInput, rowToMedia } from './mapper'
 import { validateMediaInput } from './validation'
 
+function computeProgress(mediaId: string, mediaType: string): MediaProgress | null {
+  const agg = db
+    .select({
+      max_episode: sql<number>`MAX(${watchRecord.episode})`,
+      max_chapter: sql<number>`MAX(${watchRecord.chapter})`
+    })
+    .from(watchRecord)
+    .where(eq(watchRecord.media_id, mediaId))
+    .get()
+
+  if (!agg) return null
+  const isChapter = mediaType === 'novel' || mediaType === 'manga'
+  if (isChapter && agg.max_chapter != null && agg.max_chapter > 0) return { chapter: agg.max_chapter }
+  if (!isChapter && agg.max_episode != null && agg.max_episode > 0) return { episode: agg.max_episode }
+  return null
+}
+
 export function getMediaById(id: string): Media {
   const row = db.select().from(media).where(eq(media.id, id)).get()
   if (!row) throw new HttpError(404, ERROR_MESSAGES.MEDIA_NOT_FOUND)
-  return rowToMedia(row)
+  const progress = computeProgress(row.id, row.type)
+  const progressMap = new Map<string, MediaProgress>()
+  if (progress) progressMap.set(id, progress)
+  return rowToMedia(row, undefined, progressMap)
 }
 
 export function createMedia(input: CreateMediaInput): Media {

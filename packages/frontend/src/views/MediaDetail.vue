@@ -26,8 +26,6 @@ const { openUrl } = useTauri()
 const title = ref('')
 const status = ref<Status>('plan_to_watch')
 const rating = ref<number | null>(null)
-const episode = ref(0)
-const watchDate = ref('')
 const tagsText = ref('')
 const editType = ref<MediaType>('anime')
 const editAirDate = ref('')
@@ -76,7 +74,6 @@ function fillForm(item: Media) {
   title.value = item.title
   status.value = item.status
   rating.value = item.rating
-  episode.value = progressVal(item.current_progress)
   tagsText.value = item.tags?.join(', ') ?? ''
   editType.value = item.type
   editAirDate.value = item.air_date ?? ''
@@ -154,21 +151,6 @@ async function saveDetail() {
   }
 }
 
-async function saveProgress() {
-  if (!media.value) return
-  const field = isChapterBased(media.value.type) ? 'chapter' : 'episode'
-  try {
-    media.value = await api.updateProgress(media.value.id, {
-      current_progress: { [field]: episode.value },
-      started_at: watchDate.value ? new Date(watchDate.value).toISOString() : null
-    })
-    fillForm(media.value)
-    await reloadRecords()
-  } catch (caught) {
-    error.value = caught instanceof Error ? caught.message : '保存进度失败'
-  }
-}
-
 async function reloadRecords() {
   if (!media.value) return
   try {
@@ -180,6 +162,12 @@ async function reloadRecords() {
 const watchedEps = computed(() => {
   const key = isChapterBased(media.value?.type ?? 'anime') ? 'chapter' : 'episode'
   return new Set(records.value.map(h => (h[key] as number) ?? 0).filter(Boolean))
+})
+
+const latestWatched = computed(() => {
+  const key = isChapterBased(media.value?.type ?? 'anime') ? 'chapter' : 'episode'
+  const vals = records.value.map(h => (h[key] as number) ?? 0).filter(Boolean)
+  return vals.length > 0 ? Math.max(...vals) : 0
 })
 
 interface EpisodeMapEntry {
@@ -394,34 +382,14 @@ onUnmounted(() => {
                 <span class="h-4 w-1 rounded-full bg-primary" />
                 {{ progressLabel(media.type) }}进度
               </h3>
-              <div class="flex flex-wrap items-center justify-end gap-1">
-                <input
-                  v-model="watchDate"
-                  type="date"
-                  class="rounded border border-outline-variant bg-surface-container-lowest px-2 py-1 text-caption-xs text-on-surface outline-none focus:border-primary"
-                />
-                <button class="btn-icon" type="button" :disabled="episode <= 0" @click="episode = Math.max(0, episode - 1); saveProgress()">
-                  <span class="material-symbols-outlined">remove</span>
-                </button>
-                <span class="text-label-sm font-bold text-primary tabular-nums w-10 text-center">{{ episode }}</span>
-                <span class="text-caption-xs text-on-surface-variant">/ {{ media.total_episodes }}</span>
-                <button
-                  class="btn-icon"
-                  type="button"
-                  :disabled="!!(media.total_episodes && episode >= media.total_episodes)"
-                  @click="episode = Math.min(media.total_episodes || Infinity, episode + 1); saveProgress()"
-                >
-                  <span class="material-symbols-outlined">add</span>
-                </button>
-              </div>
             </div>
 
             <!-- Progress bar -->
             <div class="w-full h-1.5 rounded-full bg-surface-container overflow-hidden">
               <div
                 class="h-full rounded-full transition-all"
-                :class="episode >= media.total_episodes ? 'bg-emerald-400' : 'bg-primary'"
-                :style="{ width: `${Math.min(100, Math.round((episode / media.total_episodes) * 100))}%` }"
+                :class="latestWatched >= media.total_episodes ? 'bg-emerald-400' : 'bg-primary'"
+                :style="{ width: `${Math.min(100, Math.round((latestWatched / media.total_episodes) * 100))}%` }"
               />
             </div>
 

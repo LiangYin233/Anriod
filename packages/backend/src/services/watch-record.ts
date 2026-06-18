@@ -78,7 +78,6 @@ export function createWatchRecord(input: CreateWatchRecordInput): WatchRecord {
     episode: input.episode ?? null,
     chapter: input.chapter ?? null,
     watched_at: watchedAt,
-    is_continuous: input.is_continuous ?? 1,
     created_at: now
   }
 
@@ -94,7 +93,6 @@ export function updateWatchRecord(id: number, input: UpdateWatchRecordInput): Wa
   if (input.episode !== undefined) values.episode = input.episode
   if (input.chapter !== undefined) values.chapter = input.chapter
   if (input.watched_at !== undefined) values.watched_at = input.watched_at
-  if (input.is_continuous !== undefined) values.is_continuous = input.is_continuous
   if (Object.keys(values).length > 0) {
     db.update(watchRecord).set(values).where(eq(watchRecord.id, id)).run()
   }

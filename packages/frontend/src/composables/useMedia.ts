@@ -1,23 +1,7 @@
 import { ref } from 'vue'
-import type { ListMediaQuery, Media, MediaProgress, PaginatedResponse, Status } from '@anriod/shared'
+import type { ListMediaQuery, Media, PaginatedResponse, Status } from '@anriod/shared'
 import { api } from '@/utils/api'
 import { isChapterBased } from '@/utils/progress'
-
-function nextProgress(media: Media): MediaProgress {
-  const current: MediaProgress = { ...(media.current_progress ?? {}) }
-
-  if (media.type === 'anime' || media.type === 'tv') {
-    current.episode = (current.episode ?? 0) + 1
-  } else if (isChapterBased(media.type)) {
-    current.chapter = (current.chapter ?? 0) + 1
-  } else if (media.type === 'movie') {
-    current.watched = true
-  } else if (media.type === 'game') {
-    current.hours_played = (current.hours_played ?? 0) + 1
-  }
-
-  return current
-}
 
 function createQueryKey(filters: ListMediaQuery): string {
   return JSON.stringify({
@@ -93,7 +77,11 @@ async function fetchMedia(filters: ListMediaQuery = {}, forceRefresh = false) {
 }
 
 async function incrementProgress(media: Media) {
-  const updated = await api.updateProgress(media.id, { current_progress: nextProgress(media) })
+  const p = media.current_progress
+  const next = isChapterBased(media.type)
+    ? ((p?.chapter ?? 0) + 1)
+    : ((p?.episode ?? 0) + 1)
+  const updated = await api.markSingleEpisode(media.id, next)
   mediaList.value = mediaList.value.map((item) => (item.id === updated.id ? updated : item))
   invalidateCache()
   return updated

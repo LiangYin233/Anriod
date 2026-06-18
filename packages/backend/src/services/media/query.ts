@@ -1,8 +1,8 @@
-import type { ListMediaQuery, Media, PaginatedResponse } from '@anriod/shared'
-import { and, asc, count, desc, eq, exists, gte, lte, sql, type SQL } from 'drizzle-orm'
+import type { ListMediaQuery, Media, MediaProgress, PaginatedResponse } from '@anriod/shared'
+import { and, asc, count, desc, eq, exists, gte, inArray, lte, sql, type SQL } from 'drizzle-orm'
 import { DEFAULT_LIMIT, DEFAULT_PAGE, ERROR_MESSAGES, MAX_LIMIT, MAX_PAGE } from '../../constants'
 import { db } from '../../db/client'
-import { media, mediaTags, tags } from '../../db/schema'
+import { media, mediaTags, tags, watchRecord } from '../../db/schema'
 import { HttpError } from '../../middleware/error'
 import { isMediaType, isStatus, toInt } from '../../utils/http'
 import { getTagsForMediaBatch } from '../tag'
@@ -121,8 +121,35 @@ export function listMedia(query: ListMediaQuery): PaginatedResponse<Media> {
 
   const tagsMap = getTagsForMediaBatch(rows.map((row) => row.id))
 
+  const progressMap = new Map<string, MediaProgress>()
+  if (rows.length > 0) {
+    const mediaIds = rows.map((r) => r.id)
+    const aggs = db
+      .select({
+        media_id: watchRecord.media_id,
+        max_episode: sql<number>`MAX(${watchRecord.episode})`,
+        max_chapter: sql<number>`MAX(${watchRecord.chapter})`
+      })
+      .from(watchRecord)
+      .where(inArray(watchRecord.media_id, mediaIds))
+      .groupBy(watchRecord.media_id)
+      .all()
+
+    const typeMap = new Map(rows.map((r) => [r.id, r.type]))
+    const CHAPTER_TYPES = new Set(['novel', 'manga'])
+    for (const agg of aggs) {
+      const type = typeMap.get(agg.media_id) ?? ''
+      const isChapter = CHAPTER_TYPES.has(type)
+      if (isChapter && agg.max_chapter != null && agg.max_chapter > 0) {
+        progressMap.set(agg.media_id, { chapter: agg.max_chapter })
+      } else if (!isChapter && agg.max_episode != null && agg.max_episode > 0) {
+        progressMap.set(agg.media_id, { episode: agg.max_episode })
+      }
+    }
+  }
+
   return {
-    data: rows.map((row) => rowToMedia(row, tagsMap)),
+    data: rows.map((row) => rowToMedia(row, tagsMap, progressMap)),
     pagination: { page, limit, total },
     status_counts: statusCounts
   }

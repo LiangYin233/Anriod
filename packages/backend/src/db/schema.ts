@@ -11,7 +11,6 @@ export const media = sqliteTable(
 
     status: text('status').$type<Status>().notNull().default('plan_to_watch'),
     rating: real('rating'),
-    current_progress: text('current_progress', { mode: 'json' }).$type<MediaProgress>(),
 
     cover_url: text('cover_url'),
     description: text('description'),
@@ -70,7 +69,6 @@ export const watchRecord = sqliteTable(
     episode: integer('episode'),
     chapter: integer('chapter'),
     watched_at: text('watched_at').notNull(),
-    is_continuous: integer('is_continuous').notNull().default(1),
     created_at: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`)
   },
   (table) => ({

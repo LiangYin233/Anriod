@@ -85,10 +85,9 @@ describe('watch record service', () => {
       episode: 2,
     })
     const updated = updateWatchRecord(entry.id, {
-      is_continuous: 0,
+      episode: 5,
     })
-    expect(updated.is_continuous).toBe(0)
-    expect(updated.episode).toBe(2)
+    expect(updated.episode).toBe(5)
   })
 
   test('deleteWatchRecord removes entry', () => {

@@ -33,6 +33,7 @@ export function exportAll(): ExportData {
 
   const mediaItems: Media[] = mediaRows.map((row) => ({
     ...row,
+    current_progress: null,
     tags: tagsByMediaId.get(row.id) || []
   }))
 
@@ -84,7 +85,6 @@ export function importAll(data: ExportData) {
         type: item.type,
         status: item.status,
         rating: item.rating ?? null,
-        current_progress: item.current_progress ?? null,
         cover_url: item.cover_url ?? null,
         description: item.description ?? null,
         external_rating: item.external_rating ?? null,
@@ -118,7 +118,6 @@ export function importAll(data: ExportData) {
         episode: entry.episode ?? null,
         chapter: entry.chapter ?? null,
         watched_at: entry.watched_at,
-        is_continuous: entry.is_continuous,
         created_at: entry.created_at
       }
       transaction.insert(watchRecord).values(values).run()

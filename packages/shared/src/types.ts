@@ -72,7 +72,6 @@ export interface WatchRecord {
   episode: number | null
   chapter: number | null
   watched_at: string
-  is_continuous: number
   created_at: string
 }
 
@@ -98,7 +97,6 @@ export interface CreateMediaInput {
   type: MediaType
   status?: Status
   rating?: number | null
-  current_progress?: MediaProgress | null
   cover_url?: string | null
   description?: string | null
   external_rating?: number | null
@@ -127,11 +125,6 @@ export interface ListMediaQuery {
   air_date_to?: string
   ep_min?: number
   ep_max?: number
-}
-
-export interface UpdateProgressInput {
-  current_progress: MediaProgress
-  started_at?: string | null
 }
 
 export interface UpdateStatusInput {
@@ -203,7 +196,6 @@ export interface CreateWatchRecordInput {
   episode?: number
   chapter?: number
   watched_at?: string
-  is_continuous?: number
 }
 
 export type UpdateWatchRecordInput = Partial<Omit<CreateWatchRecordInput, 'media_id'>>

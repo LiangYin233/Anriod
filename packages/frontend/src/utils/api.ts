@@ -14,7 +14,6 @@ import type {
   TagStatistic,
   TimelinePoint,
   UpdateMediaInput,
-  UpdateProgressInput,
   UpdateStatusInput,
   UpdateWatchRecordInput,
   WatchRecord
@@ -108,7 +107,6 @@ export const api = {
   createMedia: (data: CreateMediaInput) => apiRequest<Media>('/api/media', { method: 'POST', body: JSON.stringify(data) }),
   updateMedia: (id: string, data: UpdateMediaInput) => apiRequest<Media>(`/api/media/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteMedia: (id: string) => apiRequest<void>(`/api/media/${id}`, { method: 'DELETE' }),
-  updateProgress: (id: string, data: UpdateProgressInput) => apiRequest<Media>(`/api/media/${id}/progress`, { method: 'PATCH', body: JSON.stringify(data) }),
   markEpisodesWatched: (id: string, episodes: number[]) => apiRequest<Media>(`/api/media/${id}/records/episodes/batch`, { method: 'POST', body: JSON.stringify({ episodes }) }),
   markSingleEpisode: (id: string, episode: number) => apiRequest<Media>(`/api/media/${id}/records/episodes/single`, { method: 'POST', body: JSON.stringify({ episode }) }),
   undoEpisodeWatch: (id: string, episode: number) => apiRequest<Media>(`/api/media/${id}/records/episodes/${episode}`, { method: 'DELETE' }),

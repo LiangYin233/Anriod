@@ -1,10 +1,11 @@
-import type { CreateMediaInput, Media, UpdateMediaInput } from '@anriod/shared'
+import type { CreateMediaInput, Media, MediaProgress, UpdateMediaInput } from '@anriod/shared'
 import type { MediaRow, NewMediaRow } from '../../db/schema'
 import { getTagsForMedia } from '../tag'
 
-export function rowToMedia(row: MediaRow, tagsMap?: Map<string, string[]>): Media {
+export function rowToMedia(row: MediaRow, tagsMap?: Map<string, string[]>, progressMap?: Map<string, MediaProgress>): Media {
   return {
     ...row,
+    current_progress: progressMap?.get(row.id) ?? null,
     tags: tagsMap?.get(row.id) ?? getTagsForMedia(row.id)
   }
 }
@@ -19,7 +20,6 @@ export function normalizeMediaInput(
   if (input.type !== undefined) values.type = input.type
   if (input.status !== undefined) values.status = input.status
   if (input.rating !== undefined) values.rating = input.rating
-  if (input.current_progress !== undefined) values.current_progress = input.current_progress
   if (input.cover_url !== undefined) values.cover_url = input.cover_url
   if (input.description !== undefined) values.description = input.description
   if (input.external_rating !== undefined) values.external_rating = input.external_rating
@@ -44,7 +44,6 @@ export function createMediaValues(id: string, input: CreateMediaInput): NewMedia
     type: input.type,
     status: input.status ?? 'plan_to_watch',
     rating: input.rating ?? null,
-    current_progress: input.current_progress ?? null,
     cover_url: input.cover_url ?? null,
     description: input.description ?? null,
     external_rating: input.external_rating ?? null,

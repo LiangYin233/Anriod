@@ -1,5 +1,5 @@
 import { Hono } from 'hono'
-import type { CreateMediaInput, ImportMediaInput, UpdateMediaInput, UpdateProgressInput, UpdateStatusInput } from '@anriod/shared'
+import type { CreateMediaInput, ImportMediaInput, UpdateMediaInput, UpdateStatusInput } from '@anriod/shared'
 import { addTagToMedia, removeTagFromMedia } from '../services/tag'
 import {
   createMedia,
@@ -12,7 +12,6 @@ import {
   syncMedia,
   undoEpisodeWatch,
   updateMedia,
-  updateProgress,
   updateStatus
 } from '../services/media'
 import { listRecordsForMedia } from '../services/watch-record'
@@ -60,11 +59,6 @@ mediaRoutes.put('/:id', async (c) => {
 mediaRoutes.delete('/:id', (c) => {
   deleteMedia(c.req.param('id'))
   return c.body(null, 204)
-})
-
-mediaRoutes.patch('/:id/progress', async (c) => {
-  const body = await readJson<UpdateProgressInput>(c)
-  return c.json(updateProgress(c.req.param('id'), body.current_progress, body.started_at))
 })
 
 mediaRoutes.patch('/:id/status', async (c) => {

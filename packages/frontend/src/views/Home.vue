@@ -161,7 +161,11 @@ async function handleIncrement(media: Media) {
 
 async function handleSetProgress(media: Media, value: number) {
   const field = isChapterBased(media.type) ? 'chapter' : 'episode'
-  const updated = await api.updateProgress(media.id, { current_progress: { [field]: value } })
+  const current = field === 'chapter' ? (media.current_progress?.chapter ?? 0) : (media.current_progress?.episode ?? 0)
+  if (value <= current) return
+  const episodes: number[] = []
+  for (let e = current + 1; e <= value; e++) episodes.push(e)
+  const updated = await api.markEpisodesWatched(media.id, episodes)
   mediaList.value = mediaList.value.map((item) => (item.id === updated.id ? updated : item))
 }
 

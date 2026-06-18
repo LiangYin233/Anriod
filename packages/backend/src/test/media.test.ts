@@ -3,8 +3,9 @@ import { ERROR_MESSAGES } from '../constants'
 import { initTestEnv, clearAllTables } from './helpers'
 
 let listMedia: any, getMediaById: any, createMedia: any, updateMedia: any
-let deleteMedia: any, updateProgress: any, updateStatus: any
+let deleteMedia: any, updateStatus: any
 let importMedia: any, syncMedia: any
+let markEpisodesWatched: any, undoEpisodeWatch: any
 let getTagsForMedia: any, listRecordsForMedia: any
 
 beforeAll(async () => {
@@ -17,10 +18,11 @@ beforeAll(async () => {
   createMedia = m.createMedia
   updateMedia = m.updateMedia
   deleteMedia = m.deleteMedia
-  updateProgress = m.updateProgress
   updateStatus = m.updateStatus
   importMedia = m.importMedia
   syncMedia = m.syncMedia
+  markEpisodesWatched = m.markEpisodesWatched
+  undoEpisodeWatch = m.undoEpisodeWatch
 
   const t = await import('../services/tag')
   getTagsForMedia = t.getTagsForMedia
@@ -209,18 +211,18 @@ describe('media service — delete', () => {
 })
 
 describe('media service — progress', () => {
-  test('updateProgress increases episode count', () => {
+  test('markEpisodesWatched creates records and reflects in current_progress', () => {
     const media = createMedia({ title: 'Progress 1', type: 'anime', total_episodes: 12 })
-    const p1 = updateProgress(media.id, { episode: 5 })
+    const p1 = markEpisodesWatched(media.id, [1, 2, 3, 4, 5])
     expect(p1.current_progress?.episode).toBe(5)
 
-    const p2 = updateProgress(media.id, { episode: 8 })
+    const p2 = markEpisodesWatched(media.id, [6, 7, 8])
     expect(p2.current_progress?.episode).toBe(8)
   })
 
-  test('updateProgress creates record entries for incremental progress', () => {
+  test('markEpisodesWatched creates discrete records', () => {
     const media = createMedia({ title: 'Progress Records', type: 'anime', total_episodes: 12 })
-    updateProgress(media.id, { episode: 3 })
+    markEpisodesWatched(media.id, [1, 2, 3])
 
     const records = listRecordsForMedia(media.id)
     expect(records.length).toBe(3)
@@ -229,12 +231,12 @@ describe('media service — progress', () => {
     expect(episodes).toEqual([1, 2, 3])
   })
 
-  test('decreasing progress removes excess record entries', () => {
-    const media = createMedia({ title: 'Decrease Test', type: 'anime', total_episodes: 12 })
-    updateProgress(media.id, { episode: 5 })
-    updateProgress(media.id, { episode: 3 })
+  test('undoEpisodeWatch removes a single record', () => {
+    const media = createMedia({ title: 'Undo Test', type: 'anime', total_episodes: 12 })
+    markEpisodesWatched(media.id, [1, 2, 3, 4, 5])
+    undoEpisodeWatch(media.id, 5)
     const records = listRecordsForMedia(media.id)
-    expect(records.length).toBe(3)
+    expect(records.length).toBe(4)
   })
 })
 

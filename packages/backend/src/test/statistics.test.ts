@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeAll } from 'bun:test'
 import { initTestEnv, clearAllTables } from './helpers'
 
-let createMedia: any, updateProgress: any
+let createMedia: any, markEpisodesWatched: any
 let getOverview: any, getTimeline: any, getTagStatistics: any, getRatingDistribution: any
 
 beforeAll(async () => {
@@ -10,7 +10,7 @@ beforeAll(async () => {
 
   const m = await import('../services/media')
   createMedia = m.createMedia
-  updateProgress = m.updateProgress
+  markEpisodesWatched = m.markEpisodesWatched
 
   const s = await import('../services/statistics')
   getOverview = s.getOverview
@@ -82,7 +82,7 @@ describe('statistics — timeline', () => {
 
   test('timeline reflects watch history after progress updates', () => {
     const media = createMedia({ title: 'Timeline Test', type: 'anime' })
-    updateProgress(media.id, { episode: 2 })
+    markEpisodesWatched(media.id, [1, 2])
 
     const timeline = getTimeline()
     expect(timeline.length).toBeGreaterThanOrEqual(1)
