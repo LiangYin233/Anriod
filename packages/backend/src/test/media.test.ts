@@ -170,10 +170,9 @@ describe('media service — update', () => {
   })
 
   test('partial update preserves other fields', () => {
-    const media = createMedia({ title: 'Partial', type: 'novel', notes: 'original notes' })
+    const media = createMedia({ title: 'Partial', type: 'novel' })
     const updated = updateMedia(media.id, { rating: 5 })
     expect(updated.rating).toBe(5)
-    expect(updated.notes).toBe('original notes')
   })
 
   test('updates tags', () => {

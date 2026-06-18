@@ -118,12 +118,6 @@ onMounted(loadHistory)
               </button>
             </div>
 
-            <!-- Notes -->
-            <p v-if="item.notes" class="mt-1.5 text-body-md text-on-surface-variant leading-relaxed">
-              {{ item.notes }}
-            </p>
-
-            <!-- Rating -->
             <div v-if="item.rating !== null && item.rating > 0" class="mt-1.5 flex items-center gap-1">
               <template v-for="i in 5" :key="i">
                 <span

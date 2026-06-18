@@ -82,7 +82,6 @@ export function createWatchHistory(input: CreateWatchHistoryInput): WatchHistory
     progress_from: input.progress_from ?? null,
     progress_to: input.progress_to ?? null,
     rating: input.rating ?? null,
-    notes: input.notes ?? null,
     created_at: now
   }
 
@@ -100,8 +99,6 @@ export function updateWatchHistory(id: number, input: UpdateWatchHistoryInput): 
   if (input.progress_from !== undefined) values.progress_from = input.progress_from
   if (input.progress_to !== undefined) values.progress_to = input.progress_to
   if (input.rating !== undefined) values.rating = input.rating
-  if (input.notes !== undefined) values.notes = input.notes
-
   if (Object.keys(values).length > 0) {
     db.update(watchHistory).set(values).where(eq(watchHistory.id, id)).run()
   }

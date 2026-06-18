@@ -41,7 +41,6 @@ describe('backup — round-trip', () => {
       rating: 9,
       total_episodes: 12,
       tags: ['经典', '必看'],
-      notes: 'A test entry',
     })
 
     exported = exportAll()

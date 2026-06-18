@@ -12,7 +12,7 @@ function isChapterBased(type: string): boolean {
   return type === 'novel' || type === 'manga'
 }
 
-export function updateProgress(id: string, progress: MediaProgress, notes?: string | null, startedAt?: string | null): Media {
+export function updateProgress(id: string, progress: MediaProgress, startedAt?: string | null): Media {
   const current = getMediaById(id)
   const now = startedAt || new Date().toISOString()
   const useChapter = isChapterBased(current.type)
@@ -31,8 +31,7 @@ export function updateProgress(id: string, progress: MediaProgress, notes?: stri
         completed_at: now,
         progress_from: { [progressKey]: progressValue - 1 },
         progress_to: valueProgress,
-        rating: null,
-        notes: progressValue === newValue ? (notes ?? null) : null
+        rating: null
       })
     }
   } else if (newValue !== undefined && newValue < oldValue) {
@@ -74,8 +73,7 @@ export function updateStatus(id: string, status: Status): Media {
       completed_at: now,
       progress_from: null,
       progress_to: current.current_progress,
-      rating: current.rating,
-      notes: current.notes
+      rating: current.rating
     })
   }
 
@@ -86,8 +84,7 @@ export function updateStatus(id: string, status: Status): Media {
       completed_at: null,
       progress_from: current.current_progress,
       progress_to: null,
-      rating: null,
-      notes: null
+      rating: null
     })
   }
 

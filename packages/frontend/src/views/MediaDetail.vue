@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import type { CreditsResponse, Episode, Media, MediaType, Status, WatchHistory } from '@anriod/shared'
 import { EPISODE_TYPE_LABELS, MEDIA_TYPES, MEDIA_TYPE_VALUES, STATUS_LABELS, STATUS_VALUES } from '@anriod/shared'
@@ -9,7 +9,6 @@ import CreditList from '@/components/CreditList.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import ErrorBanner from '@/components/ErrorBanner.vue'
 import AppSelect from '@/components/AppSelect.vue'
-import { useToast } from '@/composables/useToast'
 import { useTauri } from '@/composables/useTauri'
 import { formatDate } from '@/utils/format'
 import { historyProgressLabel, isChapterBased, progressVal, progressUnit, progressLabel } from '@/utils/progress'
@@ -26,17 +25,13 @@ const credits = ref<CreditsResponse | null>(null)
 const loading = ref(false)
 const saving = ref(false)
 const error = ref('')
-const toast = useToast()
 const { openUrl } = useTauri()
 
 const title = ref('')
 const status = ref<Status>('plan_to_watch')
 const rating = ref<number | null>(null)
-const notes = ref('')
 const episode = ref(0)
 const watchDate = ref('')
-const editingEp = ref(0)
-const epNotes = ref<Record<number, string>>({})
 const tagsText = ref('')
 const editType = ref<MediaType>('anime')
 const editAirDate = ref('')
@@ -67,7 +62,6 @@ function fillForm(item: Media) {
   title.value = item.title
   status.value = item.status
   rating.value = item.rating
-  notes.value = item.notes ?? ''
   episode.value = progressVal(item.current_progress)
   tagsText.value = item.tags?.join(', ') ?? ''
   editType.value = item.type
@@ -113,37 +107,12 @@ async function loadDetail() {
       credits.value = creditsData
     }
 
-    // Build progress→notes map from history data
-    const notes: Record<number, string> = {}
-    for (const h of history.value) {
-      const to = progressVal(h.progress_to)
-      if (h.notes && to > 0) notes[to] = h.notes
-    }
-    epNotes.value = notes
   } catch (caught) {
     error.value = caught instanceof Error ? caught.message : '加载详情失败'
   } finally {
     loading.value = false
   }
 }
-
-// When clicking an episode/chapter, show its watch date
-watch(editingEp, (ep) => {
-  if (!ep || ep > progressVal(media.value?.current_progress)) {
-    watchDate.value = ''
-    return
-  }
-  // Find the history entry that covers this episode/chapter
-  const h = history.value.find(
-    (item) => progressVal(item.progress_to) === ep
-  )
-  if (h) {
-    const d = new Date(h.started_at)
-    watchDate.value = d.toISOString().slice(0, 10)
-  } else {
-    watchDate.value = ''
-  }
-})
 
 async function saveDetail() {
   if (!media.value) return
@@ -155,7 +124,6 @@ async function saveDetail() {
       type: editType.value,
       status: status.value,
       rating: rating.value,
-      notes: notes.value || null,
       tags: tagsText.value.split(',').map((t) => t.trim()).filter(Boolean),
       air_date: editAirDate.value || null,
       total_episodes: editTotalEp.value,
@@ -183,34 +151,6 @@ async function saveProgress() {
     fillForm(media.value)
   } catch (caught) {
     error.value = caught instanceof Error ? caught.message : '保存进度失败'
-  }
-}
-
-async function saveEpNote(ep: number) {
-  if (!media.value) return
-  const note = epNotes.value[ep]?.trim() || null
-  const field = isChapterBased(media.value.type) ? 'chapter' : 'episode'
-  const prefix = progressUnit(media.value.type)
-  try {
-    // Check if a history entry for this episode/chapter already exists
-    const existingIdx = history.value.findIndex(
-      (h) => progressVal(h.progress_to) === ep
-    )
-    if (existingIdx >= 0) {
-      const updated = await api.updateHistory(history.value[existingIdx].id, { notes: note })
-      history.value[existingIdx] = { ...history.value[existingIdx], notes: updated.notes }
-    } else if (note) {
-      const created = await api.createHistory({
-        media_id: media.value.id,
-        progress_from: { [field]: ep - 1 },
-        progress_to: { [field]: ep },
-        notes: note
-      })
-      history.value.push(created)
-    }
-    toast.success(note ? `${prefix}${ep} 笔记已保存` : `${prefix}${ep} 笔记已清除`)
-  } catch (caught) {
-    error.value = caught instanceof Error ? caught.message : '保存笔记失败'
   }
 }
 
@@ -385,41 +325,15 @@ onMounted(loadDetail)
                     ep <= progressVal(media.current_progress)
                       ? 'bg-primary-container/20 border-primary/30 text-on-surface'
                       : 'bg-surface-container-low border-outline-variant/30 text-on-surface-variant',
-                    editingEp === ep ? 'ring-2 ring-primary' : ''
                   ]"
-                  @click="editingEp = editingEp === ep ? 0 : ep"
                 >
                   <span class="text-label-sm font-semibold">{{ progressUnit(media.type) }}{{ ep }}</span>
                   <span class="mt-0.5 h-4 flex items-center gap-0.5">
                     <span v-if="ep <= progressVal(media.current_progress)" class="material-symbols-outlined text-[14px] text-primary">check_circle</span>
-                    <span v-if="epNotes[ep]" class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" title="有笔记" />
                   </span>
                 </button>
               </div>
 
-              <!-- Note editor -->
-              <div v-if="editingEp" class="mt-4 border-t border-outline-variant/20 pt-4">
-                <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
-                  <span class="break-words text-label-sm font-semibold text-on-surface">{{ progressUnit(media.type) }}{{ editingEp }} 笔记</span>
-                  <button class="btn-icon" type="button" @click="editingEp = 0">
-                    <span class="material-symbols-outlined text-[18px]">close</span>
-                  </button>
-                </div>
-                <textarea
-                  v-model="epNotes[editingEp]"
-                  class="field-fluent resize-none w-full"
-                  :placeholder="`这一${progressLabel(media.type).slice(0, -1)}的感想...`"
-                  rows="3"
-                />
-                <div class="flex gap-2 mt-3">
-                  <button class="btn-primary text-sm" type="button" @click="epNotes[editingEp] = ''">
-                    清空笔记
-                  </button>
-                  <button class="btn-primary text-sm" type="button" @click="saveEpNote(editingEp)">
-                    保存笔记
-                  </button>
-                </div>
-              </div>
             </div>
           </div>
 
@@ -482,9 +396,7 @@ onMounted(loadDetail)
           </div>
 
           <!-- Credits (cast & crew) -->
-          <div v-if="credits && (credits.cast.length > 0 || credits.crew.length > 0)" class="glass-card min-w-0 rounded-xl p-stack-md shadow-sm">
-            <CreditList :cast="credits.cast" :crew="credits.crew" />
-          </div>
+          <CreditList v-if="credits && (credits.cast.length > 0 || credits.crew.length > 0)" :cast="credits.cast" :crew="credits.crew" />
 
           <!-- History Timeline -->
           <div v-if="history.length > 0" class="min-w-0">
@@ -505,7 +417,7 @@ onMounted(loadDetail)
                       {{ formatDate(item.started_at) }}
                       <template v-if="item.completed_at"> → {{ formatDate(item.completed_at) }}</template>
                     </span>
-                    <span v-if="item.notes" class="mt-1 break-words text-caption-xs text-on-surface-variant">{{ item.notes }}</span>
+
                   </div>
                   <span v-if="item.rating !== null" class="text-label-sm font-medium text-primary">{{ item.rating }}/10</span>
                 </div>
@@ -595,10 +507,7 @@ onMounted(loadDetail)
                 </label>
               </template>
 
-              <label class="flex flex-col gap-1">
-                <span class="pl-1 text-label-sm text-on-surface-variant">笔记</span>
-                <textarea v-model="notes" class="field-fluent resize-none" placeholder="记录你的想法..." rows="2" />
-              </label>
+
             </div>
 
             <div class="mt-2 flex flex-wrap gap-3 p-5 pt-0">

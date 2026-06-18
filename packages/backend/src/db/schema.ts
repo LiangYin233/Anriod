@@ -11,7 +11,6 @@ export const media = sqliteTable(
 
     status: text('status').$type<Status>().notNull().default('plan_to_watch'),
     rating: real('rating'),
-    notes: text('notes'),
     current_progress: text('current_progress', { mode: 'json' }).$type<MediaProgress>(),
 
     cover_url: text('cover_url'),
@@ -73,7 +72,6 @@ export const watchHistory = sqliteTable(
     progress_from: text('progress_from', { mode: 'json' }).$type<MediaProgress>(),
     progress_to: text('progress_to', { mode: 'json' }).$type<MediaProgress>(),
     rating: real('rating'),
-    notes: text('notes'),
     created_at: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`)
   },
   (table) => ({

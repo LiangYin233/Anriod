@@ -19,7 +19,6 @@ export function normalizeMediaInput(
   if (input.type !== undefined) values.type = input.type
   if (input.status !== undefined) values.status = input.status
   if (input.rating !== undefined) values.rating = input.rating
-  if (input.notes !== undefined) values.notes = input.notes
   if (input.current_progress !== undefined) values.current_progress = input.current_progress
   if (input.cover_url !== undefined) values.cover_url = input.cover_url
   if (input.description !== undefined) values.description = input.description
@@ -45,7 +44,6 @@ export function createMediaValues(id: string, input: CreateMediaInput): NewMedia
     type: input.type,
     status: input.status ?? 'plan_to_watch',
     rating: input.rating ?? null,
-    notes: input.notes ?? null,
     current_progress: input.current_progress ?? null,
     cover_url: input.cover_url ?? null,
     description: input.description ?? null,

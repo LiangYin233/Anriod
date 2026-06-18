@@ -42,7 +42,6 @@ export interface Media {
   type: MediaType
   status: Status
   rating: number | null
-  notes: string | null
   current_progress: MediaProgress | null
   cover_url: string | null
   description: string | null
@@ -75,7 +74,6 @@ export interface WatchHistory {
   progress_from: MediaProgress | null
   progress_to: MediaProgress | null
   rating: number | null
-  notes: string | null
   created_at: string
 }
 
@@ -101,7 +99,6 @@ export interface CreateMediaInput {
   type: MediaType
   status?: Status
   rating?: number | null
-  notes?: string | null
   current_progress?: MediaProgress | null
   cover_url?: string | null
   description?: string | null
@@ -135,7 +132,6 @@ export interface ListMediaQuery {
 
 export interface UpdateProgressInput {
   current_progress: MediaProgress
-  notes?: string | null
   started_at?: string | null
 }
 
@@ -210,7 +206,6 @@ export interface CreateWatchHistoryInput {
   progress_from?: MediaProgress | null
   progress_to?: MediaProgress | null
   rating?: number | null
-  notes?: string | null
 }
 
 export type UpdateWatchHistoryInput = Partial<Omit<CreateWatchHistoryInput, 'media_id'>>

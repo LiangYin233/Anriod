@@ -37,11 +37,9 @@ describe('watch history service', () => {
       media_id: mediaId,
       progress_from: { episode: 0 },
       progress_to: { episode: 1 },
-      notes: 'First episode',
     })
     expect(entry.media_id).toBe(mediaId)
     expect(entry.progress_to?.episode).toBe(1)
-    expect(entry.notes).toBe('First episode')
     expect(entry.id).toBeGreaterThan(0)
     expect(entry.started_at).toBeTruthy()
   })
@@ -87,10 +85,8 @@ describe('watch history service', () => {
       progress_to: { episode: 2 },
     })
     const updated = updateWatchHistory(entry.id, {
-      notes: 'Updated notes',
       rating: 8,
     })
-    expect(updated.notes).toBe('Updated notes')
     expect(updated.rating).toBe(8)
     expect(updated.progress_to?.episode).toBe(2)
   })

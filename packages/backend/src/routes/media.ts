@@ -61,7 +61,7 @@ mediaRoutes.delete('/:id', (c) => {
 
 mediaRoutes.patch('/:id/progress', async (c) => {
   const body = await readJson<UpdateProgressInput>(c)
-  return c.json(updateProgress(c.req.param('id'), body.current_progress, body.notes, body.started_at))
+  return c.json(updateProgress(c.req.param('id'), body.current_progress, body.started_at))
 })
 
 mediaRoutes.patch('/:id/status', async (c) => {

@@ -89,7 +89,6 @@ export function importAll(data: ExportData) {
         type: item.type,
         status: item.status,
         rating: item.rating ?? null,
-        notes: item.notes ?? null,
         current_progress: item.current_progress ?? null,
         cover_url: item.cover_url ?? null,
         description: item.description ?? null,
@@ -128,7 +127,6 @@ export function importAll(data: ExportData) {
         progress_from: entry.progress_from ?? null,
         progress_to: entry.progress_to ?? null,
         rating: entry.rating ?? null,
-        notes: entry.notes ?? null,
         created_at: entry.created_at
       }
       transaction.insert(watchHistory).values(values).run()
