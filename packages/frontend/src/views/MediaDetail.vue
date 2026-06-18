@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import type { CreditsResponse, Episode, Media, MediaType, Status, WatchHistory } from '@anriod/shared'
 import { EPISODE_TYPE_LABELS, MEDIA_TYPES, MEDIA_TYPE_VALUES, STATUS_LABELS, STATUS_VALUES } from '@anriod/shared'
@@ -11,11 +11,7 @@ import ErrorBanner from '@/components/ErrorBanner.vue'
 import AppSelect from '@/components/AppSelect.vue'
 import { useTauri } from '@/composables/useTauri'
 import { formatDate } from '@/utils/format'
-import { historyProgressLabel, isChapterBased, progressVal, progressUnit, progressLabel } from '@/utils/progress'
-
-function episodeLabel(h: WatchHistory): string {
-  return historyProgressLabel(h.progress_from, h.progress_to)
-}
+import { isChapterBased, progressVal, progressUnit, progressLabel } from '@/utils/progress'
 
 const route = useRoute()
 const mediaId = computed(() => String(route.params.id))
@@ -41,6 +37,24 @@ const editCoverUrl = ref('')
 const editExternalRating = ref<number | null>(null)
 const editDescription = ref('')
 const showMore = ref(false)
+const menuEp = ref(0)
+const menuButtonRef = ref<HTMLElement | null>(null)
+
+const menuPanelStyle = computed(() => {
+  if (!menuButtonRef.value) return { top: '0', left: '0' }
+  const rect = menuButtonRef.value.getBoundingClientRect()
+  const panelH = 88
+  const gap = 4
+  const spaceBelow = window.innerHeight - rect.bottom
+  const top = spaceBelow >= panelH || spaceBelow > rect.top
+    ? rect.bottom + gap
+    : rect.top - panelH - gap
+  return {
+    top: `${top}px`,
+    left: `${rect.left + rect.width / 2}px`,
+    transform: 'translateX(-50%)'
+  }
+})
 
 // Episode list from source metadata
 const episodes = computed(() => {
@@ -149,8 +163,100 @@ async function saveProgress() {
       started_at: watchDate.value ? new Date(watchDate.value).toISOString() : null
     })
     fillForm(media.value)
+    await reloadHistory()
   } catch (caught) {
     error.value = caught instanceof Error ? caught.message : '保存进度失败'
+  }
+}
+
+async function reloadHistory() {
+  if (!media.value) return
+  try {
+    const res = await api.listHistory({ media_id: mediaId.value })
+    history.value = res.data
+  } catch { /* silent */ }
+}
+
+const watchedEps = computed(() => {
+  const key = isChapterBased(media.value?.type ?? 'anime') ? 'chapter' : 'episode'
+  return new Set(history.value.map(h => (h.progress_to?.[key] as number) ?? 0).filter(Boolean))
+})
+
+interface EpisodeMapEntry {
+  episode: number
+  date: string
+  historyId: number
+}
+
+const episodeMap = computed<EpisodeMapEntry[]>(() => {
+  const key = isChapterBased(media.value?.type ?? 'anime') ? 'chapter' : 'episode'
+  return history.value
+    .filter(h => (h.progress_to?.[key] as number) > 0)
+    .map(h => ({
+      episode: (h.progress_to?.[key] as number) ?? 0,
+      date: formatDate(h.started_at),
+      historyId: h.id
+    }))
+    .sort((a, b) => a.episode - b.episode)
+})
+
+function toggleMenu(ep: number, e: MouseEvent) {
+  menuButtonRef.value = e.currentTarget as HTMLElement
+  menuEp.value = menuEp.value === ep ? 0 : ep
+}
+
+async function markWatched(ep: number) {
+  if (!media.value) return
+  const current = progressVal(media.value.current_progress)
+  if (ep <= current) return
+  menuEp.value = 0
+  const episodes: number[] = []
+  for (let e = current + 1; e <= ep; e++) episodes.push(e)
+  try {
+    media.value = await api.markEpisodesWatched(media.value.id, episodes)
+    fillForm(media.value)
+    await reloadHistory()
+  } catch (caught) {
+    error.value = caught instanceof Error ? caught.message : '标记失败'
+  }
+}
+
+async function markSingle(ep: number) {
+  if (!media.value) return
+  menuEp.value = 0
+  try {
+    await api.markSingleEpisode(media.value.id, ep)
+    media.value = await api.getMedia(mediaId.value)
+    fillForm(media.value)
+    await reloadHistory()
+  } catch (caught) {
+    error.value = caught instanceof Error ? caught.message : '标记失败'
+  }
+}
+
+async function undoEpisode(ep: number) {
+  if (!media.value) return
+  menuEp.value = 0
+  try {
+    media.value = await api.undoEpisodeWatch(media.value.id, ep)
+    fillForm(media.value)
+    await reloadHistory()
+  } catch (caught) {
+    error.value = caught instanceof Error ? caught.message : '撤销失败'
+  }
+}
+
+function onWindowClick() {
+  menuEp.value = 0
+}
+
+function onScroll() {
+  menuEp.value = 0
+}
+
+function onKeydown(e: KeyboardEvent) {
+  if (e.key === 'Escape' && menuEp.value) {
+    menuEp.value = 0
   }
 }
 
@@ -183,7 +289,18 @@ async function syncCurrent() {
   }
 }
 
-onMounted(loadDetail)
+onMounted(() => {
+  window.addEventListener('click', onWindowClick)
+  window.addEventListener('scroll', onScroll, { passive: true, capture: true })
+  window.addEventListener('keydown', onKeydown)
+  loadDetail()
+})
+
+onUnmounted(() => {
+  window.removeEventListener('click', onWindowClick)
+  window.removeEventListener('scroll', onScroll, { capture: true })
+  window.removeEventListener('keydown', onKeydown)
+})
 </script>
 
 <template>
@@ -312,26 +429,52 @@ onMounted(loadDetail)
 
             <!-- Episode/Chapter boxes grid -->
             <div class="glass-card min-w-0 rounded-lg p-4 shadow-sm">
-              <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
-                <span class="text-caption-xs text-on-surface-variant">点击集数快速跳转</span>
-                <span class="text-caption-xs text-on-surface-variant/70">提示: 正片外的 SP/OVA 可手动输入</span>
-              </div>
               <div class="grid min-w-0 gap-2" :style="{ gridTemplateColumns: `repeat(auto-fill, minmax(48px, 1fr))` }">
-                <button
-                  v-for="ep in media.total_episodes"
-                  :key="ep"
-                  class="flex flex-col items-center justify-center rounded-lg border py-2 transition-all hover:shadow-sm"
-                  :class="[
-                    ep <= progressVal(media.current_progress)
-                      ? 'bg-primary-container/20 border-primary/30 text-on-surface'
-                      : 'bg-surface-container-low border-outline-variant/30 text-on-surface-variant',
-                  ]"
-                >
-                  <span class="text-label-sm font-semibold">{{ progressUnit(media.type) }}{{ ep }}</span>
-                  <span class="mt-0.5 h-4 flex items-center gap-0.5">
-                    <span v-if="ep <= progressVal(media.current_progress)" class="material-symbols-outlined text-[14px] text-primary">check_circle</span>
-                  </span>
-                </button>
+                <template v-for="ep in media.total_episodes" :key="ep">
+                  <button
+                    class="flex flex-col items-center justify-center rounded-lg border py-2 transition-all hover:shadow-sm cursor-pointer"
+                    :class="[
+                      ep <= progressVal(media.current_progress)
+                        ? 'bg-primary-container/20 border-primary/30 text-on-surface'
+                        : 'bg-surface-container-low border-outline-variant/30 text-on-surface-variant',
+                    ]"
+                    @click.stop="toggleMenu(ep, $event)"
+                  >
+                    <span class="text-label-sm font-semibold">{{ progressUnit(media.type) }}{{ ep }}</span>
+                    <span class="mt-0.5 h-4 flex items-center gap-0.5">
+                      <span v-if="ep <= progressVal(media.current_progress)" class="material-symbols-outlined text-[14px] text-primary">check_circle</span>
+                    </span>
+                  </button>
+                  <Teleport v-if="menuEp === ep" to="body">
+                    <div
+                      class="fixed z-[99999] rounded-xl border border-black/6 bg-white p-1 shadow-[0_8px_24px_rgba(0,0,0,0.12),0_2px_6px_rgba(0,0,0,0.06)] dark:border-white/6 dark:bg-[#2a2a2a] dark:shadow-[0_8px_24px_rgba(0,0,0,0.4)]"
+                      :style="menuPanelStyle"
+                      @click.stop
+                    >
+                      <template v-if="!watchedEps.has(ep)">
+                        <button
+                          class="block w-full rounded-lg px-3 py-2 text-left text-sm text-on-surface transition-colors hover:bg-on-surface/8 dark:text-[#e0e0e0] dark:hover:bg-white/6"
+                          @click.stop="markWatched(ep)"
+                        >
+                          看到
+                        </button>
+                        <button
+                          class="block w-full rounded-lg px-3 py-2 text-left text-sm text-on-surface transition-colors hover:bg-on-surface/8 dark:text-[#e0e0e0] dark:hover:bg-white/6"
+                          @click.stop="markSingle(ep)"
+                        >
+                          看过
+                        </button>
+                      </template>
+                      <button
+                        v-if="watchedEps.has(ep)"
+                        class="block w-full rounded-lg px-3 py-2 text-left text-sm text-on-surface transition-colors hover:bg-on-surface/8 dark:text-[#e0e0e0] dark:hover:bg-white/6"
+                        @click.stop="undoEpisode(ep)"
+                      >
+                        撤销
+                      </button>
+                    </div>
+                  </Teleport>
+                </template>
               </div>
 
             </div>
@@ -398,28 +541,23 @@ onMounted(loadDetail)
           <!-- Credits (cast & crew) -->
           <CreditList v-if="credits && (credits.cast.length > 0 || credits.crew.length > 0)" :cast="credits.cast" :crew="credits.crew" />
 
-          <!-- History Timeline -->
-          <div v-if="history.length > 0" class="min-w-0">
+          <!-- History -->
+          <div v-if="episodeMap.length > 0" class="min-w-0">
             <h3 class="mb-unit flex items-center gap-2 text-title-sm text-on-surface">
               <span class="h-4 w-1 rounded-full bg-primary" />
               观看历史
             </h3>
-            <div class="glass-card relative flex min-w-0 flex-col gap-4 rounded-lg p-stack-md shadow-sm">
-              <div class="absolute bottom-6 left-[31px] top-6 w-px bg-outline-variant/40" />
-              <div v-for="item in history" :key="item.id" class="group relative z-10 flex min-w-0 items-start gap-4">
-                <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-surface-container-lowest bg-primary-container transition-transform group-hover:scale-110">
-                  <span class="material-symbols-outlined text-[16px] text-on-primary-container" style="font-variation-settings: 'FILL' 1;">play_circle</span>
-                </div>
-                <div class="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-2 rounded-lg bg-surface-container p-3 transition-colors hover:bg-surface-container-high">
-                  <div class="flex min-w-0 flex-col">
-                    <span class="break-words text-[14px] font-medium text-on-surface">
-                      <template v-if="episodeLabel(item)">{{ episodeLabel(item) }} · </template>
-                      {{ formatDate(item.started_at) }}
-                      <template v-if="item.completed_at"> → {{ formatDate(item.completed_at) }}</template>
-                    </span>
-
-                  </div>
-                  <span v-if="item.rating !== null" class="text-label-sm font-medium text-primary">{{ item.rating }}/10</span>
+            <div class="glass-card min-w-0 rounded-lg p-stack-md shadow-sm">
+              <div class="flex min-w-0 flex-col gap-0">
+                <div
+                  v-for="(item, idx) in episodeMap"
+                  :key="item.episode"
+                  class="flex min-w-0 items-center gap-3 py-2.5"
+                  :class="idx !== 0 ? 'border-t border-outline-variant/20' : ''"
+                >
+                  <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                  <span class="text-body-sm font-semibold text-on-surface">{{ progressUnit(media.type) }}{{ item.episode }}</span>
+                  <span class="ml-auto text-caption-xs text-on-surface-variant">{{ item.date }}</span>
                 </div>
               </div>
             </div>

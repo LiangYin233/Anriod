@@ -32,10 +32,10 @@ export function progressLabel(type: MediaType): string {
  * Format a watch-history progress range (e.g. EP1 → EP3, CH5).
  */
 export function historyProgressLabel(progressFrom: MediaProgress | null | undefined, progressTo: MediaProgress | null | undefined): string {
-  const fromVal = progressVal(progressFrom)
   const toVal = progressVal(progressTo)
   if (toVal <= 0) return ''
-
   const prefix = progressFrom?.chapter !== undefined || progressTo?.chapter !== undefined ? 'CH' : 'EP'
-  return fromVal > 0 && fromVal !== toVal ? `${prefix}${fromVal} → ${prefix}${toVal}` : `${prefix}${toVal}`
+  const fromVal = progressVal(progressFrom)
+  if (fromVal > 0 && fromVal !== toVal) return `${prefix}${fromVal} → ${prefix}${toVal}`
+  return `${prefix}${toVal}`
 }

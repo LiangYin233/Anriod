@@ -7,7 +7,10 @@ import {
   getMediaById,
   importMedia,
   listMedia,
+  markEpisodesWatched,
+  markSingleEpisode,
   syncMedia,
+  undoEpisodeWatch,
   updateMedia,
   updateProgress,
   updateStatus
@@ -70,6 +73,20 @@ mediaRoutes.patch('/:id/status', async (c) => {
 })
 
 mediaRoutes.post('/:id/sync', async (c) => c.json(await syncMedia(c.req.param('id'))))
+
+mediaRoutes.post('/:id/history/episodes/batch', async (c) => {
+  const body = await readJson<{ episodes: number[] }>(c)
+  return c.json(markEpisodesWatched(c.req.param('id'), body.episodes))
+})
+
+mediaRoutes.post('/:id/history/episodes/single', async (c) => {
+  const body = await readJson<{ episode: number }>(c)
+  return c.json(markSingleEpisode(c.req.param('id'), body.episode))
+})
+
+mediaRoutes.delete('/:id/history/episodes/:ep', (c) => {
+  return c.json(undoEpisodeWatch(c.req.param('id'), Number(c.req.param('ep'))))
+})
 
 mediaRoutes.get('/:id/history', (c) => c.json(listHistoryForMedia(c.req.param('id'))))
 
