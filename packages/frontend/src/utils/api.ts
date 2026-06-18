@@ -1,6 +1,6 @@
 import type {
   CreateMediaInput,
-  CreateWatchHistoryInput,
+  CreateWatchRecordInput,
   CreditsResponse,
   DiscoverResponse,
   ImportMediaInput,
@@ -16,8 +16,8 @@ import type {
   UpdateMediaInput,
   UpdateProgressInput,
   UpdateStatusInput,
-  UpdateWatchHistoryInput,
-  WatchHistory
+  UpdateWatchRecordInput,
+  WatchRecord
 } from '@anriod/shared'
 
 export interface ClientConfig {
@@ -109,26 +109,26 @@ export const api = {
   updateMedia: (id: string, data: UpdateMediaInput) => apiRequest<Media>(`/api/media/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteMedia: (id: string) => apiRequest<void>(`/api/media/${id}`, { method: 'DELETE' }),
   updateProgress: (id: string, data: UpdateProgressInput) => apiRequest<Media>(`/api/media/${id}/progress`, { method: 'PATCH', body: JSON.stringify(data) }),
-  markEpisodesWatched: (id: string, episodes: number[]) => apiRequest<Media>(`/api/media/${id}/history/episodes/batch`, { method: 'POST', body: JSON.stringify({ episodes }) }),
-  markSingleEpisode: (id: string, episode: number) => apiRequest<Media>(`/api/media/${id}/history/episodes/single`, { method: 'POST', body: JSON.stringify({ episode }) }),
-  undoEpisodeWatch: (id: string, episode: number) => apiRequest<Media>(`/api/media/${id}/history/episodes/${episode}`, { method: 'DELETE' }),
+  markEpisodesWatched: (id: string, episodes: number[]) => apiRequest<Media>(`/api/media/${id}/records/episodes/batch`, { method: 'POST', body: JSON.stringify({ episodes }) }),
+  markSingleEpisode: (id: string, episode: number) => apiRequest<Media>(`/api/media/${id}/records/episodes/single`, { method: 'POST', body: JSON.stringify({ episode }) }),
+  undoEpisodeWatch: (id: string, episode: number) => apiRequest<Media>(`/api/media/${id}/records/episodes/${episode}`, { method: 'DELETE' }),
   updateStatus: (id: string, data: UpdateStatusInput) => apiRequest<Media>(`/api/media/${id}/status`, { method: 'PATCH', body: JSON.stringify(data) }),
   importMedia: (data: ImportMediaInput) => apiRequest<Media>('/api/media/import', { method: 'POST', body: JSON.stringify(data) }),
   syncMedia: (id: string) => apiRequest<Media>(`/api/media/${id}/sync`, { method: 'POST' }),
   listTags: () => apiRequest<Tag[]>('/api/tags'),
   createTag: (name: string) => apiRequest<Tag>('/api/tags', { method: 'POST', body: JSON.stringify({ name }) }),
   deleteTag: (id: number) => apiRequest<void>(`/api/tags/${id}`, { method: 'DELETE' }),
-  listHistory: (query: { page?: number; limit?: number; media_id?: string } = {}) => apiRequest<PaginatedResponse<WatchHistory>>(`/api/history${queryString(query)}`),
-  createHistory: (data: CreateWatchHistoryInput) => apiRequest<WatchHistory>('/api/history', { method: 'POST', body: JSON.stringify(data) }),
-  updateHistory: (id: number, data: UpdateWatchHistoryInput) => apiRequest<WatchHistory>(`/api/history/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  deleteHistory: (id: number) => apiRequest<void>(`/api/history/${id}`, { method: 'DELETE' }),
+  listRecords: (query: { page?: number; limit?: number; media_id?: string } = {}) => apiRequest<PaginatedResponse<WatchRecord>>(`/api/records${queryString(query)}`),
+  createRecord: (data: CreateWatchRecordInput) => apiRequest<WatchRecord>('/api/records', { method: 'POST', body: JSON.stringify(data) }),
+  updateRecord: (id: number, data: UpdateWatchRecordInput) => apiRequest<WatchRecord>(`/api/records/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteRecord: (id: number) => apiRequest<void>(`/api/records/${id}`, { method: 'DELETE' }),
   search: (query: { query: string; type?: string; source?: string }) => apiRequest<SearchResult[]>(`/api/search${queryString(query)}`),
   dataSources: () => apiRequest<{ data: Array<{ name: string; supportedTypes: string[] }> }>('/api/search/sources'),
   overview: () => apiRequest<StatisticsOverview>('/api/statistics/overview'),
   timeline: () => apiRequest<TimelinePoint[]>('/api/statistics/timeline'),
   tagStats: () => apiRequest<TagStatistic[]>('/api/statistics/tags'),
   ratingDistribution: () => apiRequest<Array<{ rating: number; count: number }>>('/api/statistics/ratings'),
-  exportBackup: () => apiRequest<{ version: number; media: Media[]; tags: Tag[]; watch_history: WatchHistory[] }>('/api/backup/export'),
+  exportBackup: () => apiRequest<{ version: number; media: Media[]; tags: Tag[]; watch_records: WatchRecord[] }>('/api/backup/export'),
   importBackup: (data: any) => apiRequest<{ ok: boolean }>('/api/backup/import', { method: 'POST', body: JSON.stringify(data) }),
   triggerSync: () => apiRequest<{ synced: number; errors: string[] }>('/api/sync/trigger', { method: 'POST' }),
   fetchDetails: (query: { source: string; source_id: string; type?: string }) =>

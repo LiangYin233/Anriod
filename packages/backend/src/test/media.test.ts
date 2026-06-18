@@ -5,7 +5,7 @@ import { initTestEnv, clearAllTables } from './helpers'
 let listMedia: any, getMediaById: any, createMedia: any, updateMedia: any
 let deleteMedia: any, updateProgress: any, updateStatus: any
 let importMedia: any, syncMedia: any
-let getTagsForMedia: any, listHistoryForMedia: any
+let getTagsForMedia: any, listRecordsForMedia: any
 
 beforeAll(async () => {
   await initTestEnv()
@@ -25,8 +25,8 @@ beforeAll(async () => {
   const t = await import('../services/tag')
   getTagsForMedia = t.getTagsForMedia
 
-  const h = await import('../services/history')
-  listHistoryForMedia = h.listHistoryForMedia
+  const h = await import('../services/watch-record')
+  listRecordsForMedia = h.listRecordsForMedia
 })
 
 const sampleAnime = {
@@ -218,25 +218,23 @@ describe('media service — progress', () => {
     expect(p2.current_progress?.episode).toBe(8)
   })
 
-  test('updateProgress creates history entries for incremental progress', () => {
-    const media = createMedia({ title: 'Progress History', type: 'anime', total_episodes: 12 })
+  test('updateProgress creates record entries for incremental progress', () => {
+    const media = createMedia({ title: 'Progress Records', type: 'anime', total_episodes: 12 })
     updateProgress(media.id, { episode: 3 })
 
-    const history = listHistoryForMedia(media.id)
-    expect(history.length).toBe(3)
-    // All entries should have episode values
-    expect(history.every((h: any) => h.progress_to?.episode)).toBe(true)
-    // Entries are ordered by started_at DESC; all created at same time
-    const episodes = history.map((h: any) => h.progress_to.episode).sort((a: number, b: number) => a - b)
+    const records = listRecordsForMedia(media.id)
+    expect(records.length).toBe(3)
+    expect(records.every((h: any) => h.episode)).toBe(true)
+    const episodes = records.map((h: any) => h.episode).sort((a: number, b: number) => a - b)
     expect(episodes).toEqual([1, 2, 3])
   })
 
-  test('decreasing progress removes excess history entries', () => {
+  test('decreasing progress removes excess record entries', () => {
     const media = createMedia({ title: 'Decrease Test', type: 'anime', total_episodes: 12 })
     updateProgress(media.id, { episode: 5 })
     updateProgress(media.id, { episode: 3 })
-    const history = listHistoryForMedia(media.id)
-    expect(history.length).toBe(3)
+    const records = listRecordsForMedia(media.id)
+    expect(records.length).toBe(3)
   })
 })
 
@@ -252,23 +250,15 @@ describe('media service — status transitions', () => {
     expect(() => updateStatus(media.id, 'invalid' as any)).toThrow()
   })
 
-  test('completing creates a finished history entry', () => {
-    const media = createMedia({ title: 'Complete Test', type: 'anime', total_episodes: 12 })
-    updateProgress(media.id, { episode: 12 })
-    updateStatus(media.id, 'completed')
-
-    const history = listHistoryForMedia(media.id)
-    const completeEntry = history.find((h: any) => h.completed_at !== null)
-    expect(completeEntry).toBeDefined()
-  })
-
-  test('marking as watching creates an open-ended history entry', () => {
-    const media = createMedia({ title: 'Watch Start', type: 'anime' })
+  test('updateStatus changes between statuses', () => {
+    const media = createMedia({ title: 'Status Change', type: 'anime', total_episodes: 12 })
     updateStatus(media.id, 'watching')
+    const watching = getMediaById(media.id)
+    expect(watching.status).toBe('watching')
 
-    const history = listHistoryForMedia(media.id)
-    const openEntry = history.find((h: any) => h.completed_at === null)
-    expect(openEntry).toBeDefined()
+    updateStatus(media.id, 'completed')
+    const completed = getMediaById(media.id)
+    expect(completed.status).toBe('completed')
   })
 })
 

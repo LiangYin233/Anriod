@@ -1,34 +1,33 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import type { WatchHistory } from '@anriod/shared'
+import type { WatchRecord } from '@anriod/shared'
 import PageHeader from '@/components/PageHeader.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import ErrorBanner from '@/components/ErrorBanner.vue'
 import { api } from '@/utils/api'
 import { formatDate } from '@/utils/format'
-import { historyProgressLabel } from '@/utils/progress'
 import { useToast } from '@/composables/useToast'
 import { useAsyncState } from '@/composables/useAsyncState'
 
-const history = ref<WatchHistory[]>([])
+const records = ref<WatchRecord[]>([])
 const { loading, error, execute } = useAsyncState()
 const toast = useToast()
 
-async function loadHistory() {
+async function loadRecords() {
   await execute(async () => {
-    history.value = (await api.listHistory({ page: 1, limit: 500 })).data
+    records.value = (await api.listRecords({ page: 1, limit: 500 })).data
   }, '加载历史失败')
 }
 
-function episodeLabel(h: WatchHistory): string {
-  return historyProgressLabel(h.progress_from, h.progress_to)
+function episodeLabel(h: WatchRecord): string {
+  return h.episode ? `EP${h.episode}` : h.chapter ? `CH${h.chapter}` : ''
 }
 
 async function deleteEntry(id: number) {
   try {
-    await api.deleteHistory(id)
-    history.value = history.value.filter((h) => h.id !== id)
+    await api.deleteRecord(id)
+    records.value = records.value.filter((h) => h.id !== id)
     toast.success('已删除记录')
   } catch (caught) {
     toast.error('删除失败: ' + (caught instanceof Error ? caught.message : String(caught)))
@@ -37,9 +36,9 @@ async function deleteEntry(id: number) {
 
 // Group by YYYY-MM
 const months = computed(() => {
-  const map = new Map<string, WatchHistory[]>()
-  for (const item of history.value) {
-    const d = new Date(item.started_at)
+  const map = new Map<string, WatchRecord[]>()
+  for (const item of records.value) {
+    const d = new Date(item.watched_at)
     if (isNaN(d.getTime())) continue
     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
     if (!map.has(key)) map.set(key, [])
@@ -53,14 +52,14 @@ function monthLabel(key: string): string {
   return `${y}年${parseInt(m)}月`
 }
 
-onMounted(loadHistory)
+onMounted(loadRecords)
 </script>
 
 <template>
   <div class="section-gap">
     <PageHeader title="观看记录" description="每集观看时间线">
       <template #actions>
-        <button class="btn-ghost" type="button" @click="loadHistory">
+        <button class="btn-ghost" type="button" @click="loadRecords">
           <span class="material-symbols-outlined text-[18px]">refresh</span>
         </button>
       </template>
@@ -70,7 +69,7 @@ onMounted(loadHistory)
     <LoadingSpinner v-if="loading" />
 
     <EmptyState
-      v-else-if="history.length === 0"
+      v-else-if="records.length === 0"
       icon="history"
       title="暂无记录"
       description="开始标记观看进度，记录将出现在这里。"
@@ -92,7 +91,7 @@ onMounted(loadHistory)
             class="glass-card rounded-lg px-4 py-3 transition-colors hover:bg-surface-container-low/50"
           >
             <!-- Date -->
-            <span class="text-caption-xs text-on-surface-variant">{{ formatDate(item.started_at) }}</span>
+            <span class="text-caption-xs text-on-surface-variant">{{ formatDate(item.watched_at) }}</span>
 
             <!-- Title + episode inline -->
             <div class="flex items-baseline gap-2 mt-0.5">
@@ -116,16 +115,6 @@ onMounted(loadHistory)
               >
                 <span class="material-symbols-outlined text-[14px]">delete</span>
               </button>
-            </div>
-
-            <div v-if="item.rating !== null && item.rating > 0" class="mt-1.5 flex items-center gap-1">
-              <template v-for="i in 5" :key="i">
-                <span
-                  class="material-symbols-outlined text-[14px]"
-                  :class="i <= Math.round((item.rating ?? 0) / 2) ? 'star-filled' : 'star-empty'"
-                >star</span>
-              </template>
-              <span class="ml-1 text-label-sm text-on-surface">{{ item.rating }}/10</span>
             </div>
           </div>
         </div>

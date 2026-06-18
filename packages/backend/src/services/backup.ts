@@ -1,22 +1,21 @@
-import type { Media, Tag, WatchHistory } from '@anriod/shared'
+import type { Media, Tag, WatchRecord } from '@anriod/shared'
 import { asc, eq } from 'drizzle-orm'
 import { ERROR_MESSAGES } from '../constants'
 import { db } from '../db/client'
-import { media, mediaTags, tags, watchHistory, type NewMediaRow, type NewTagRow, type NewWatchHistoryRow } from '../db/schema'
+import { media, mediaTags, tags, watchRecord, type NewMediaRow, type NewTagRow, type NewWatchRecordRow } from '../db/schema'
 import { HttpError } from '../middleware/error'
 
 export interface ExportData {
-  version: 1
+  version: 2
   exported_at: string
   media: Media[]
   tags: Tag[]
-  watch_history: WatchHistory[]
+  watch_records: WatchRecord[]
 }
 
 export function exportAll(): ExportData {
   const mediaRows = db.select().from(media).orderBy(asc(media.created_at)).all()
 
-  // Fetch all media_tags in one query
   const allMediaTags = db
     .select({ media_id: mediaTags.media_id, name: tags.name })
     .from(mediaTags)
@@ -24,7 +23,6 @@ export function exportAll(): ExportData {
     .orderBy(asc(mediaTags.media_id), asc(tags.name))
     .all()
 
-  // Group tags by media_id
   const tagsByMediaId = new Map<string, string[]>()
   for (const row of allMediaTags) {
     if (!tagsByMediaId.has(row.media_id)) {
@@ -39,23 +37,23 @@ export function exportAll(): ExportData {
   }))
 
   const tagRows = db.select().from(tags).orderBy(asc(tags.id)).all()
-  const watchHistoryRows = db.select().from(watchHistory).orderBy(asc(watchHistory.id)).all()
+  const recordRows = db.select().from(watchRecord).orderBy(asc(watchRecord.id)).all()
 
   return {
-    version: 1,
+    version: 2,
     exported_at: new Date().toISOString(),
     media: mediaItems,
     tags: tagRows,
-    watch_history: watchHistoryRows
+    watch_records: recordRows
   }
 }
 
 export function importAll(data: ExportData) {
-  if (!data || data.version !== 1) {
+  if (!data || data.version !== 2) {
     throw new HttpError(400, ERROR_MESSAGES.INVALID_EXPORT_FORMAT)
   }
 
-  if (!Array.isArray(data.media) || !Array.isArray(data.tags) || !Array.isArray(data.watch_history)) {
+  if (!Array.isArray(data.media) || !Array.isArray(data.tags) || !Array.isArray(data.watch_records)) {
     throw new HttpError(400, ERROR_MESSAGES.EXPORT_MISSING_ARRAYS)
   }
 
@@ -65,13 +63,11 @@ export function importAll(data: ExportData) {
   }
 
   db.transaction((transaction) => {
-    // Clear existing data (order matters due to foreign keys)
-    transaction.delete(watchHistory).run()
+    transaction.delete(watchRecord).run()
     transaction.delete(mediaTags).run()
     transaction.delete(tags).run()
     transaction.delete(media).run()
 
-    // Restore tags
     for (const tag of data.tags) {
       const values: NewTagRow = {
         id: tag.id,
@@ -81,7 +77,6 @@ export function importAll(data: ExportData) {
       transaction.insert(tags).values(values).onConflictDoNothing().run()
     }
 
-    // Restore media
     for (const item of data.media) {
       const values: NewMediaRow = {
         id: item.id,
@@ -106,7 +101,6 @@ export function importAll(data: ExportData) {
       }
       transaction.insert(media).values(values).run()
 
-      // Restore media-tag associations
       if (Array.isArray(item.tags)) {
         for (const tagName of item.tags) {
           const tag = tagsByName.get(tagName)
@@ -117,19 +111,17 @@ export function importAll(data: ExportData) {
       }
     }
 
-    // Restore watch history
-    for (const entry of data.watch_history) {
-      const values: NewWatchHistoryRow = {
+    for (const entry of data.watch_records) {
+      const values: NewWatchRecordRow = {
         id: entry.id,
         media_id: entry.media_id,
-        started_at: entry.started_at,
-        completed_at: entry.completed_at ?? null,
-        progress_from: entry.progress_from ?? null,
-        progress_to: entry.progress_to ?? null,
-        rating: entry.rating ?? null,
+        episode: entry.episode ?? null,
+        chapter: entry.chapter ?? null,
+        watched_at: entry.watched_at,
+        is_continuous: entry.is_continuous,
         created_at: entry.created_at
       }
-      transaction.insert(watchHistory).values(values).run()
+      transaction.insert(watchRecord).values(values).run()
     }
   })
 }

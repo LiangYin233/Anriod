@@ -41,9 +41,9 @@ export const ERROR_MESSAGES = {
   TAG_NOT_FOUND: '标签不存在',
   TAG_CREATE_FAILED: '创建标签失败',
 
-  // History errors
-  HISTORY_NOT_FOUND: '观看记录不存在',
-  HISTORY_CREATE_FAILED: '创建观看记录失败',
+  // Record errors
+  RECORD_NOT_FOUND: '观看记录不存在',
+  RECORD_CREATE_FAILED: '创建观看记录失败',
 
   // Backup errors
   INVALID_EXPORT_FORMAT: '无效的导出数据格式',

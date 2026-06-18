@@ -45,8 +45,8 @@ export async function initTestEnv() {
 /** Clear all data from every table. */
 export async function clearAllTables() {
   const { db } = await import('../db/client')
-  const { media, mediaTags, tags, watchHistory } = await import('../db/schema')
-  db.delete(watchHistory).run()
+  const { media, mediaTags, tags, watchRecord } = await import('../db/schema')
+  db.delete(watchRecord).run()
   db.delete(mediaTags).run()
   db.delete(tags).run()
   db.delete(media).run()

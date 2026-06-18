@@ -65,15 +65,14 @@ export interface Tag {
   created_at: string
 }
 
-export interface WatchHistory {
+export interface WatchRecord {
   id: number
   media_id: string
   media_title?: string
-  started_at: string
-  completed_at: string | null
-  progress_from: MediaProgress | null
-  progress_to: MediaProgress | null
-  rating: number | null
+  episode: number | null
+  chapter: number | null
+  watched_at: string
+  is_continuous: number
   created_at: string
 }
 
@@ -199,16 +198,15 @@ export interface ImportMediaInput {
   type?: MediaType
 }
 
-export interface CreateWatchHistoryInput {
+export interface CreateWatchRecordInput {
   media_id: string
-  started_at?: string
-  completed_at?: string | null
-  progress_from?: MediaProgress | null
-  progress_to?: MediaProgress | null
-  rating?: number | null
+  episode?: number
+  chapter?: number
+  watched_at?: string
+  is_continuous?: number
 }
 
-export type UpdateWatchHistoryInput = Partial<Omit<CreateWatchHistoryInput, 'media_id'>>
+export type UpdateWatchRecordInput = Partial<Omit<CreateWatchRecordInput, 'media_id'>>
 
 export interface StatisticsOverview {
   total: number

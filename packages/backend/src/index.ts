@@ -11,7 +11,7 @@ import { authMiddleware } from './middleware/auth'
 import { handleError, notFound } from './middleware/error'
 import { backupRoutes } from './routes/backup'
 import { discoverRoutes } from './routes/discover'
-import { historyRoutes } from './routes/history'
+import { recordRoutes } from './routes/watch-record'
 import { mediaRoutes } from './routes/media'
 import { searchRoutes } from './routes/search'
 import { syncRoutes } from './routes/sync'
@@ -71,7 +71,7 @@ app.get('/covers/:filename', async (c) => {
 app.use('/api/*', authMiddleware)
 app.route('/api/media', mediaRoutes)
 app.route('/api/tags', tagRoutes)
-app.route('/api/history', historyRoutes)
+app.route('/api/records', recordRoutes)
 app.route('/api/search', searchRoutes)
 app.route('/api/backup', backupRoutes)
 app.route('/api/sync', syncRoutes)

@@ -15,7 +15,7 @@ import {
   updateProgress,
   updateStatus
 } from '../services/media'
-import { listHistoryForMedia } from '../services/history'
+import { listRecordsForMedia } from '../services/watch-record'
 import { parseOptionalInt, readJson, toInt } from '../utils/http'
 import { DEFAULT_LIMIT, MAX_LIMIT } from '../constants'
 
@@ -74,21 +74,21 @@ mediaRoutes.patch('/:id/status', async (c) => {
 
 mediaRoutes.post('/:id/sync', async (c) => c.json(await syncMedia(c.req.param('id'))))
 
-mediaRoutes.post('/:id/history/episodes/batch', async (c) => {
+mediaRoutes.post('/:id/records/episodes/batch', async (c) => {
   const body = await readJson<{ episodes: number[] }>(c)
   return c.json(markEpisodesWatched(c.req.param('id'), body.episodes))
 })
 
-mediaRoutes.post('/:id/history/episodes/single', async (c) => {
+mediaRoutes.post('/:id/records/episodes/single', async (c) => {
   const body = await readJson<{ episode: number }>(c)
   return c.json(markSingleEpisode(c.req.param('id'), body.episode))
 })
 
-mediaRoutes.delete('/:id/history/episodes/:ep', (c) => {
+mediaRoutes.delete('/:id/records/episodes/:ep', (c) => {
   return c.json(undoEpisodeWatch(c.req.param('id'), Number(c.req.param('ep'))))
 })
 
-mediaRoutes.get('/:id/history', (c) => c.json(listHistoryForMedia(c.req.param('id'))))
+mediaRoutes.get('/:id/records', (c) => c.json(listRecordsForMedia(c.req.param('id'))))
 
 mediaRoutes.post('/:id/tags', async (c) => {
   const body = await readJson<{ tag_id: number }>(c)

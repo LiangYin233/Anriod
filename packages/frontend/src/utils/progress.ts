@@ -28,14 +28,3 @@ export function progressLabel(type: MediaType): string {
   return isChapterBased(type) ? '章节' : '集数'
 }
 
-/**
- * Format a watch-history progress range (e.g. EP1 → EP3, CH5).
- */
-export function historyProgressLabel(progressFrom: MediaProgress | null | undefined, progressTo: MediaProgress | null | undefined): string {
-  const toVal = progressVal(progressTo)
-  if (toVal <= 0) return ''
-  const prefix = progressFrom?.chapter !== undefined || progressTo?.chapter !== undefined ? 'CH' : 'EP'
-  const fromVal = progressVal(progressFrom)
-  if (fromVal > 0 && fromVal !== toVal) return `${prefix}${fromVal} → ${prefix}${toVal}`
-  return `${prefix}${toVal}`
-}

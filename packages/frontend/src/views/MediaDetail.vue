@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import type { CreditsResponse, Episode, Media, MediaType, Status, WatchHistory } from '@anriod/shared'
+import type { CreditsResponse, Episode, Media, MediaType, Status, WatchRecord } from '@anriod/shared'
 import { EPISODE_TYPE_LABELS, MEDIA_TYPES, MEDIA_TYPE_VALUES, STATUS_LABELS, STATUS_VALUES } from '@anriod/shared'
 import { api } from '@/utils/api'
 import { getCoverSrc } from '@/utils/cover'
@@ -16,7 +16,7 @@ import { isChapterBased, progressVal, progressUnit, progressLabel } from '@/util
 const route = useRoute()
 const mediaId = computed(() => String(route.params.id))
 const media = ref<Media | null>(null)
-const history = ref<WatchHistory[]>([])
+const records = ref<WatchRecord[]>([])
 const credits = ref<CreditsResponse | null>(null)
 const loading = ref(false)
 const saving = ref(false)
@@ -95,9 +95,9 @@ async function loadDetail() {
     media.value = await api.getMedia(mediaId.value)
     fillForm(media.value)
 
-    // Then parallelize history and credits loading
+    // Then parallelize records and credits loading
     const promises: Promise<any>[] = [
-      api.listHistory({ media_id: mediaId.value }).then(res => res.data)
+      api.listRecords({ media_id: mediaId.value }).then(res => res.data)
     ]
 
     // Add credits loading if source_id is available
@@ -114,9 +114,9 @@ async function loadDetail() {
       )
     }
 
-    const [historyData, creditsData] = await Promise.all(promises)
+    const [recordsData, creditsData] = await Promise.all(promises)
 
-    history.value = historyData
+    records.value = recordsData
     if (creditsData && (creditsData.cast?.length > 0 || creditsData.crew?.length > 0)) {
       credits.value = creditsData
     }
@@ -163,39 +163,37 @@ async function saveProgress() {
       started_at: watchDate.value ? new Date(watchDate.value).toISOString() : null
     })
     fillForm(media.value)
-    await reloadHistory()
+    await reloadRecords()
   } catch (caught) {
     error.value = caught instanceof Error ? caught.message : '保存进度失败'
   }
 }
 
-async function reloadHistory() {
+async function reloadRecords() {
   if (!media.value) return
   try {
-    const res = await api.listHistory({ media_id: mediaId.value })
-    history.value = res.data
+    const res = await api.listRecords({ media_id: mediaId.value })
+    records.value = res.data
   } catch { /* silent */ }
 }
 
 const watchedEps = computed(() => {
   const key = isChapterBased(media.value?.type ?? 'anime') ? 'chapter' : 'episode'
-  return new Set(history.value.map(h => (h.progress_to?.[key] as number) ?? 0).filter(Boolean))
+  return new Set(records.value.map(h => (h[key] as number) ?? 0).filter(Boolean))
 })
 
 interface EpisodeMapEntry {
   episode: number
   date: string
-  historyId: number
 }
 
 const episodeMap = computed<EpisodeMapEntry[]>(() => {
   const key = isChapterBased(media.value?.type ?? 'anime') ? 'chapter' : 'episode'
-  return history.value
-    .filter(h => (h.progress_to?.[key] as number) > 0)
+  return records.value
+    .filter(h => ((h[key] as number) ?? 0) > 0)
     .map(h => ({
-      episode: (h.progress_to?.[key] as number) ?? 0,
-      date: formatDate(h.started_at),
-      historyId: h.id
+      episode: (h[key] as number) ?? 0,
+      date: formatDate(h.watched_at)
     }))
     .sort((a, b) => a.episode - b.episode)
 })
@@ -215,7 +213,7 @@ async function markWatched(ep: number) {
   try {
     media.value = await api.markEpisodesWatched(media.value.id, episodes)
     fillForm(media.value)
-    await reloadHistory()
+    await reloadRecords()
   } catch (caught) {
     error.value = caught instanceof Error ? caught.message : '标记失败'
   }
@@ -228,7 +226,7 @@ async function markSingle(ep: number) {
     await api.markSingleEpisode(media.value.id, ep)
     media.value = await api.getMedia(mediaId.value)
     fillForm(media.value)
-    await reloadHistory()
+    await reloadRecords()
   } catch (caught) {
     error.value = caught instanceof Error ? caught.message : '标记失败'
   }
@@ -240,7 +238,7 @@ async function undoEpisode(ep: number) {
   try {
     media.value = await api.undoEpisodeWatch(media.value.id, ep)
     fillForm(media.value)
-    await reloadHistory()
+    await reloadRecords()
   } catch (caught) {
     error.value = caught instanceof Error ? caught.message : '撤销失败'
   }
@@ -541,7 +539,7 @@ onUnmounted(() => {
           <!-- Credits (cast & crew) -->
           <CreditList v-if="credits && (credits.cast.length > 0 || credits.crew.length > 0)" :cast="credits.cast" :crew="credits.crew" />
 
-          <!-- History -->
+          <!-- Records -->
           <div v-if="episodeMap.length > 0" class="min-w-0">
             <h3 class="mb-unit flex items-center gap-2 text-title-sm text-on-surface">
               <span class="h-4 w-1 rounded-full bg-primary" />

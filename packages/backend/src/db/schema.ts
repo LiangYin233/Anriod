@@ -60,27 +60,28 @@ export const mediaTags = sqliteTable(
   })
 )
 
-export const watchHistory = sqliteTable(
-  'watch_history',
+export const watchRecord = sqliteTable(
+  'watch_record',
   {
     id: integer('id').primaryKey({ autoIncrement: true }),
     media_id: text('media_id')
       .notNull()
       .references(() => media.id, { onDelete: 'cascade' }),
-    started_at: text('started_at').notNull(),
-    completed_at: text('completed_at'),
-    progress_from: text('progress_from', { mode: 'json' }).$type<MediaProgress>(),
-    progress_to: text('progress_to', { mode: 'json' }).$type<MediaProgress>(),
-    rating: real('rating'),
+    episode: integer('episode'),
+    chapter: integer('chapter'),
+    watched_at: text('watched_at').notNull(),
+    is_continuous: integer('is_continuous').notNull().default(1),
     created_at: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`)
   },
   (table) => ({
-    mediaIdx: index('idx_watch_history_media').on(table.media_id),
-    dateIdx: index('idx_watch_history_date').on(table.started_at)
+    mediaIdx: index('idx_wr_media').on(table.media_id),
+    episodeIdx: index('idx_wr_ep').on(table.media_id, table.episode),
+    chapterIdx: index('idx_wr_ch').on(table.media_id, table.chapter),
+    dateIdx: index('idx_wr_date').on(table.watched_at)
   })
 )
 
 export type MediaRow = typeof media.$inferSelect
 export type NewMediaRow = typeof media.$inferInsert
 export type NewTagRow = typeof tags.$inferInsert
-export type NewWatchHistoryRow = typeof watchHistory.$inferInsert
+export type NewWatchRecordRow = typeof watchRecord.$inferInsert

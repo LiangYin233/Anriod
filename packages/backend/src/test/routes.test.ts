@@ -158,14 +158,14 @@ describe('backup routes', () => {
     const res = await fetchApi('/api/backup/export')
     expect(res.status).toBe(200)
     const body: any = await res.json()
-    expect(body.version).toBe(1)
+    expect(body.version).toBe(2)
     expect(Array.isArray(body.media)).toBe(true)
   })
 
   test('POST /api/backup/import validates format', async () => {
     const res = await fetchApi('/api/backup/import', {
       method: 'POST',
-      body: JSON.stringify({ version: 1, media: [], tags: [], watch_history: [] }),
+      body: JSON.stringify({ version: 2, media: [], tags: [], watch_records: [] }),
     })
     expect(res.status).toBe(200)
     const body: any = await res.json()
@@ -181,9 +181,9 @@ describe('backup routes', () => {
   })
 })
 
-describe('history routes', () => {
-  test('GET /api/history returns history', async () => {
-    const res = await fetchApi('/api/history')
+describe('record routes', () => {
+  test('GET /api/records returns records', async () => {
+    const res = await fetchApi('/api/records')
     expect(res.status).toBe(200)
     const body: any = await res.json()
     expect(body.data).toBeDefined()

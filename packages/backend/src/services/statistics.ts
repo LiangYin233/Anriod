@@ -2,7 +2,7 @@ import type { MediaType, StatisticsOverview, Status, TagStatistic, TimelinePoint
 import { MEDIA_TYPE_VALUES, STATUS_VALUES } from '@anriod/shared'
 import { asc, count, desc, eq, isNotNull } from 'drizzle-orm'
 import { db } from '../db/client'
-import { media, mediaTags, tags, watchHistory } from '../db/schema'
+import { media, mediaTags, tags, watchRecord } from '../db/schema'
 
 function zeroRecord<T extends string>(keys: readonly T[]): Record<T, number> {
   return Object.fromEntries(keys.map((key) => [key, 0])) as Record<T, number>
@@ -57,12 +57,12 @@ export function getOverview(): StatisticsOverview {
 export function getTimeline(): TimelinePoint[] {
   const countsByPeriod = new Map<string, number>()
   const rows = db
-    .select({ started_at: watchHistory.started_at, completed_at: watchHistory.completed_at })
-    .from(watchHistory)
+    .select({ watched_at: watchRecord.watched_at })
+    .from(watchRecord)
     .all()
 
   for (const row of rows) {
-    const period = (row.completed_at ?? row.started_at).slice(0, 7)
+    const period = row.watched_at.slice(0, 7)
     countsByPeriod.set(period, (countsByPeriod.get(period) ?? 0) + 1)
   }
 

@@ -22,11 +22,11 @@ beforeAll(async () => {
 describe('backup — export', () => {
   test('exports empty database', () => {
     const data = exportAll()
-    expect(data.version).toBe(1)
+    expect(data.version).toBe(2)
     expect(data.exported_at).toBeTruthy()
     expect(data.media).toEqual([])
     expect(data.tags).toEqual([])
-    expect(data.watch_history).toEqual([])
+    expect(data.watch_records).toEqual([])
   })
 })
 
@@ -82,7 +82,7 @@ describe('backup — round-trip', () => {
 describe('backup — validation', () => {
   test('rejects invalid format', () => {
     expect(() => importAll(null as any)).toThrow(ERROR_MESSAGES.INVALID_EXPORT_FORMAT)
-    expect(() => importAll({ version: 2 } as any)).toThrow(ERROR_MESSAGES.INVALID_EXPORT_FORMAT)
-    expect(() => importAll({ version: 1 } as any)).toThrow(ERROR_MESSAGES.EXPORT_MISSING_ARRAYS)
+    expect(() => importAll({ version: 1 } as any)).toThrow(ERROR_MESSAGES.INVALID_EXPORT_FORMAT)
+    expect(() => importAll({ version: 2 } as any)).toThrow(ERROR_MESSAGES.EXPORT_MISSING_ARRAYS)
   })
 })
